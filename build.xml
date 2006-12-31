@@ -66,17 +66,18 @@
 
         <delete file="mvel-${version}-java${java.version}.jar"/>
 
-        <!-- <copydir src="META-INF" dest="build/META-INF"/> -->
         <jar jarfile="mvel-${version}-java${java.version}.jar" basedir="build">
             <manifest>
-                <!--   <attribute name="Main-Class" value="com.ba.FileExtractor" /> -->
                 <attribute name="Built-By" value="Mike Brock"/>
+                <attribute name="Main-Class" value="org.mvel.MVELSH" />
+
                 <section name="org.mvel">
                     <attribute name="Sealed" value="false"/>
                     <attribute name="Specification-Title" value="MVEL"/>
                     <attribute name="Specification-Version" value="${version}"/>
                     <attribute name="Implementation-Version" value="${version} ${TODAY}"/>
                     <attribute name="Implementation-Vendor" value="Mike Brock"/>
+                    <attribute name="Main-Class" value="org.mvel.MVELSH" />                    
                 </section>
             </manifest>
         </jar>
@@ -94,13 +95,13 @@
 
         <delete file="mvel-${version}-java${java.version}-nd.jar"/>
 
-        <!-- <copydir src="META-INF" dest="build/META-INF"/> -->
         <jar jarfile="mvel-${version}-java${java.version}-nd.jar" basedir="build">
             <manifest>
-                <!--   <attribute name="Main-Class" value="com.ba.FileExtractor" /> -->
                 <attribute name="Built-By" value="Mike Brock"/>
+                <attribute name="Main-Class" value="org.mvel.MVELSH" />
+
                 <section name="org.mvel">
-                    <attribute name="Sealed" value="false"/>
+                    <attribute name="Sealed" value="true"/>
                     <attribute name="Specification-Title" value="MVEL"/>
                     <attribute name="Specification-Version" value="${version}"/>
                     <attribute name="Implementation-Version" value="${version} ${TODAY}"/>
