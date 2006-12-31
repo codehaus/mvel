@@ -9,13 +9,6 @@
     <property name="build" location="build"/>
     <property name="dist" location="dist"/>
 
-    <property name="ognl" location="lib\ognl-2.6.7.jar"/>
-    <property name="logger" location="lib\log4j.jar"/>
-    <property name="xerces" location="lib\xercesImpl.jar"/>
-    <property name="xml" location="lib\xml-apis.jar"/>
-    <property name="junit" location="lib\junit-3.8.1.jar"/>
-    <property name="javolution" location="lib\javolution.jar"/>
-    <property name="bsh" location="lib\bsh-2.0b2.jar"/>
 
     <property name="deploy_to" location="c:\projects\rwhoist\WEB-INF\lib"/>
 
@@ -31,15 +24,12 @@
         <!-- Compile the java code from ${src} into ${build} debuglevel="vars,lines,source" -->
         <javac source="1.5" srcdir="${src}" destdir="${build}" optimize="true" debug="on"
                debuglevel="vars,lines,source">
-            <classpath>
-                <pathelement path="${bsh}"/>
-                <pathelement path="${ognl}"/>
-                <pathelement path="${logger}"/>
-                <pathelement path="${xerces}"/>
-                <pathelement path="${xml}"/>
-                <pathelement path="${junit}"/>
-                <pathelement path="${javolution}"/>
-            </classpath>
+        </javac>
+    </target>
+
+    <target name="compile-nodebug" depends="init"
+            description="compile the source ">
+        <javac source="1.5" srcdir="${src}" destdir="${build}" optimize="true" debug="off">
         </javac>
     </target>
 
@@ -77,7 +67,7 @@
         <delete file="mvel-${version}-java${java.version}.jar"/>
 
         <!-- <copydir src="META-INF" dest="build/META-INF"/> -->
-        <jar jarfile="mvel-${version}-java${java.version}.jar" basedir="buildUtils">
+        <jar jarfile="mvel-${version}-java${java.version}.jar" basedir="build">
             <manifest>
                 <!--   <attribute name="Main-Class" value="com.ba.FileExtractor" /> -->
                 <attribute name="Built-By" value="Mike Brock"/>
@@ -90,8 +80,37 @@
                 </section>
             </manifest>
         </jar>
-        <delete dir="buildUtils"/>
+        <delete dir="build"/>
     </target>
+
+    <target name="release-no-debugging" depends="clean,compile-nodebug,el-tests"
+            description="generate the distribution">
+        <!-- Create the distribution directory -->
+
+        <mkdir dir="build"/>
+        <copy todir="build/">
+            <fileset dir="${build}"/>
+        </copy>
+
+        <delete file="mvel-${version}-java${java.version}-nd.jar"/>
+
+        <!-- <copydir src="META-INF" dest="build/META-INF"/> -->
+        <jar jarfile="mvel-${version}-java${java.version}-nd.jar" basedir="build">
+            <manifest>
+                <!--   <attribute name="Main-Class" value="com.ba.FileExtractor" /> -->
+                <attribute name="Built-By" value="Mike Brock"/>
+                <section name="org.mvel">
+                    <attribute name="Sealed" value="false"/>
+                    <attribute name="Specification-Title" value="MVEL"/>
+                    <attribute name="Specification-Version" value="${version}"/>
+                    <attribute name="Implementation-Version" value="${version} ${TODAY}"/>
+                    <attribute name="Implementation-Vendor" value="Mike Brock"/>
+                </section>
+            </manifest>
+        </jar>
+        <delete dir="build"/>
+    </target>
+
 
     <target name="clean"
             description="clean up">
