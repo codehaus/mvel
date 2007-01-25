@@ -26,15 +26,13 @@ public class RandomThing {
         
     }
     
-    public List toList(Object object1, Object object2, String object3, int integer, Map map, List inputList) {
-        List list = new ArrayList();
-        list.add( object1 );
-        list.add( object2 );
-        list.add( object3 );
-        list.add( new Integer( integer ) );
-        list.add( map );
-        list.add( inputList );
-        return list;
+    public void methodWithComplexity(Object object1, Object object2, String object3, int integer, Map map, List inputList) {
+    }
+    
+    public void methodWithComplexityOverloading(Object object1, Object object2, String object3, int integer, Map map, List inputList) {
+    }
+    
+    public void methodWithComplexityOverloading(Object object1, Object object2, String object3, long integer, Map map, List inputList) {
     }
 
 }

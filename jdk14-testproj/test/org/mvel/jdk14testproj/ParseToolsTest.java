@@ -4,6 +4,10 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import junit.framework.TestCase;
 
@@ -88,7 +92,61 @@ public class ParseToolsTest extends TestCase {
         
         method = ParseTools.getBestCanadidate( new Object[] { new BigInteger( "42" ) }, "methodWithOneOverloadedParam", methods );
         assertMethod( "methodWithOneOverloadedParam", method, new Class[] { Integer.TYPE } );
+    }
+    
+    public void testGetBestCandidate_Complexity() throws Exception {
+        Method method = ParseTools.getBestCanadidate( EMPTY_OBJECT_ARRAY, "methodWithComplexity", methods );
+        assertNull( method );
         
+        Map map   = new HashMap();
+        List list = new ArrayList();
+        
+        method = ParseTools.getBestCanadidate( 
+                new Object[] { 
+                       new Integer( 42 ),
+                       new BigDecimal( "42.42" ),
+                       "Tacos, damn!",
+                       new Integer( 84 ),
+                       map,
+                       list, 
+                }, 
+                "methodWithComplexity", methods );
+        
+        assertMethod( "methodWithComplexity", method, new Class[] { Object.class, Object.class, String.class, int.class, Map.class, List.class } );
+    }
+    
+    public void testGetBestCandidate_ComplexityOverloading() throws Exception {
+        Method method = ParseTools.getBestCanadidate( EMPTY_OBJECT_ARRAY, "methodWithComplexityOverloading", methods );
+        assertNull( method );
+        
+        Map map   = new HashMap();
+        List list = new ArrayList();
+        
+        method = ParseTools.getBestCanadidate( 
+                new Object[] { 
+                       new Integer( 42 ),
+                       new BigDecimal( "42.42" ),
+                       "Tacos, damn!",
+                       new Integer( 84 ),
+                       map,
+                       list, 
+                }, 
+                "methodWithComplexityOverloading", methods );
+        
+        assertMethod( "methodWithComplexityOverloading", method, new Class[] { Object.class, Object.class, String.class, int.class, Map.class, List.class } );
+        
+        method = ParseTools.getBestCanadidate( 
+                new Object[] { 
+                       new Integer( 42 ),
+                       new BigDecimal( "42.42" ),
+                       "Tacos, damn!",
+                       new Long( 84 ),
+                       map,
+                       list, 
+                }, 
+                "methodWithComplexityOverloading", methods );
+        
+        assertMethod( "methodWithComplexityOverloading", method, new Class[] { Object.class, Object.class, String.class, long.class, Map.class, List.class } );
     }
     
     protected void assertMethod(String name, Method method) {
