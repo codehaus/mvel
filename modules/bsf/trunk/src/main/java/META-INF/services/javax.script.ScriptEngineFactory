@@ -1,0 +1,5 @@
+# This file contains a list of ScriptEngineFactory classes that the
+# javax.script.ScriptEngineManager will load for MVEL
+#
+# @author Richard L. Burton III
+org.mvel.bsf.MVELScriptEngineFactory
