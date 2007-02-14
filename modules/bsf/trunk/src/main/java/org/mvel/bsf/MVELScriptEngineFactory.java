@@ -164,7 +164,7 @@ public class MVELScriptEngineFactory implements ScriptEngineFactory {
     /**
      * Returns a String which can be used to invoke a method of a Java object using the
      * syntax of the supported scripting language. For more information on the syntax
-     * that MVEL uses, please see <a href="TODO: Locate the link">MVEL Home Page</a>
+     * that MVEL uses, please see <a href="http://mvel.codehaus.org">http://mvel.codehaus.org</a>
      * @param object    The name representing the object whose method is to be invoked.
      *                  The name is the one used to create bindings using the put method
      *                  of ScriptEngine, the put method of an ENGINE_SCOPE  Bindings, or

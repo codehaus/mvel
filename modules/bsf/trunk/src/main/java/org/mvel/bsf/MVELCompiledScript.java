@@ -15,7 +15,7 @@ import java.util.Map;
  * JSR 223 extention jar. If the ASM dependency is in the class path, then this
  * ExecutableStatement will truly be compiled into a Class on the fly. Otherwise,
  * this each invocation of eval(..) will parse up the expression provided. For more
- * information, check out <a href="TODO: Locate the URL for MVEL">MVEL Home Page</a>.
+ * information, check out <a href="http://mvel.codehaus.org">http://mvel.codehaus.org<a>.
  * @author Richard L. Burton III
  * @version 1.0
  * @since MVEL 1.2
