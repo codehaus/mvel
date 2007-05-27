@@ -1,0 +1,1 @@
+java -cp "classes/production/mvelsh;classes/production/mvel" org.mvel.sh.Main
