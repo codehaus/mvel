@@ -1,12 +1,11 @@
 package org.mvel.tests.bsf;
 
 import junit.framework.TestCase;
+import org.mvel.bsf.MVELScriptEngineFactory;
 
 import javax.script.*;
-import java.util.List;
 import java.io.StringReader;
-
-import org.mvel.bsf.MVELScriptEngineFactory;
+import java.util.List;
 
 /**
  * @author Richard L. Burton III

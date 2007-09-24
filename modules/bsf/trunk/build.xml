@@ -1,0 +1,88 @@
+<project name="MVEL4BSF" default="release" basedir=".">
+    <description>
+        MVEL JSR-223 (BSF) Extensions
+    </description>
+
+    <property name="version" value="1.0"/>
+
+    <property name="src" location="src/main/java/"/>
+    <property name="build" location="build"/>
+    <property name="dist" location="dist"/>
+
+
+    <target name="init">
+        <!-- Create the time stamp -->
+        <tstamp/>
+        <!-- Create the build directory structure used by optimize -->
+        <mkdir dir="${build}"/>
+    </target>
+
+    <target name="compile" depends="init"
+            description="compile the source ">
+        <!-- Compile the java code from ${src} into ${build} debuglevel="vars,lines,source" -->
+        <javac source="1.5" srcdir="${src}" destdir="${build}" optimize="true" debug="on"
+               debuglevel="vars,lines,source">
+            <classpath refid="classpath"/>
+        </javac>
+    </target>
+
+    <target name="compile-nodebug" depends="init"
+            description="compile the source ">
+        <javac source="1.5" srcdir="${src}" destdir="${build}" optimize="true" debug="off">
+            <classpath refid="classpath"/>
+        </javac>
+    </target>
+
+    <path id="classpath">
+        <pathelement location="${build}"/>
+        <fileset dir="lib">
+            <include name="**/*.jar"/>
+        </fileset>
+    </path>
+
+
+
+    <target name="jar" depends="clean,compile">
+        <delete file="mvel4bsf.jar"/>
+
+        <jar jarfile="mvel4bsf.jar" basedir="build">
+            <manifest>
+                <attribute name="Built-By" value="Mike Brock"/>
+
+                <section name="org.mvel.bsf">
+                    <attribute name="Sealed" value="false"/>
+                    <attribute name="Specification-Title" value="MVEL for BSF"/>
+                    <attribute name="Specification-Version" value="${version}"/>
+                    <attribute name="Implementation-Version" value="${version} ${TODAY}"/>
+                    <attribute name="Implementation-Vendor" value="Richard L. Burton"/>
+                </section>
+            </manifest>
+        </jar>
+    </target>
+
+    <target name="release" depends="jar"
+            description="generate the distribution">
+
+        <delete dir="distrib/${version}"/>
+        <mkdir dir="distrib/${version}/"/>
+
+        <copy todir="distrib/${version}" file="mvel4bsf.jar"/>
+
+
+        <mkdir dir="distrib/${version}/lib/"/>
+
+        <zip zipfile="distrib/mvel4bsf-${version}-java${java.version}.zip" basedir="distrib/${version}/"/>
+
+        <echo message="ALL DONE!"/>
+
+        <delete dir="build"/>
+    </target>
+
+
+
+    <target name="clean"
+            description="clean up">
+        <delete dir="${build}"/>
+        <delete dir="${dist}"/>
+    </target>
+</project>
