@@ -7,7 +7,7 @@ import javax.script.ScriptEngine;
 import javax.script.Invocable;
 import javax.script.ScriptException;
 
-import org.mvel.bsf.MVELScriptEngineFactory;
+import org.mvel.jsr223.MVELScriptEngineFactory;
 import org.mvel.tests.bsf.model.PersonBean;
 
 /**

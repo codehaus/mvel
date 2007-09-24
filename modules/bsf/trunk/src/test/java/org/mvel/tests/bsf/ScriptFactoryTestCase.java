@@ -4,7 +4,7 @@ import junit.framework.TestCase;
 
 import javax.script.*;
 
-import org.mvel.bsf.MVELScriptEngineFactory;
+import org.mvel.jsr223.MVELScriptEngineFactory;
 import org.mvel.MVEL;
 import org.mvel.tests.bsf.model.PersonBean;
 

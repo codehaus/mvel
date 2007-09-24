@@ -1,4 +1,4 @@
-package org.mvel.bsf;
+package org.mvel.jsr223;
 
 import org.mvel.ExecutableStatement;
 import org.mvel.integration.impl.MapVariableResolverFactory;

@@ -1,7 +1,7 @@
 package org.mvel.tests.bsf;
 
 import junit.framework.TestCase;
-import org.mvel.bsf.MVELScriptEngineFactory;
+import org.mvel.jsr223.MVELScriptEngineFactory;
 
 import javax.script.*;
 import java.io.StringReader;

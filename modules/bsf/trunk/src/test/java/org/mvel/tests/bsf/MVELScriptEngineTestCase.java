@@ -1,7 +1,7 @@
 package org.mvel.tests.bsf;
 
 import junit.framework.TestCase;
-import org.mvel.bsf.MVELScriptEngineFactory;
+import org.mvel.jsr223.MVELScriptEngineFactory;
 import org.mvel.tests.bsf.model.PersonBean;
 
 import javax.script.*;

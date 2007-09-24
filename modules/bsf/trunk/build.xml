@@ -49,7 +49,7 @@
             <manifest>
                 <attribute name="Built-By" value="Mike Brock"/>
 
-                <section name="org.mvel.bsf">
+                <section name="org.mvel.jsr223">
                     <attribute name="Sealed" value="false"/>
                     <attribute name="Specification-Title" value="MVEL for BSF"/>
                     <attribute name="Specification-Version" value="${version}"/>

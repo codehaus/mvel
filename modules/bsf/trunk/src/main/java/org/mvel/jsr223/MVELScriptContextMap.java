@@ -1,4 +1,4 @@
-package org.mvel.bsf;
+package org.mvel.jsr223;
 
 import javax.script.ScriptContext;
 import javax.script.Bindings;
