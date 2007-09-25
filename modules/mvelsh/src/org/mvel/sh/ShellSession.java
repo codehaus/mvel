@@ -1,14 +1,15 @@
 package org.mvel.sh;
 
-import org.mvel.integration.impl.LocalVariableResolverFactory;
-import org.mvel.TemplateInterpreter;
 import org.mvel.MVEL;
+import org.mvel.TemplateInterpreter;
+import org.mvel.integration.impl.DefaultLocalVariableResolverFactory;
+import org.mvel.integration.impl.MapVariableResolverFactory;
 import org.mvel.sh.command.basic.BasicCommandSet;
 import org.mvel.sh.command.file.FileCommandSet;
 
-import java.util.Map;
-import java.util.HashMap;
 import java.io.*;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author Christopher Brock
@@ -40,7 +41,8 @@ public class ShellSession {
         env.put("$ECHO", "true");
         env.put("$USE_OPTIMIZER_ALWAYS", "false");
 
-        LocalVariableResolverFactory lvrf = new LocalVariableResolverFactory(variables);
+        DefaultLocalVariableResolverFactory lvrf = new DefaultLocalVariableResolverFactory(variables);
+        lvrf.appendFactory(new MapVariableResolverFactory(env));
 
         StringBuffer inBuffer = new StringBuffer();
         String[] inTokens;
@@ -100,8 +102,7 @@ public class ShellSession {
                         }
 
                         if (Boolean.parseBoolean(env.get("$USE_OPTIMIZER_ALWAYS"))) {
-                            Serializable compile = MVEL.compileExpression(inBuffer.toString());
-                            outputBuffer = MVEL.executeExpression(compile, lvrf);
+                            outputBuffer = MVEL.executeExpression(MVEL.compileExpression(inBuffer.toString()), lvrf);
                         }
                         else {
                             outputBuffer = MVEL.eval(inBuffer.toString(), lvrf);
@@ -109,7 +110,18 @@ public class ShellSession {
                     }
                     catch (Exception e) {
                         System.out.println("Eval Error: " + e.getMessage());
-                        e.printStackTrace();
+                        //    e.printStackTrace();
+
+                        ByteArrayOutputStream stackTraceCap = new ByteArrayOutputStream();
+                        PrintStream capture = new PrintStream(stackTraceCap);
+
+                        e.printStackTrace(capture);
+
+
+                        env.put("$LAST_STACK_TRACE", new String(stackTraceCap.toByteArray()));
+
+
+
                         inBuffer.delete(0, inBuffer.length());
 
                         continue;

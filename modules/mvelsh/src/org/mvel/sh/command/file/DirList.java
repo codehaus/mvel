@@ -4,7 +4,6 @@ import org.mvel.sh.Command;
 import org.mvel.sh.CommandException;
 import org.mvel.sh.ShellSession;
 
-import java.util.Map;
 import java.io.File;
 
 

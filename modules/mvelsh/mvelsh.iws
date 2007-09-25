@@ -16,7 +16,13 @@
     <option name="USER" value="" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" name="Default" comment="" />
+    <list default="true" name="Default" comment="">
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../mvel/src/main/java/org/mvel/integration/impl/MapVariableResolverFactory.java" afterPath="$PROJECT_DIR$/../mvel/src/main/java/org/mvel/integration/impl/MapVariableResolverFactory.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/org/mvel/sh/ShellSession.java" afterPath="$PROJECT_DIR$/src/org/mvel/sh/ShellSession.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/org/mvel/sh/DefaultEnvironment.java" afterPath="$PROJECT_DIR$/src/org/mvel/sh/DefaultEnvironment.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/mvelsh.iws" afterPath="$PROJECT_DIR$/mvelsh.iws" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/org/mvel/sh/command/file/DirList.java" afterPath="$PROJECT_DIR$/src/org/mvel/sh/command/file/DirList.java" />
+    </list>
   </component>
   <component name="ChangeListSynchronizer" />
   <component name="ChangesViewManager" flattened_view="true" />
@@ -86,6 +92,21 @@
     <disable_hints />
   </component>
   <component name="DebuggerManager">
+    <line_breakpoints>
+      <breakpoint url="file://$PROJECT_DIR$/../mvel/src/main/java/org/mvel/optimizers/OptimizerFactory.java" line="61" class="org.mvel.optimizers.OptimizerFactory" package="org.mvel.optimizers">
+        <option name="ENABLED" value="true" />
+        <option name="SUSPEND_POLICY" value="SuspendAll" />
+        <option name="LOG_ENABLED" value="false" />
+        <option name="LOG_EXPRESSION_ENABLED" value="false" />
+        <option name="COUNT_FILTER_ENABLED" value="false" />
+        <option name="COUNT_FILTER" value="0" />
+        <option name="CONDITION_ENABLED" value="false" />
+        <option name="CLASS_FILTERS_ENABLED" value="false" />
+        <option name="INSTANCE_FILTERS_ENABLED" value="false" />
+        <option name="CONDITION" value="" />
+        <option name="LOG_MESSAGE" value="" />
+      </breakpoint>
+    </line_breakpoints>
     <breakpoint_any>
       <breakpoint>
         <option name="NOTIFY_CAUGHT" value="true" />
@@ -128,58 +149,67 @@
   <component name="FavoritesManager">
     <favorites_list name="mvelsh" />
   </component>
-  <component name="FavoritesProjectViewPane" />
+  <component name="FavoritesProjectViewPane">
+    <subPane subId="mvelsh">
+      <PATH>
+        <PATH_ELEMENT>
+          <option name="myItemId" />
+          <option name="myItemType" value="com.intellij.ide.favoritesTreeView.FavoritesTreeNodeDescriptor" />
+        </PATH_ELEMENT>
+      </PATH>
+    </subPane>
+  </component>
   <component name="FileEditorManager">
     <leaf>
-      <file leaf-file-name="Help.java" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/org/mvel/sh/command/basic/Help.java">
+      <file leaf-file-name="PerfTest.java" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/../mvel/src/test/java/org/mvel/tests/perftests/PerfTest.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="25" column="0" selection-start="605" selection-end="605" vertical-scroll-proportion="0.8730159">
+            <state line="101" column="14" selection-start="2212" selection-end="2212" vertical-scroll-proportion="0.17845118">
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="DefaultEnvironment.java" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/org/mvel/sh/DefaultEnvironment.java">
+      <file leaf-file-name="ELComparisons.java" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/../mvel/src/test/java/org/mvel/tests/perftests/ELComparisons.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="7" column="0" selection-start="227" selection-end="227" vertical-scroll-proportion="0.29085872">
+            <state line="2" column="3" selection-start="38" selection-end="38" vertical-scroll-proportion="0.060283687">
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="AbstractParser.java" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/../mvel/src/main/java/org/mvel/AbstractParser.java">
+      <file leaf-file-name="ParserPerformanceTests.java" pinned="false" current="true" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/../mvel/src/test/java/org/mvel/tests/perftests/ParserPerformanceTests.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="401" column="72" selection-start="14562" selection-end="14562" vertical-scroll-proportion="0.041551247">
+            <state line="108" column="70" selection-start="2773" selection-end="2773" vertical-scroll-proportion="0.4074074">
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="MapVariableResolver.java" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/../mvel/src/main/java/org/mvel/integration/impl/MapVariableResolver.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="68" column="20" selection-start="1936" selection-end="1936" vertical-scroll-proportion="0.45238096">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="DataConversion.java" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/../mvel/src/main/java/org/mvel/DataConversion.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="77" column="10" selection-start="2724" selection-end="2724" vertical-scroll-proportion="0.6111111">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="ShellSession.java" pinned="false" current="true" current-in-tab="true">
+      <file leaf-file-name="ShellSession.java" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/org/mvel/sh/ShellSession.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="124" column="64" selection-start="4366" selection-end="4366" vertical-scroll-proportion="0.71428573">
+            <state line="44" column="56" selection-start="1581" selection-end="1581" vertical-scroll-proportion="0.97306395">
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="MapVariableResolverFactory.java" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/../mvel/src/main/java/org/mvel/integration/impl/MapVariableResolverFactory.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="33" column="36" selection-start="1137" selection-end="1137" vertical-scroll-proportion="0.44444445">
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="ByteArrayInputStream.class" pinned="false" current="false" current-in-tab="false">
+        <entry file="jar:///System/Library/Frameworks/JavaVM.framework/Versions/1.5.0/Classes/classes.jar!/java/io/ByteArrayInputStream.class">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="5" column="13" selection-start="145" selection-end="145" vertical-scroll-proportion="0.22895622">
               <folding />
             </state>
           </provider>
@@ -188,7 +218,7 @@
       <file leaf-file-name="DirList.java" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/org/mvel/sh/command/file/DirList.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="9" column="0" selection-start="178" selection-end="178" vertical-scroll-proportion="0.041551247">
+            <state line="22" column="44" selection-start="694" selection-end="694" vertical-scroll-proportion="1.030303">
               <folding />
             </state>
           </provider>
@@ -197,7 +227,7 @@
       <file leaf-file-name="ChangeWorkingDir.java" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/org/mvel/sh/command/file/ChangeWorkingDir.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="36" column="24" selection-start="1151" selection-end="1151" vertical-scroll-proportion="0.8095238">
+            <state line="36" column="24" selection-start="1151" selection-end="1151" vertical-scroll-proportion="1.2659932">
               <folding />
             </state>
           </provider>
@@ -206,7 +236,7 @@
       <file leaf-file-name="Set.java" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/org/mvel/sh/command/basic/Set.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="13" column="8" selection-start="348" selection-end="348" vertical-scroll-proportion="0.17460318">
+            <state line="13" column="8" selection-start="348" selection-end="348" vertical-scroll-proportion="0.35016835">
               <folding />
             </state>
           </provider>
@@ -215,7 +245,7 @@
       <file leaf-file-name="ShowVars.java" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/org/mvel/sh/command/basic/ShowVars.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="22" column="8" selection-start="498" selection-end="498" vertical-scroll-proportion="0.0952381">
+            <state line="22" column="8" selection-start="498" selection-end="498" vertical-scroll-proportion="0.23569024">
               <folding />
             </state>
           </provider>
@@ -320,100 +350,8 @@
           <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
         </PATH_ELEMENT>
         <PATH_ELEMENT>
-          <option name="myItemId" value="mvelsh" />
+          <option name="myItemId" value="mvel" />
           <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewModuleNode" />
-        </PATH_ELEMENT>
-        <PATH_ELEMENT>
-          <option name="myItemId" value="PsiDirectory:C:\projects\mvelsh" />
-          <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-        </PATH_ELEMENT>
-      </PATH>
-      <PATH>
-        <PATH_ELEMENT>
-          <option name="myItemId" value="mvelsh.ipr" />
-          <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-        </PATH_ELEMENT>
-        <PATH_ELEMENT>
-          <option name="myItemId" value="mvelsh" />
-          <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewModuleNode" />
-        </PATH_ELEMENT>
-        <PATH_ELEMENT>
-          <option name="myItemId" value="PsiDirectory:C:\projects\mvelsh" />
-          <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-        </PATH_ELEMENT>
-        <PATH_ELEMENT>
-          <option name="myItemId" value="PsiDirectory:C:\projects\mvelsh\src" />
-          <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-        </PATH_ELEMENT>
-        <PATH_ELEMENT>
-          <option name="myItemId" value="PsiDirectory:C:\projects\mvelsh\src\org\mvel\sh" />
-          <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-        </PATH_ELEMENT>
-      </PATH>
-      <PATH>
-        <PATH_ELEMENT>
-          <option name="myItemId" value="mvelsh.ipr" />
-          <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-        </PATH_ELEMENT>
-        <PATH_ELEMENT>
-          <option name="myItemId" value="mvelsh" />
-          <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewModuleNode" />
-        </PATH_ELEMENT>
-        <PATH_ELEMENT>
-          <option name="myItemId" value="PsiDirectory:C:\projects\mvelsh" />
-          <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-        </PATH_ELEMENT>
-        <PATH_ELEMENT>
-          <option name="myItemId" value="PsiDirectory:C:\projects\mvelsh\src" />
-          <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-        </PATH_ELEMENT>
-        <PATH_ELEMENT>
-          <option name="myItemId" value="PsiDirectory:C:\projects\mvelsh\src\org\mvel\sh" />
-          <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-        </PATH_ELEMENT>
-        <PATH_ELEMENT>
-          <option name="myItemId" value="PsiDirectory:C:\projects\mvelsh\src\org\mvel\sh\command" />
-          <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-        </PATH_ELEMENT>
-        <PATH_ELEMENT>
-          <option name="myItemId" value="PsiDirectory:C:\projects\mvelsh\src\org\mvel\sh\command\file" />
-          <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-        </PATH_ELEMENT>
-      </PATH>
-      <PATH>
-        <PATH_ELEMENT>
-          <option name="myItemId" value="mvelsh.ipr" />
-          <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-        </PATH_ELEMENT>
-        <PATH_ELEMENT>
-          <option name="myItemId" value="mvelsh" />
-          <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewModuleNode" />
-        </PATH_ELEMENT>
-        <PATH_ELEMENT>
-          <option name="myItemId" value="PsiDirectory:C:\projects\mvelsh" />
-          <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-        </PATH_ELEMENT>
-        <PATH_ELEMENT>
-          <option name="myItemId" value="PsiDirectory:C:\projects\mvelsh\src" />
-          <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-        </PATH_ELEMENT>
-        <PATH_ELEMENT>
-          <option name="myItemId" value="PsiDirectory:C:\projects\mvelsh\src\org\mvel\sh" />
-          <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-        </PATH_ELEMENT>
-        <PATH_ELEMENT>
-          <option name="myItemId" value="PsiDirectory:C:\projects\mvelsh\src\org\mvel\sh\command" />
-          <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-        </PATH_ELEMENT>
-        <PATH_ELEMENT>
-          <option name="myItemId" value="PsiDirectory:C:\projects\mvelsh\src\org\mvel\sh\command\basic" />
-          <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-        </PATH_ELEMENT>
-      </PATH>
-      <PATH>
-        <PATH_ELEMENT>
-          <option name="myItemId" value="mvelsh.ipr" />
-          <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
         </PATH_ELEMENT>
       </PATH>
     </subPane>
@@ -429,21 +367,21 @@
       <showLibraryContents />
       <hideEmptyPackages />
       <abbreviatePackageNames />
-      <showStructure ProjectPane="false" Scope="false" PackagesPane="false" />
+      <showStructure Favorites="false" ProjectPane="false" Scope="false" PackagesPane="false" />
       <autoscrollToSource />
       <autoscrollFromSource />
       <sortByType />
     </navigator>
   </component>
   <component name="PropertiesComponent">
+    <property name="MemberChooser.copyJavadoc" value="false" />
+    <property name="GoToClass.includeLibraries" value="false" />
+    <property name="MemberChooser.showClasses" value="true" />
+    <property name="MemberChooser.sorted" value="false" />
+    <property name="RunManagerConfig.compileBeforeRunning" value="true" />
     <property name="GoToFile.includeJavaFiles" value="false" />
     <property name="GoToClass.toSaveIncludeLibraries" value="false" />
     <property name="RunManagerConfig.showSettingsBeforeRunnig" value="true" />
-    <property name="RunManagerConfig.compileBeforeRunning" value="true" />
-    <property name="MemberChooser.sorted" value="false" />
-    <property name="MemberChooser.showClasses" value="true" />
-    <property name="GoToClass.includeLibraries" value="false" />
-    <property name="MemberChooser.copyJavadoc" value="false" />
   </component>
   <component name="ReadonlyStatusHandler">
     <option name="SHOW_DIALOG" value="true" />
@@ -457,34 +395,33 @@
   <component name="RunManager" selected="Application.Main">
     <tempConfiguration default="false" name="Main" type="Application" factoryName="Application" enabled="false" merge="false">
       <option name="MAIN_CLASS_NAME" value="org.mvel.sh.Main" />
-      <option name="VM_PARAMETERS" value="-Dmvel.advanced_debugging=true" />
+      <option name="VM_PARAMETERS" value="" />
       <option name="PROGRAM_PARAMETERS" value="" />
       <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
       <option name="ALTERNATIVE_JRE_PATH" value="" />
       <option name="ENABLE_SWING_INSPECTOR" value="false" />
       <module name="mvelsh" />
+      <RunnerSettings RunnerId="Debug">
+        <option name="DEBUG_PORT" value="49456" />
+        <option name="TRANSPORT" value="0" />
+        <option name="LOCAL" value="true" />
+      </RunnerSettings>
       <RunnerSettings RunnerId="JProfiler">
         <option name="WINDOW" value="false" />
         <option name="JVMPI" value="false" />
         <option name="INTERPRETED" value="false" />
       </RunnerSettings>
       <RunnerSettings RunnerId="Profile ">
-        <option name="myExternalizedOptions" value="&#13;&#10;snapshots-dir=&#13;&#10;" />
+        <option name="myExternalizedOptions" value="&#10;snapshots-dir=&#10;" />
       </RunnerSettings>
       <RunnerSettings RunnerId="Run" />
+      <ConfigurationWrapper RunnerId="Debug" />
       <ConfigurationWrapper RunnerId="Run" />
       <method>
         <option name="Make" value="true" />
       </method>
     </tempConfiguration>
-    <configuration default="true" type="Remote" factoryName="Remote">
-      <option name="USE_SOCKET_TRANSPORT" value="true" />
-      <option name="SERVER_MODE" value="false" />
-      <option name="SHMEM_ADDRESS" value="javadebug" />
-      <option name="HOST" value="localhost" />
-      <option name="PORT" value="5005" />
-    </configuration>
     <configuration default="true" type="JUnit" factoryName="JUnit" enabled="false" merge="false">
       <module name="" />
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
@@ -503,6 +440,13 @@
       <method>
         <option name="Make" value="true" />
       </method>
+    </configuration>
+    <configuration default="true" type="Remote" factoryName="Remote">
+      <option name="USE_SOCKET_TRANSPORT" value="true" />
+      <option name="SERVER_MODE" value="false" />
+      <option name="SHMEM_ADDRESS" value="javadebug" />
+      <option name="HOST" value="localhost" />
+      <option name="PORT" value="5005" />
     </configuration>
     <configuration default="true" type="Applet" factoryName="Applet">
       <module name="" />
@@ -592,7 +536,7 @@
     <option name="UPDATE_RUN_STATUS" value="false" />
     <option name="UPDATE_RECURSIVELY" value="true" />
     <option name="MERGE_DRY_RUN" value="false" />
-    <configuration useDefault="true">D:\Users\Mike Brock\AppData\Roaming\Subversion</configuration>
+    <configuration useDefault="true">$PROJECT_DIR$/../../.subversion</configuration>
     <checkoutURL>https://svn.codehaus.org/mvel</checkoutURL>
     <upgradeMode>auto</upgradeMode>
   </component>
@@ -611,36 +555,36 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="74" y="9" width="1192" height="775" extended-state="0" />
+    <frame x="42" y="22" width="1395" height="878" extended-state="0" />
     <editor active="true" />
     <layout>
       <window_info id="UI Designer" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" order="3" />
-      <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" order="8" />
-      <window_info id="Palette" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" order="3" />
-      <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.2495854" order="1" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" order="1" />
-      <window_info id="Profile" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" order="8" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" order="3" />
-      <window_info id="IDEtalk Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" order="8" />
-      <window_info id="IDEtalk" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" order="3" />
-      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" order="8" />
-      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.32766616" order="8" />
-      <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" order="7" />
-      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" order="1" />
-      <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" order="0" />
-      <window_info id="JProfiler" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" order="8" />
       <window_info id="CVS" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" order="8" />
+      <window_info id="IDEtalk" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" order="3" />
+      <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" order="7" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.22956909" order="0" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32959327" order="1" />
+      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" order="1" />
+      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32258064" order="8" />
+      <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" order="6" />
+      <window_info id="Profile" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" order="8" />
       <window_info id="Module Dependencies" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" order="3" />
       <window_info id="Dependency Viewer" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" order="8" />
-      <window_info id="File View" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" order="3" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.23206377" order="0" />
+      <window_info id="Palette" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" order="3" />
+      <window_info id="Ant Build" active="false" anchor="right" auto_hide="true" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.24958123" order="1" />
+      <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" order="8" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.516129" order="2" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" order="2" />
-      <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" order="6" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.51931995" order="2" />
-      <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" order="5" />
+      <window_info id="File View" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" order="3" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3993808" order="3" />
+      <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" order="0" />
+      <window_info id="IDEtalk Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" order="8" />
+      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" order="8" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" order="0" />
+      <window_info id="JProfiler" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" order="8" />
       <window_info id="Web" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" order="2" />
       <window_info id="EJB" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" order="4" />
+      <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" order="5" />
     </layout>
   </component>
   <component name="VCS.FileViewConfiguration">
@@ -666,7 +610,7 @@
     <option name="FILE_HISTORY_DIALOG_COMMENTS_SPLITTER_PROPORTION" value="0.8" />
     <option name="FILE_HISTORY_DIALOG_SPLITTER_PROPORTION" value="0.5" />
     <option name="ERROR_OCCURED" value="false" />
-    <option name="ACTIVE_VCS_NAME" />
+    <option name="ACTIVE_VCS_NAME" value="svn" />
     <option name="UPDATE_GROUP_BY_PACKAGES" value="false" />
     <option name="SHOW_FILE_HISTORY_AS_TREE" value="false" />
     <option name="FILE_HISTORY_SPLITTER_PROPORTION" value="0.6" />
@@ -715,115 +659,115 @@
   <component name="com.intellij.ide.util.scopeChooser.ScopeChooserConfigurable" proportions="" version="1">
     <option name="myLastEditedConfigurable" />
   </component>
-  <component name="com.intellij.openapi.roots.ui.configuration.projectRoot.ProjectRootMasterDetailsConfigurable" proportions="0.2" version="1">
+  <component name="com.intellij.openapi.roots.ui.configuration.projectRoot.ProjectRootMasterDetailsConfigurable" proportions="0.2,0.5" version="1">
     <option name="myPlainMode" value="false" />
-    <option name="myLastEditedConfigurable" value="mvel" />
+    <option name="myLastEditedConfigurable" value="mvelsh" />
   </component>
   <component name="com.intellij.profile.ui.ErrorOptionsConfigurable" proportions="" version="1">
     <option name="myLastEditedConfigurable" />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/src/org/mvel/sh/command/basic/BasicCommands.java">
+    <entry file="file://$PROJECT_DIR$/../mvel/src/main/java/org/mvel/ParserContext.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="9" column="13" selection-start="211" selection-end="211" vertical-scroll-proportion="0.2195122">
+        <state line="28" column="11" selection-start="717" selection-end="717" vertical-scroll-proportion="0.0">
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/org/mvel/sh/command/basic/BasicCommandSet.java">
+    <entry file="file://$PROJECT_DIR$/../mvel/src/main/java/org/mvel/MVEL.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="8" column="13" selection-start="158" selection-end="158" vertical-scroll-proportion="0.10050251">
+        <state line="34" column="24" selection-start="1308" selection-end="1308" vertical-scroll-proportion="0.04076087">
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/org/mvel/sh/Main.java">
+    <entry file="file://$PROJECT_DIR$/../mvel/src/main/java/org/mvel/MVELSH.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="6" column="0" selection-start="129" selection-end="129" vertical-scroll-proportion="0.15517241">
+        <state line="28" column="13" selection-start="953" selection-end="953" vertical-scroll-proportion="0.023364486">
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/org/mvel/sh/Command.java">
+    <entry file="file://$PROJECT_DIR$/../mvel/src/main/java/org/mvel/util/ParseTools.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="5" column="61" selection-start="133" selection-end="133" vertical-scroll-proportion="0.12562814">
+        <state line="660" column="21" selection-start="22794" selection-end="22794" vertical-scroll-proportion="0.02467344">
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/org/mvel/sh/command/basic/Exit.java">
+    <entry file="file://$PROJECT_DIR$/../mvel/src/main/java/org/mvel/optimizers/OptimizerFactory.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="9" column="61" selection-start="222" selection-end="222" vertical-scroll-proportion="0.15075377">
+        <state line="39" column="21" selection-start="1474" selection-end="1474" vertical-scroll-proportion="0.024147727">
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/org/mvel/sh/command/basic/Help.java">
+    <entry file="file://$PROJECT_DIR$/../mvel/src/test/java/org/mvel/tests/perftests/PerfTest.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="25" column="0" selection-start="605" selection-end="605" vertical-scroll-proportion="0.8730159">
+        <state line="101" column="14" selection-start="2212" selection-end="2212" vertical-scroll-proportion="0.17845118">
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/org/mvel/sh/DefaultEnvironment.java">
+    <entry file="file://$PROJECT_DIR$/../mvel/src/test/java/org/mvel/tests/perftests/ELComparisons.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="7" column="0" selection-start="227" selection-end="227" vertical-scroll-proportion="0.29085872">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/../mvel/src/main/java/org/mvel/AbstractParser.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="401" column="72" selection-start="14562" selection-end="14562" vertical-scroll-proportion="0.041551247">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/../mvel/src/main/java/org/mvel/integration/impl/MapVariableResolver.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="68" column="20" selection-start="1936" selection-end="1936" vertical-scroll-proportion="0.45238096">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/../mvel/src/main/java/org/mvel/DataConversion.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="77" column="10" selection-start="2724" selection-end="2724" vertical-scroll-proportion="0.6111111">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/org/mvel/sh/command/file/DirList.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="9" column="0" selection-start="178" selection-end="178" vertical-scroll-proportion="0.041551247">
+        <state line="2" column="3" selection-start="38" selection-end="38" vertical-scroll-proportion="0.060283687">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/org/mvel/sh/command/file/ChangeWorkingDir.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="36" column="24" selection-start="1151" selection-end="1151" vertical-scroll-proportion="0.8095238">
+        <state line="36" column="24" selection-start="1151" selection-end="1151" vertical-scroll-proportion="1.2659932">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/org/mvel/sh/command/basic/Set.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="13" column="8" selection-start="348" selection-end="348" vertical-scroll-proportion="0.17460318">
+        <state line="13" column="8" selection-start="348" selection-end="348" vertical-scroll-proportion="0.35016835">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/org/mvel/sh/command/basic/ShowVars.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="22" column="8" selection-start="498" selection-end="498" vertical-scroll-proportion="0.0952381">
+        <state line="22" column="8" selection-start="498" selection-end="498" vertical-scroll-proportion="0.23569024">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/org/mvel/sh/command/file/DirList.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="22" column="44" selection-start="694" selection-end="694" vertical-scroll-proportion="1.030303">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar:///System/Library/Frameworks/JavaVM.framework/Versions/1.5.0/Classes/classes.jar!/java/io/ByteArrayInputStream.class">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="5" column="13" selection-start="145" selection-end="145" vertical-scroll-proportion="0.22895622">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../mvel/src/main/java/org/mvel/integration/impl/MapVariableResolverFactory.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="33" column="36" selection-start="1137" selection-end="1137" vertical-scroll-proportion="0.44444445">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/org/mvel/sh/ShellSession.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="124" column="64" selection-start="4366" selection-end="4366" vertical-scroll-proportion="0.71428573">
+        <state line="44" column="56" selection-start="1581" selection-end="1581" vertical-scroll-proportion="0.97306395">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../mvel/src/test/java/org/mvel/tests/perftests/ParserPerformanceTests.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="108" column="70" selection-start="2773" selection-end="2773" vertical-scroll-proportion="0.4074074">
           <folding />
         </state>
       </provider>
