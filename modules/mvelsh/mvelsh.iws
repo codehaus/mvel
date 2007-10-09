@@ -17,15 +17,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/org/mvel/sh/text/TextUtil.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../mvel/src/main/java/org/mvel/MVELSH.java" afterPath="$PROJECT_DIR$/../mvel/src/main/java/org/mvel/MVELSH.java" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/src/org/mvel/sh/command/basic/BasicCommands.java" afterPath="" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/org/mvel/sh/ShellSession.java" afterPath="$PROJECT_DIR$/src/org/mvel/sh/ShellSession.java" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/mvelsh.iws" afterPath="$PROJECT_DIR$/mvelsh.iws" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/org/mvel/sh/command/basic/BasicCommandSet.java" afterPath="$PROJECT_DIR$/src/org/mvel/sh/command/basic/BasicCommandSet.java" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/org/mvel/sh/command/basic/ObjectInspector.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/org/mvel/sh/command/basic/Help.java" afterPath="$PROJECT_DIR$/src/org/mvel/sh/command/basic/Help.java" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/org/mvel/sh/text" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/org/mvel/sh/command/basic/ObjectInspector.java" afterPath="$PROJECT_DIR$/src/org/mvel/sh/command/basic/ObjectInspector.java" />
     </list>
   </component>
   <component name="ChangeListSynchronizer" />
@@ -197,7 +190,7 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="Exit.java" pinned="false" current="false" current-in-tab="false">
+      <file leaf-file-name="Exit.java" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/org/mvel/sh/command/basic/Exit.java">
           <provider selected="true" editor-type-id="text-editor">
             <state line="7" column="13" selection-start="134" selection-end="134" vertical-scroll-proportion="0.102874435">
@@ -215,10 +208,10 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="ObjectInspector.java" pinned="false" current="true" current-in-tab="true">
+      <file leaf-file-name="ObjectInspector.java" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/org/mvel/sh/command/basic/ObjectInspector.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="74" column="30" selection-start="2224" selection-end="2224" vertical-scroll-proportion="0.3570348">
+            <state line="151" column="12" selection-start="4624" selection-end="4624" vertical-scroll-proportion="1.1285931">
               <folding>
                 <element signature="imports" expanded="true" />
               </folding>
@@ -707,7 +700,7 @@
     <option name="PERFORM_COMMIT_IN_BACKGROUND" value="false" />
     <option name="PUT_FOCUS_INTO_COMMENT" value="false" />
     <option name="FORCE_NON_EMPTY_COMMENT" value="false" />
-    <option name="LAST_COMMIT_MESSAGE" value="" />
+    <option name="LAST_COMMIT_MESSAGE" value="added object inspector" />
     <option name="SAVE_LAST_COMMIT_MESSAGE" value="true" />
     <option name="CHECKIN_DIALOG_SPLITTER_PROPORTION" value="0.8" />
     <option name="OPTIMIZE_IMPORTS_BEFORE_PROJECT_COMMIT" value="false" />
@@ -720,6 +713,7 @@
     <option name="UPDATE_GROUP_BY_PACKAGES" value="false" />
     <option name="SHOW_FILE_HISTORY_AS_TREE" value="false" />
     <option name="FILE_HISTORY_SPLITTER_PROPORTION" value="0.6" />
+    <MESSAGE value="added object inspector" />
   </component>
   <component name="VssConfiguration">
     <option name="CLIENT_PATH" value="" />
@@ -829,13 +823,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/org/mvel/sh/command/basic/Exit.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="7" column="13" selection-start="134" selection-end="134" vertical-scroll-proportion="0.102874435">
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/org/mvel/sh/command/basic/Help.java">
       <provider selected="true" editor-type-id="text-editor">
         <state line="7" column="0" selection-start="182" selection-end="651" vertical-scroll-proportion="0.13157895">
@@ -875,10 +862,17 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/org/mvel/sh/command/basic/ObjectInspector.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="74" column="30" selection-start="2224" selection-end="2224" vertical-scroll-proportion="0.3570348">
+        <state line="151" column="12" selection-start="4624" selection-end="4624" vertical-scroll-proportion="1.1285931">
           <folding>
             <element signature="imports" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/org/mvel/sh/command/basic/Exit.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="7" column="13" selection-start="134" selection-end="134" vertical-scroll-proportion="0.102874435">
+          <folding />
         </state>
       </provider>
     </entry>

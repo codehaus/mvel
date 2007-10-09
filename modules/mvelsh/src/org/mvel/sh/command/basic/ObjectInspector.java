@@ -136,6 +136,10 @@ public class ObjectInspector implements Command {
             }
             appender.append(")");
 
+            if (m.getDeclaringClass() != cls) {
+                appender.append("    [inherited from: ").append(m.getDeclaringClass().getName()).append("]");
+            }
+
 
             if ((i + 1) < methods.length) appender.append('\n');
         }
@@ -148,7 +152,7 @@ public class ObjectInspector implements Command {
     }
 
     public String getDescription() {
-        return "displays help for available shell commands";
+        return "inspects an object";
     }
 
     public String getHelp() {
