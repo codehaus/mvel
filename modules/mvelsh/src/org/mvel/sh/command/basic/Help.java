@@ -2,13 +2,12 @@ package org.mvel.sh.command.basic;
 
 import org.mvel.sh.Command;
 import org.mvel.sh.ShellSession;
-
-import java.util.Map;
+import static org.mvel.sh.text.TextUtil.pad;
 
 public class Help implements Command {
     public Object execute(ShellSession session, String[] args) {
         for (String command : session.getCommands().keySet()) {
-            System.out.println(command + " - " + session.getCommands().get(command).getDescription());
+            System.out.println(command + pad(command.length(), 25) + "- " + session.getCommands().get(command).getDescription());
         }
 
         return null;
