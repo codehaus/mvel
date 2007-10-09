@@ -15,13 +15,6 @@ import java.lang.reflect.Modifier;
 import java.util.LinkedList;
 import java.util.List;
 
-/**
- * Created by IntelliJ IDEA.
- * User: christopherbrock
- * Date: Oct 8, 2007
- * Time: 11:47:24 PM
- * To change this template use File | Settings | File Templates.
- */
 public class ObjectInspector implements Command {
     private static final int PADDING = 17;
 
@@ -80,7 +73,6 @@ public class ObjectInspector implements Command {
         renderMethods(cls);
 
 
-
         System.out.println();
 
         return null;
@@ -108,7 +100,7 @@ public class ObjectInspector implements Command {
         Field[] fields = cls.getFields();
 
         for (int i = 0; i < fields.length; i++) {
-            write("", fields[i].getName());
+            write("", fields[i].getType().getName() + " " + fields[i].getName());
         }
     }
 
@@ -119,19 +111,20 @@ public class ObjectInspector implements Command {
         StringAppender appender = new StringAppender();
         int mf;
         for (int i = 0; i < methods.length; i++) {
-            m = methods[i];
-            mf = m.getModifiers();
-
             appender.append(TextUtil.paint(' ', PADDING + 2));
-
-            if ((mf & Modifier.PUBLIC) != 0) appender.append("public");
+            if (((mf = (m = methods[i]).getModifiers()) & Modifier.PUBLIC) != 0) appender.append("public");
             else if ((mf & Modifier.PRIVATE) != 0) appender.append("private");
             else if ((mf & Modifier.PROTECTED) != 0) appender.append("protected");
 
             appender.append(' ').append(m.getReturnType().getName()).append(' ').append(m.getName()).append("(");
             Class[] parmTypes = m.getParameterTypes();
             for (int y = 0; y < parmTypes.length; y++) {
-                appender.append(parmTypes[y].getName());
+                if (parmTypes[y].isArray()) {
+                    appender.append(parmTypes[y].getComponentType().getName() + "[]");
+                }
+                else {
+                    appender.append(parmTypes[y].getName());
+                }
                 if ((y + 1) < parmTypes.length) appender.append(", ");
             }
             appender.append(")");

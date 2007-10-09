@@ -30,6 +30,13 @@ public class ShellSession {
 
     private int depth;
 
+    private boolean multi = false;
+    private int multiIndentSize = 0;
+    private PrintStream out = System.out;
+    private String prompt;
+    private String commandBuffer;
+
+
     public void run() {
         System.out.println("Starting session...");
 
@@ -59,6 +66,11 @@ public class ShellSession {
         }
         catch (MissingResourceException e) {
             System.out.println("No config file found.  Loading default config.");
+
+            if (!System.getProperty("os.name").toLowerCase().contains("windows")) {
+                env.put("$PATH", "/bin:/usr/bin:/sbin:/usr/sbin");
+            }
+
         }
 
         DefaultLocalVariableResolverFactory lvrf = new DefaultLocalVariableResolverFactory(variables);
@@ -66,35 +78,34 @@ public class ShellSession {
 
         StringAppender inBuffer = new StringAppender();
         String[] inTokens;
-        PrintStream out = System.out;
         Object outputBuffer;
-        boolean multi = false;
-        int multiIndentSize = 0;
+
 
         final PrintStream sysPrintStream = System.out;
         final PrintStream sysErrorStream = System.err;
         final InputStream sysInputStream = System.in;
 
-        InputStreamReader reader = new InputStreamReader(System.in);
-        BufferedReader readBuffer = new BufferedReader(reader);
+        //  final InputStreamReader readBuffer = new InputStreamReader(System.in);
 
-        String prompt;
-        String execPath;
+        final BufferedReader readBuffer = new BufferedReader(new InputStreamReader(System.in));
+
         File execFile;
 
         try {
             //noinspection InfiniteLoopStatement
             while (true) {
-                if (!multi) {
-                    multiIndentSize = (prompt = evalToString(env.get("$PROMPT"), variables)).length();
-                    out.append(prompt);
+                printPrompt();
+
+                if (commandBuffer == null) {
+                    System.out.println("{INPUT}");
+                    commandBuffer = readBuffer.readLine();
                 }
-                else {
-                    out.append(">").append(indent((multiIndentSize - 1) + (depth * 4)));
-                }
+                System.out.println("EXEC: " + commandBuffer);
 
                 if (commands.containsKey((inTokens =
-                        inBuffer.append(readBuffer.readLine()).toString().split("\\s"))[0])) {
+                        inBuffer.append(commandBuffer).toString().split("\\s"))[0])) {
+
+                    commandBuffer = null;
 
                     String[] passParameters;
                     if (inTokens.length > 1) {
@@ -112,6 +123,8 @@ public class ShellSession {
                     }
                 }
                 else {
+                    commandBuffer = null;
+
                     try {
 
                         if (shouldDefer(inBuffer)) {
@@ -130,104 +143,160 @@ public class ShellSession {
                         }
                     }
                     catch (Exception e) {
-                        if ((execPath = inTokens[0]).startsWith("./"))
-                            execPath = new File(env.get("$CWD")).getAbsolutePath() + execPath.substring(execPath.indexOf('/'));
 
-                        if ((execFile = new File(execPath)).exists() && execFile.isFile()) {
-                            String[] execString = new String[inTokens.length - 1];
+                        String[] paths;
+                        String s;
+                        if ((s = inTokens[0]).startsWith("./")) {
+                            s = new File(env.get("$CWD")).getAbsolutePath() + s.substring(s.indexOf('/'));
 
-                            if (inTokens.length > 1) {
-                                arraycopy(inTokens, 1, execString, 1, inTokens.length - 1);
-                            }
+                            paths = new String[]{s};
+                        }
+                        else {
+                            paths = env.get("$PATH").split("(:|;)");
+                        }
 
-                            try {
-                                final Process p = getRuntime().exec(execFile.getAbsolutePath(), execString);
-                                final OutputStream outStream = p.getOutputStream();
+                        boolean successfulExec = false;
 
-                                final InputStream inStream = p.getInputStream();
-                                final InputStream errStream = p.getErrorStream();
+                        for (String execPath : paths) {
+                            if ((execFile = new File(execPath + "/" + s)).exists() && execFile.isFile()) {
 
-                                final RunState runState = new RunState();
+                                System.out.println("[Executing:" + execFile.getAbsolutePath() + "]");
 
-                                final Thread pollingThread = new Thread(new Runnable() {
-                                    public void run() {
-                                        byte[] buf = new byte[25];
-                                        int read;
+                                successfulExec = true;
 
-                                        while (true) {
-                                            try {
-                                                while ((read = inStream.read(buf)) > 0) {
-                                                    for (int i = 0; i < read; i++) {
-                                                        sysPrintStream.print((char) buf[i]);
-                                                    }
-                                                    sysPrintStream.flush();
-                                                }
-                                            }
-                                            catch (Exception e) {
-                                                break;
-                                            }
-                                        }
+                                String[] execString = new String[inTokens.length - 1];
 
-                                        System.out.println("Process Exited: Returning to MVELSH - Press Enter");
-                                    }
-                                });
-
-                                Thread watchThread = new Thread(new Runnable() {
-
-                                    public void run() {
-                                        try {
-                                            p.waitFor();
-                                        }
-                                        catch (InterruptedException e) {
-                                            // nothing;
-                                        }
-
-                                        runState.setRunning(false);
-
-                                        try {
-                                            inStream.close();
-                                            outStream.close();
-                                        }
-                                        catch (IOException e) {
-                                            // nothing;
-                                        }
-                                    }
-                                });
-
-                                pollingThread.setPriority(Thread.MIN_PRIORITY);
-                                pollingThread.start();
-
-                                watchThread.setPriority(Thread.MIN_PRIORITY);
-                                watchThread.start();
-
-                                while (runState.isRunning()) {
-                                    try {
-                                        char[] input = readBuffer.readLine().toCharArray();
-                                        for (char anInput : input) {
-                                            outStream.write((byte) anInput);
-                                        }
-
-                                        outStream.write((byte) '\n');
-                                        outStream.flush();
-                                    }
-                                    catch (Exception e2) {
-                                        break;
-                                    }
+                                if (inTokens.length > 1) {
+                                    arraycopy(inTokens, 1, execString, 1, inTokens.length - 1);
                                 }
 
                                 try {
-                                    pollingThread.notify();
-                                }
-                                catch (Exception ne) {
+                                    final Process p = getRuntime().exec(execFile.getAbsolutePath(), execString);
+                                    final OutputStream outStream = p.getOutputStream();
+
+                                    final InputStream inStream = p.getInputStream();
+                                    final InputStream errStream = p.getErrorStream();
+
+                                    final RunState runState = new RunState(this);
+
+                                    final Thread pollingThread = new Thread(new Runnable() {
+                                        public void run() {
+                                            byte[] buf = new byte[25];
+                                            int read;
+
+                                            while (true) {
+                                                try {
+                                                    while ((read = inStream.read(buf)) > 0) {
+                                                        for (int i = 0; i < read; i++) {
+                                                            sysPrintStream.print((char) buf[i]);
+                                                        }
+                                                        sysPrintStream.flush();
+                                                    }
+
+                                                    if (!runState.isRunning()) break;
+                                                }
+                                                catch (Exception e) {
+                                                    break;
+                                                }
+                                            }
+
+                                            sysPrintStream.flush();
+
+                                            if (!multi) {
+                                                multiIndentSize = (prompt = evalToString(env.get("$PROMPT"), variables)).length();
+                                                out.append(prompt);
+                                            }
+                                            else {
+                                                out.append(">").append(indent((multiIndentSize - 1) + (depth * 4)));
+                                            }
+
+                                            //   printPrompt();
+
+                                            //     System.out.println("Process Exited: Returning to MVELSH - Press Enter");
+                                        }
+                                    });
+
+
+                                    final Thread watchThread = new Thread(new Runnable() {
+                                        public void run() {
+
+                                            Thread runningThread = new Thread(new Runnable() {
+                                                public void run() {
+                                                    try {
+
+
+                                                        String read;
+                                                        while (runState.isRunning()) {
+                                                            while ((read = readBuffer.readLine()) != null) {
+                                                                if (runState.isRunning()) {
+                                                                    for (char c : read.toCharArray()) {
+                                                                        outStream.write((byte) c);
+                                                                    }
+                                                                }
+                                                                else {
+                                                                    runState.getSession().setCommandBuffer(read);
+                                                                    break;
+                                                                }
+                                                            }
+                                                        }
+
+                                                        outStream.write((byte) '\n');
+                                                        outStream.flush();
+                                                    }
+                                                    catch (Exception e2) {
+
+                                                    }
+                                                }
+
+                                            });
+
+                                            runningThread.setPriority(Thread.MIN_PRIORITY);
+                                            runningThread.start();
+
+                                            try {
+                                                p.waitFor();
+                                            }
+                                            catch (InterruptedException e) {
+                                                // nothing;
+                                            }
+
+                                            sysPrintStream.flush();
+                                            runState.setRunning(false);
+
+                                            try {
+                                                runningThread.join();
+                                            }
+                                            catch (InterruptedException e) {
+                                                // nothing;Ç
+                                            }
+                                        }
+                                    });
+
+                                    pollingThread.setPriority(Thread.MIN_PRIORITY);
+                                    pollingThread.start();
+
+                                    watchThread.setPriority(Thread.MIN_PRIORITY);
+                                    watchThread.start();
+                                    watchThread.join();
+
+
+                                    try {
+                                        pollingThread.notify();
+                                    }
+                                    catch (Exception ne) {
+
+                                    }
 
                                 }
+                                catch (Exception e2) {
+                                    // fall through;
+                                }
+                            }
+                        }
 
-                                inBuffer.reset();
-                                continue;
-                            }
-                            catch (Exception e2) {
-                                // fall through;
-                            }
+                        if (successfulExec) {
+                            inBuffer.reset();
+                            continue;
                         }
 
                         System.out.println("Eval Error: " + e.getMessage());
@@ -244,9 +313,11 @@ public class ShellSession {
                         continue;
                     }
 
+
                     if (outputBuffer != null && "true".equals(env.get("$ECHO"))) {
                         out.println(String.valueOf(outputBuffer));
                     }
+
                 }
 
                 inBuffer.reset();
@@ -257,6 +328,16 @@ public class ShellSession {
             System.out.println("unexpected exception. exiting.");
         }
 
+    }
+
+    public void printPrompt() {
+        if (!multi) {
+            multiIndentSize = (prompt = evalToString(env.get("$PROMPT"), variables)).length();
+            out.append(prompt);
+        }
+        else {
+            out.append(">").append(indent((multiIndentSize - 1) + (depth * 4)));
+        }
     }
 
 
@@ -299,9 +380,31 @@ public class ShellSession {
         return env;
     }
 
+
+    public String getCommandBuffer() {
+        return commandBuffer;
+    }
+
+    public void setCommandBuffer(String commandBuffer) {
+        this.commandBuffer = commandBuffer;
+    }
+
     public static final class RunState {
         private boolean running = true;
+        private ShellSession session;
 
+
+        public RunState(ShellSession session) {
+            this.session = session;
+        }
+
+        public ShellSession getSession() {
+            return session;
+        }
+
+        public void setSession(ShellSession session) {
+            this.session = session;
+        }
 
         public boolean isRunning() {
             return running;

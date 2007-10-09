@@ -6,13 +6,6 @@ import org.mvel.sh.Command;
 import java.util.Map;
 import java.util.HashMap;
 
-/**
- * Created by IntelliJ IDEA.
- * User: Mike Brock
- * Date: 6-Feb-2007
- * Time: 10:51:47 PM
- * To change this template use File | Settings | File Templates.
- */
 public class FileCommandSet implements CommandSet {
 
     public Map<String, Command> load() {
@@ -20,6 +13,7 @@ public class FileCommandSet implements CommandSet {
 
         cmd.put("ls", new DirList());
         cmd.put("cd", new ChangeWorkingDir());
+        cmd.put("pwd", new PrintWorkingDirectory());
 
         return cmd;
     }
