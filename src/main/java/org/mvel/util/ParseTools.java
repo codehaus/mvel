@@ -32,7 +32,7 @@ import java.util.*;
  * This class contains much of the actual parsing code used by the core parser.
  */
 @SuppressWarnings({"ManualArrayCopy"})
-public class ParseTools {
+public class loaParseTools {
     public static final Object[] EMPTY_OBJ_ARR = new Object[0];
     public static final MathProcessor MATH_PROCESSOR;
     public static final boolean JDK_14_COMPATIBILITY;
