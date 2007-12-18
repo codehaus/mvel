@@ -1,7 +1,7 @@
 package org.mvel.tests;
 
-import org.mvel.compiler.Accessor;
-import org.mvel.compiler.ExecutableStatement;
+import org.mvel.Accessor;
+import org.mvel.ExecutableStatement;
 import org.mvel.integration.VariableResolverFactory;
 import org.mvel.tests.main.res.Foo;
 

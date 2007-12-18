@@ -78,9 +78,13 @@ public interface Operator {
     public static final int IMPORT_STATIC = 95;
     public static final int IMPORT = 96;
     public static final int ASSERT = 97;
-    public static final int UNTYPED_VAR = 98;
+    public static final int TYPED_VAR = 98;
     public static final int RETURN = 99;
 
     public static final int FUNCTION = 100;
+
+    public static final int STK_SWAP = 200;
+    public static final int STK_XSWAP = 201;
+    public static final int STK_X2SWAP = 202;
 
 }

@@ -1,6 +1,5 @@
 package org.mvel;
 
-import org.mvel.compiler.AbstractParser;
 import org.mvel.util.StringAppender;
 
 import static java.lang.Character.isWhitespace;

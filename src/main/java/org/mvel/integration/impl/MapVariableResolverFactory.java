@@ -77,7 +77,7 @@ public class MapVariableResolverFactory extends BaseVariableResolverFactory {
     }
 
     public VariableResolver getVariableResolver(String name) {
-        if (variables != null && variables.containsKey(name)) {
+        if (variables.containsKey(name)) {
             return variableResolvers != null && variableResolvers.containsKey(name) ? variableResolvers.get(name) :
                     new MapVariableResolver(variables, name, cachingSafe);
         }
@@ -100,7 +100,7 @@ public class MapVariableResolverFactory extends BaseVariableResolverFactory {
         return false;
     }
 
-    protected void addResolver(String name, VariableResolver vr) {
+    private void addResolver(String name, VariableResolver vr) {
         if (variableResolvers == null) variableResolvers = new HashMap<String, VariableResolver>();
         variableResolvers.put(name, vr);
     }

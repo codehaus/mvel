@@ -1,12 +1,12 @@
 package org.mvel.tests.main;
 
 import junit.framework.TestCase;
+import org.mvel.CompiledExpression;
+import org.mvel.ExpressionCompiler;
 import org.mvel.MVEL;
 import static org.mvel.MVEL.compileExpression;
 import static org.mvel.MVEL.executeExpression;
 import org.mvel.ParserContext;
-import org.mvel.compiler.CompiledExpression;
-import org.mvel.compiler.ExpressionCompiler;
 import static org.mvel.debug.DebugTools.decompile;
 import org.mvel.integration.impl.MapVariableResolverFactory;
 import static org.mvel.optimizers.OptimizerFactory.setDefaultOptimizer;
@@ -55,10 +55,10 @@ public abstract class AbstractTest extends TestCase {
         map.put("hour", "60");
         map.put("zero", 0);
 
-        map.put("five", 5);
-
         map.put("order", new Order());
         map.put("$id", 20);
+
+        map.put("five", 5);
 
         map.put("testImpl",
                 new TestInterface() {
@@ -179,7 +179,7 @@ public abstract class AbstractTest extends TestCase {
         Object first = null, second = null, third = null, fourth = null, fifth = null, sixth = null, seventh = null,
                 eighth = null;
 
-        //      System.out.println(DebugTools.decompile((Serializable) compiled));
+        //  System.out.println(DebugTools.decompile((Serializable) compiled));
 
         if (!Boolean.getBoolean("mvel.disable.jit")) {
 
@@ -229,8 +229,6 @@ public abstract class AbstractTest extends TestCase {
 
         if (first != null && !first.getClass().isArray()) {
             if (!first.equals(second)) {
-                if (failErrors == null) failErrors = new StringAppender();
-
                 System.out.println(failErrors.toString());
 
                 throw new AssertionError("Different result from test 1 and 2 (Compiled Re-Run / JIT) [first: "
@@ -277,7 +275,7 @@ public abstract class AbstractTest extends TestCase {
         if (fourth != null && !fourth.getClass().isArray()) {
             if (!fourth.equals(fifth)) {
                 throw new AssertionError("Different result from test 4 and 5 (Compiled Re-Run / Reflective) [first: "
-                        + valueOf(fourth) + "; second: " + valueOf(fifth) + "]");
+                        + valueOf(first) + "; second: " + valueOf(second) + "]");
             }
         }
 
@@ -338,8 +336,7 @@ public abstract class AbstractTest extends TestCase {
         }
 
         try {
-            Object expr = serializationTest(compiledD);
-            eighth = executeExpression(expr, base, new MapVariableResolverFactory(map));
+            eighth = executeExpression(serializationTest(compiledD), base, new MapVariableResolverFactory(map));
         }
         catch (Exception e) {
             if (failErrors == null) failErrors = new StringAppender();
@@ -353,8 +350,8 @@ public abstract class AbstractTest extends TestCase {
 
         if (eighth != null && !eighth.getClass().isArray()) {
             if (!eighth.equals(seventh)) {
-                throw new AssertionError("Different result from test 7 and 8 (Reflective / De-Serialized) [first: "
-                        + valueOf(seventh) + "; second: " + valueOf(eighth) + "]");
+                throw new AssertionError("Different result from test 4 and 5 (Compiled Re-Run / Reflective) [first: "
+                        + valueOf(first) + "; second: " + valueOf(second) + "]");
             }
         }
 
@@ -368,7 +365,7 @@ public abstract class AbstractTest extends TestCase {
     }
 
     protected static Object serializationTest(Serializable s) throws Exception {
-        File file = new File(System.getProperty("java.io.tmpdir") + "/mvel_ser_test" + currentTimeMillis() + Math.round(Math.random() * 1000) + ".tmp");
+        File file = new File("./mvel_ser_test" + currentTimeMillis() + Math.round(Math.random() * 1000) + ".tmp");
         InputStream inputStream = null;
         ObjectInputStream objectIn = null;
         try {
