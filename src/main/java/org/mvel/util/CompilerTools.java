@@ -1,25 +1,12 @@
-/**
- * MVEL (The MVFLEX Expression Language)
- *
- * Copyright (C) 2007 Christopher Brock, MVFLEX/Valhalla Project and the Codehaus
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
 package org.mvel.util;
 
+import org.mvel.ASTLinkedList;
+import org.mvel.ASTNode;
 import org.mvel.Operator;
-import org.mvel.ast.*;
+import org.mvel.ast.And;
+import org.mvel.ast.BinaryOperation;
+import org.mvel.ast.EndOfStatement;
+import org.mvel.ast.Or;
 
 public class CompilerTools {
 
@@ -44,21 +31,10 @@ public class CompilerTools {
             }
             else if (astLinkedList.hasMoreNodes()) {
                 if ((tkOp = astLinkedList.nextNode()).getFields() == -1) {
-
+                    optimizedAst.addTokenNode(tk);
                     if (tk instanceof EndOfStatement) {
-                        /**
-                         * If this is the last node of the script, don't bother
-                         * with the end of statement.
-                         */
-                        if (astLinkedList.hasMoreNodes()) {
-                            optimizedAst.addTokenNode(tk);
-                        }
-
                         astLinkedList.setCurrentNode(tkOp);
                         continue;
-                    }
-                    else {
-                        optimizedAst.addTokenNode(tk);
                     }
 
                     optimizedAst.addTokenNode(tkOp);
@@ -82,22 +58,12 @@ public class CompilerTools {
                         optimizedAst.addTokenNode(tkOp2);
                     }
                 }
+
                 else {
+                    optimizedAst.addTokenNode(tk);
                     if (tk instanceof EndOfStatement) {
                         astLinkedList.setCurrentNode(tkOp);
-
-                        /**
-                         * If this is the last node of the script, don't bother
-                         * with the end of statement.
-                         */
-                        if (astLinkedList.hasMoreNodes()) {
-                            optimizedAst.addTokenNode(tk);
-                        }
-
                         continue;
-                    }
-                    else {
-                        optimizedAst.addTokenNode(tk);
                     }
 
                     optimizedAst.addTokenNode(tkOp);
@@ -183,4 +149,24 @@ public class CompilerTools {
 
         return optimizedAst;
     }
+
+    public static boolean isOperator(char item) {
+        switch (item) {
+            case'+':
+            case'-':
+            case'*':
+            case'/':
+            case'&':
+            case'|':
+            case'^':
+            case'.':
+            case'>':
+            case'<':
+
+                return true;
+            default:
+                return false;
+        }
+    }
+
 }

@@ -3,19 +3,17 @@ package org.mvel;
 import static org.mvel.DataConversion.canConvert;
 import static org.mvel.Operator.*;
 import static org.mvel.Soundex.soundex;
-import org.mvel.ast.ASTNode;
 import org.mvel.ast.LineLabel;
-import org.mvel.compiler.CompiledExpression;
 import org.mvel.debug.Debugger;
 import org.mvel.debug.DebuggerContext;
 import org.mvel.integration.VariableResolverFactory;
 import org.mvel.integration.impl.TypeInjectionResolverFactoryImpl;
-import org.mvel.util.ASTLinkedList;
 import org.mvel.util.ExecutionStack;
 import static org.mvel.util.ParseTools.containsCheck;
 import static org.mvel.util.PropertyTools.isEmpty;
 import static org.mvel.util.PropertyTools.similarity;
 import org.mvel.util.Stack;
+import org.mvel.util.StringAppender;
 
 import static java.lang.String.valueOf;
 import static java.lang.Thread.currentThread;
@@ -23,7 +21,6 @@ import static java.lang.Thread.currentThread;
 /**
  * This class contains the runtime for running compiled MVEL expressions.
  */
-@SuppressWarnings({"CaughtExceptionImmediatelyRethrown"})
 public class MVELRuntime {
 //    private static ThreadLocal<Map<String, Set<Integer>>> threadBreakpoints;
 //    private static ThreadLocal<Debugger> threadDebugger;
@@ -186,6 +183,10 @@ public class MVELRuntime {
                                 stk.push((Integer) v2 >>> (Integer) v1);
                                 break;
 
+                            case STR_APPEND:
+                                stk.push(new StringAppender(valueOf(v2)).append(valueOf(v1)).toString());
+                                break;
+
                             case SOUNDEX:
                                 stk.push(soundex(valueOf(v1)).equals(soundex(valueOf(v2))));
                                 break;
@@ -204,7 +205,7 @@ public class MVELRuntime {
                 }
             }
 
-            return stk.pop();
+            return stk.peek();
         }
         catch (NullPointerException e) {
             if (tk != null && tk.isOperator() && !node.hasMoreNodes()) {

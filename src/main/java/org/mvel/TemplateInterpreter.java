@@ -181,6 +181,7 @@ public class TemplateInterpreter {
         }
         else {
             this.expression = EX_PRECACHE.get(template);
+
             try {
                 this.nodes = cloneAll(EX_NODE_CACHE.get(expression));
             }
@@ -220,9 +221,9 @@ public class TemplateInterpreter {
             this.nodes = cloneAll(nodes);
         }
         else {
-            this.expression = EX_PRECACHE.get(expression);
+            
             try {
-                this.nodes = cloneAll(EX_NODE_CACHE.get(expression));
+                this.nodes = cloneAll(EX_NODE_CACHE.get(this.expression = EX_PRECACHE.get(expression)));
             }
             catch (NullPointerException e) {
                 EX_NODE_CACHE.remove(expression);

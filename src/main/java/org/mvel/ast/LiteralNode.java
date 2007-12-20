@@ -19,6 +19,7 @@
 package org.mvel.ast;
 
 import org.mvel.integration.VariableResolverFactory;
+import org.mvel.ASTNode;
 
 /**
  * @author Christopher Brock

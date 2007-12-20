@@ -21,7 +21,6 @@ package org.mvel;
 
 import static org.mvel.DataConversion.convert;
 import static org.mvel.MVELRuntime.execute;
-import org.mvel.compiler.*;
 import org.mvel.integration.Interceptor;
 import org.mvel.integration.VariableResolverFactory;
 import org.mvel.integration.impl.MapVariableResolverFactory;
@@ -29,14 +28,10 @@ import org.mvel.optimizers.impl.refl.GetterAccessor;
 import org.mvel.optimizers.impl.refl.ReflectiveAccessorOptimizer;
 import org.mvel.util.ParseTools;
 import static org.mvel.util.ParseTools.handleParserEgress;
-import static org.mvel.util.ParseTools.loadFromFile;
 
-import java.io.File;
-import java.io.IOException;
 import java.io.Serializable;
 import static java.lang.Boolean.getBoolean;
 import static java.lang.String.valueOf;
-import java.util.HashMap;
 import java.util.Map;
 
 public class MVEL {
@@ -49,7 +44,7 @@ public class MVEL {
     static String ADVANCED_DEBUGGING_FILE = System.getProperty("mvel.debugging.file") == null ? "mvel_debug.txt"
             : System.getProperty("mvel.debugging.file");
     static boolean ADVANCED_DEBUG = getBoolean("mvel.advanced_debugging");
-    public static boolean THREAD_SAFE = getBoolean("mvel.threadsafety");
+    static boolean THREAD_SAFE = getBoolean("mvel.threadsafety");
     static boolean WEAK_CACHE = getBoolean("mvel.weak_caching");
     static boolean NO_JIT = getBoolean("mvel.disable.jit");
 
@@ -495,31 +490,6 @@ public class MVEL {
             return valueOf(handleParserEgress(end.getValue(), false));
         }
     }
-
-    public static Object evalFile(File file) throws IOException {
-        return _evalFile(file, null, new MapVariableResolverFactory(new HashMap()));
-    }
-
-    public static Object evalFile(File file, Object ctx) throws IOException {
-        return _evalFile(file, ctx, new MapVariableResolverFactory(new HashMap()));
-    }
-
-    public static Object evalFile(File file, Map vars) throws IOException {
-        return evalFile(file, null, vars);
-    }
-
-    public static Object evalFile(File file, Object ctx, Map vars) throws IOException {
-        return _evalFile(file, ctx, new MapVariableResolverFactory(vars));
-    }
-
-    public static Object evalFile(File file, Object ctx, VariableResolverFactory factory) throws IOException {
-        return _evalFile(file, ctx, factory);
-    }
-
-    private static Object _evalFile(File file, Object ctx, VariableResolverFactory factory) throws IOException {
-        return eval(loadFromFile(file), ctx, factory);
-    }
-
 
     /**
      * Evaluate an expression in Boolean-only mode.

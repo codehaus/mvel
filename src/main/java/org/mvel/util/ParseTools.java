@@ -1,37 +1,21 @@
-/**
- * MVEL (The MVFLEX Expression Language)
- *
- * Copyright (C) 2007 Christopher Brock, MVFLEX/Valhalla Project and the Codehaus
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
 package org.mvel.util;
 
 import org.mvel.*;
+import static org.mvel.AbstractParser.getCurrentThreadParserContext;
+import static org.mvel.AbstractParser.isReservedWord;
 import static org.mvel.DataConversion.canConvert;
-import org.mvel.ast.ASTNode;
-import org.mvel.compiler.*;
-import static org.mvel.compiler.AbstractParser.getCurrentThreadParserContext;
-import static org.mvel.compiler.AbstractParser.isReservedWord;
 import org.mvel.integration.ResolverTools;
 import org.mvel.integration.VariableResolverFactory;
 import org.mvel.integration.impl.ClassImportResolverFactory;
+import org.mvel.integration.impl.DefaultLocalVariableResolverFactory;
+import org.mvel.integration.impl.LocalVariableResolverFactory;
 import org.mvel.integration.impl.StaticMethodImportResolverFactory;
-import org.mvel.integration.impl.TypeInjectionResolverFactoryImpl;
 import org.mvel.math.MathProcessor;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.Serializable;
 import static java.lang.Character.isWhitespace;
 import static java.lang.Double.parseDouble;
 import static java.lang.String.valueOf;
@@ -41,9 +25,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
-import static java.nio.ByteBuffer.allocateDirect;
-import java.nio.channels.ReadableByteChannel;
 import java.util.*;
 
 
@@ -239,6 +220,7 @@ public class ParseTools {
                 for (int i = 0; i < parameterTypes.length; i++) {
                     if (parameterTypes[i] != args[i]) return null;
                 }
+
                 return meth;
             }
         }
@@ -606,68 +588,23 @@ public class ParseTools {
         return stmt;
     }
 
-//    public static VariableResolverFactory finalLocalVariableFactory(VariableResolverFactory factory, boolean indexable) {
-//        if (!indexable) {
-//            VariableResolverFactory v = factory;
-//            while (v != null) {
-//                if (v instanceof LocalVariableResolverFactory) {
-//                    return v;
-//                }
-//
-//                v = v.getNextFactory();
-//            }
-//
-//            if (factory == null) {
-//                throw new OptimizationFailure("unable to assign variables.  no variable resolver factory available.");
-//            }
-//            else {
-//                return factory;
-//
-//        //        return ResolverTools.insertFactory(factory, new DefaultLocalVariableResolverFactory(new HashMap<String, Object>()));
-//
-//            }
-//        }
-//        else {
-//            VariableResolverFactory v = factory;
-//            while (v != null) {
-//                if (v instanceof LocalVariableResolverFactory && v.isIndexedFactory()) {
-//                    System.out.println("returning:" + v);
-//                    return v;
-//                }
-//
-//                v = v.getNextFactory();
-//            }
-//
-//            if (factory == null) {
-//                throw new OptimizationFailure("unable to assign variables.  no variable resolver factory available.");
-//            }
-//            else {
-//                System.out.println("returning new functionVariableResolverFactory");
-//                return new FunctionVariableResolverFactory().setNextFactory(factory);
-//
-//             //   return ResolverTools.insertFactory(factory, new FunctionVariableResolverFactory());
-//            }
-//        }
-//    }
-
-
-    public static TypeInjectionResolverFactoryImpl findTypeInjectionResolverFactory(VariableResolverFactory factory) {
+    public static VariableResolverFactory finalLocalVariableFactory(VariableResolverFactory factory) {
         VariableResolverFactory v = factory;
         while (v != null) {
-            if (v instanceof TypeInjectionResolverFactoryImpl) {
-                return (TypeInjectionResolverFactoryImpl) v;
+            if (v instanceof LocalVariableResolverFactory) {
+                return v;
             }
+
             v = v.getNextFactory();
         }
 
         if (factory == null) {
-            throw new OptimizationFailure("unable to import classes.  no variable resolver factory available.");
+            throw new OptimizationFailure("unable to assign variables.  no variable resolver factory available.");
         }
         else {
-            return ResolverTools.appendFactory(factory, new TypeInjectionResolverFactoryImpl());
+            return new DefaultLocalVariableResolverFactory(new HashMap<String, Object>()).setNextFactory(factory);
         }
     }
-
 
     public static ClassImportResolverFactory findClassImportResolverFactory(VariableResolverFactory factory) {
         VariableResolverFactory v = factory;
@@ -1122,18 +1059,10 @@ public class ParseTools {
         return optimizeTree(new ExpressionCompiler(expression)._compile());
     }
 
-    public static Serializable subCompileExpression(char[] expression, ParserContext ctx) {
-        return optimizeTree(new ExpressionCompiler(expression, ctx)._compile());
-    }
-
-    public static Serializable subCompileExpression(String expression, ParserContext ctx) {
-        return optimizeTree(new ExpressionCompiler(expression, ctx)._compile());
-    }
-
     public static Serializable optimizeTree(final CompiledExpression compiled) {
         ASTIterator nodes = compiled.getTokens();
 
-        /**
+        /**                                            g
          * If there is only one token, and it's an identifier, we can optimize this as an accessor expression.
          */
         if (MVEL.isOptimizationEnabled() && nodes.size() == 1) {
@@ -1147,8 +1076,7 @@ public class ParseTools {
                     return new ExecutableLiteral(tk.getLiteralValue());
                 }
             }
-            return tk.canSerializeAccessor() ? new ExecutableAccessorSafe(tk, false, compiled.getKnownEgressType()) :
-                    new ExecutableAccessor(tk, false, compiled.getKnownEgressType());
+            return new ExecutableAccessor(tk, false, compiled.getKnownEgressType());
 
         }
 
@@ -1162,42 +1090,5 @@ public class ParseTools {
         }
         return new String(n);
     }
-
-    public static char[] loadFromFile(File file) throws IOException {
-        if (!file.exists())
-            throw new CompileException("cannot find file: " + file.getName());
-
-        FileInputStream inStream = null;
-        ReadableByteChannel fc = null;
-        try {
-            inStream = new FileInputStream(file);
-            fc = inStream.getChannel();
-            ByteBuffer buf = allocateDirect(10);
-
-            StringAppender sb = new StringAppender((int) file.length());
-
-            int read = 0;
-            while (read >= 0) {
-                buf.rewind();
-                read = fc.read(buf);
-                buf.rewind();
-
-                for (; read > 0; read--) {
-                    sb.append((char) buf.get());
-                }
-            }
-
-            //noinspection unchecked
-            return sb.toChars();
-        }
-        catch (FileNotFoundException e) {
-            // this can't be thrown, we check for this explicitly.
-        }
-        finally {
-            if (inStream != null) inStream.close();
-            if (fc != null) fc.close();
-        }
-
-        return null;
-    }
+    
 }

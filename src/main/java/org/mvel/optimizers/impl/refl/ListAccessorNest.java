@@ -16,12 +16,13 @@
  * limitations under the License.
  *
  */
+
 package org.mvel.optimizers.impl.refl;
 
-import org.mvel.compiler.AccessorNode;
-import org.mvel.compiler.ExecutableStatement;
-import org.mvel.integration.VariableResolverFactory;
+import org.mvel.AccessorNode;
+import org.mvel.ExecutableStatement;
 import org.mvel.util.ParseTools;
+import org.mvel.integration.VariableResolverFactory;
 
 import java.util.List;
 

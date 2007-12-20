@@ -21,10 +21,8 @@ package org.mvel;
 
 import static org.mvel.DataConversion.canConvert;
 import static org.mvel.Operator.*;
-import org.mvel.ast.ASTNode;
 import org.mvel.ast.Substatement;
-import org.mvel.compiler.AbstractParser;
-import org.mvel.compiler.EndWithValue;
+import org.mvel.debug.DebugTools;
 import org.mvel.integration.VariableResolverFactory;
 import org.mvel.integration.impl.MapVariableResolverFactory;
 import static org.mvel.optimizers.OptimizerFactory.setThreadAccessorOptimizer;
@@ -42,7 +40,6 @@ import java.util.Map;
 import static java.util.regex.Pattern.compile;
 
 
-@SuppressWarnings({"CaughtExceptionImmediatelyRethrown"})
 public class MVELInterpretedRuntime extends AbstractParser {
     private boolean returnBigDecimal = false;
     private int roundingMode = BigDecimal.ROUND_HALF_DOWN;
@@ -59,6 +56,7 @@ public class MVELInterpretedRuntime extends AbstractParser {
 
         try {
             stk = new ExecutionStack();
+            dStack = new ExecutionStack();
 
             cursor = 0;
 
@@ -70,7 +68,7 @@ public class MVELInterpretedRuntime extends AbstractParser {
                 contextControl(REMOVE, null, null);
             }
 
-            return handleParserEgress(stk.pop(), returnBigDecimal);
+            return handleParserEgress(stk.peek(), returnBigDecimal);
         }
         catch (ArrayIndexOutOfBoundsException e) {
             e.printStackTrace();
@@ -116,24 +114,16 @@ public class MVELInterpretedRuntime extends AbstractParser {
                 if (stk.isEmpty()) {
                     stk.push(tk.getReducedValue(ctx, ctx, variableFactory));
 
-                    /**
-                     * If this is a substatement, we need to move the result into the d-stack to preserve
-                     * proper execution order.
-                     */
                     if (tk instanceof Substatement) {
                         procDStack();
 
-                        if ((tk = nextToken()) != null) {
-                            if (isStandardMathOperator(tk.getOperator())) {
-                                if (dStack == null) dStack = new ExecutionStack();
-                                dStack.push(tk.getOperator());
-                                dStack.push(stk.pop());
-                                continue;
-                            }
-                        }
-                        else {
+                        if ((tk = nextToken()) != null && isStandardMathOperator(tk.getOperator())) {
+                            dStack.push(tk.getOperator());
+                            dStack.push(stk.pop());
                             continue;
                         }
+
+                        if (tk == null) continue;
                     }
                 }
 
@@ -223,6 +213,7 @@ public class MVELInterpretedRuntime extends AbstractParser {
 
             procDStack();
         }
+
         catch (NullPointerException e) {
             if (tk != null && tk.isOperator() && cursor >= length) {
                 throw new CompileException("incomplete statement: "
@@ -238,13 +229,7 @@ public class MVELInterpretedRuntime extends AbstractParser {
         return operator == ADD || operator == MULT || operator == SUB || operator == DIV;
     }
 
-    /**
-     * This method peforms the equivilent of an XSWAP operation to flip the operator
-     * over to the top of the stack, and loads the stored values on the d-stack onto
-     * the main program stack.
-     */
     private void procDStack() {
-        if (dStack == null) return;
         Object o;
         while (!dStack.isEmpty()) {
             o = stk.pop();
@@ -266,106 +251,107 @@ public class MVELInterpretedRuntime extends AbstractParser {
      * current state against 2 downrange structures (usually an op and a val).
      */
     private void reduce() {
+        if (stk.size() <= 1) return;
+
         Object v1 = null, v2 = null;
         Integer operator;
         try {
-            while (stk.size() > 1) {
-                operator = (Integer) stk.pop();
-                v1 = stk.pop();
-                v2 = stk.pop();
+            operator = (Integer) stk.pop();
+            v1 = stk.pop();
+            v2 = stk.pop();
 
-                switch (operator) {
-                    case ADD:
-                    case SUB:
-                    case DIV:
-                    case MULT:
-                    case MOD:
-                    case EQUAL:
-                    case NEQUAL:
-                    case GTHAN:
-                    case LTHAN:
-                    case GETHAN:
-                    case LETHAN:
-                    case POWER:
-                        stk.push(doOperations(v2, operator, v1));
-                        break;
+            switch (operator) {
+                case ADD:
+                case SUB:
+                case DIV:
+                case MULT:
+                case MOD:
+                case EQUAL:
+                case NEQUAL:
+                case GTHAN:
+                case LTHAN:
+                case GETHAN:
+                case LETHAN:
+                case POWER:
+                    stk.push(doOperations(v2, operator, v1));
+                    break;
 
-                    case CHOR:
-                        if (!isEmpty(v2) || !isEmpty(v1)) {
-                            stk.clear();
-                            stk.push(!isEmpty(v2) ? v2 : v1);
-                            return;
-                        }
-                        else stk.push(null);
-                        break;
+                case CHOR:
+                    if (!isEmpty(v2) || !isEmpty(v1)) {
+                        stk.clear();
+                        stk.push(!isEmpty(v2) ? v2 : v1);
+                        return;
+                    }
+                    else stk.push(null);
+                    break;
 
-                    case REGEX:
-                        stk.push(compile(valueOf(v1)).matcher(valueOf(v2)).matches());
-                        break;
+                case REGEX:
+                    stk.push(compile(valueOf(v1)).matcher(valueOf(v2)).matches());
+                    break;
 
-                    case INSTANCEOF:
-                        if (v1 instanceof Class)
-                            stk.push(((Class) v1).isInstance(v2));
-                        else
-                            stk.push(currentThread().getContextClassLoader().loadClass(valueOf(v1)).isInstance(v2));
+                case INSTANCEOF:
+                    if (v1 instanceof Class)
+                        stk.push(((Class) v1).isInstance(v2));
+                    else
+                        stk.push(currentThread().getContextClassLoader().loadClass(valueOf(v1)).isInstance(v2));
 
-                        break;
+                    break;
 
-                    case CONVERTABLE_TO:
-                        if (v1 instanceof Class)
-                            stk.push(canConvert(v2.getClass(), (Class) v1));
-                        else
-                            stk.push(canConvert(v2.getClass(), currentThread().getContextClassLoader().loadClass(valueOf(v1))));
-                        break;
+                case CONVERTABLE_TO:
+                    if (v1 instanceof Class)
+                        stk.push(canConvert(v2.getClass(), (Class) v1));
+                    else
+                        stk.push(canConvert(v2.getClass(), currentThread().getContextClassLoader().loadClass(valueOf(v1))));
+                    break;
 
-                    case CONTAINS:
-                        stk.push(containsCheck(v2, v1));
-                        break;
+                case CONTAINS:
+                    stk.push(containsCheck(v2, v1));
+                    break;
 
-                    case BW_AND:
-                        stk.push(asInt(v2) & asInt(v1));
-                        break;
+                case BW_AND:
+                    stk.push(asInt(v2) & asInt(v1));
+                    break;
 
-                    case BW_OR:
-                        stk.push(asInt(v2) | asInt(v1));
-                        break;
+                case BW_OR:
+                    stk.push(asInt(v2) | asInt(v1));
+                    break;
 
-                    case BW_XOR:
-                        stk.push(asInt(v2) ^ asInt(v1));
-                        break;
+                case BW_XOR:
+                    stk.push(asInt(v2) ^ asInt(v1));
+                    break;
 
-                    case BW_SHIFT_LEFT:
-                        stk.push(asInt(v2) << asInt(v1));
-                        break;
+                case BW_SHIFT_LEFT:
+                    stk.push(asInt(v2) << asInt(v1));
+                    break;
 
-                    case BW_USHIFT_LEFT:
-                        int iv2 = asInt(v2);
-                        if (iv2 < 0) iv2 *= -1;
-                        stk.push(iv2 << asInt(v1));
-                        break;
+                case BW_USHIFT_LEFT:
+                    int iv2 = asInt(v2);
+                    if (iv2 < 0) iv2 *= -1;
+                    stk.push(iv2 << asInt(v1));
+                    break;
 
-                    case BW_SHIFT_RIGHT:
-                        stk.push(asInt(v2) >> asInt(v1));
-                        break;
+                case BW_SHIFT_RIGHT:
+                    stk.push(asInt(v2) >> asInt(v1));
+                    break;
 
-                    case BW_USHIFT_RIGHT:
-                        stk.push(asInt(v2) >>> asInt(v1));
-                        break;
+                case BW_USHIFT_RIGHT:
+                    stk.push(asInt(v2) >>> asInt(v1));
+                    break;
 
-                    case STR_APPEND:
-                        stk.push(new StringAppender(valueOf(v2)).append(valueOf(v1)).toString());
-                        break;
+                case STR_APPEND:
+                    stk.push(new StringAppender(valueOf(v2)).append(valueOf(v1)).toString());
+                    break;
 
-                    case SOUNDEX:
-                        stk.push(Soundex.soundex(valueOf(v1)).equals(Soundex.soundex(valueOf(v2))));
-                        break;
+                case SOUNDEX:
+                    stk.push(Soundex.soundex(valueOf(v1)).equals(Soundex.soundex(valueOf(v2))));
+                    break;
 
-                    case SIMILARITY:
-                        stk.push(similarity(valueOf(v1), valueOf(v2)));
-                        break;
+                case SIMILARITY:
+                    stk.push(similarity(valueOf(v1), valueOf(v2)));
+                    break;
 
-                }
             }
+
         }
         catch (ClassCastException e) {
             if ((fields & ASTNode.LOOKAHEAD) == 0) {

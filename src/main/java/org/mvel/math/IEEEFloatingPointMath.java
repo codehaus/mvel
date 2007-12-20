@@ -1,21 +1,3 @@
-/**
- * MVEL (The MVFLEX Expression Language)
- *
- * Copyright (C) 2007 Christopher Brock, MVFLEX/Valhalla Project and the Codehaus
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
 package org.mvel.math;
 
 import org.mvel.CompileException;
@@ -25,7 +7,6 @@ import org.mvel.DataTypes;
 import static org.mvel.DataTypes.EMPTY;
 import static org.mvel.Operator.*;
 import org.mvel.Unit;
-import org.mvel.debug.DebugTools;
 import static org.mvel.util.ParseTools.resolveType;
 import static org.mvel.util.PropertyTools.isNumber;
 
@@ -166,9 +147,7 @@ public class IEEEFloatingPointMath implements MathProcessor {
         }
 
         throw new CompileException("could not perform numeric operation on non-numeric types: left-type="
-                + (val1 != null ? val1.getClass().getName() : "null") + "; right-type="
-                + (val2 != null ? val2.getClass().getName() : "null")
-                + " [vals (" + valueOf(val1) + ", " + valueOf(val2) + ") operation=" + DebugTools.getOperatorName(operation) + " ]");
+                + (val1 != null ? val1.getClass().getName() : "null") + "; right-type=" + (val2 != null ? val2.getClass().getName() : "null"));
 
     }
 
