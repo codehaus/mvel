@@ -21,7 +21,6 @@ package org.mvel;
 import static org.mvel.DataConversion.canConvert;
 import static org.mvel.DataConversion.convert;
 import static org.mvel.MVEL.eval;
-import org.mvel.ast.Function;
 import org.mvel.integration.VariableResolverFactory;
 import org.mvel.util.MethodStub;
 import org.mvel.util.ParseTools;
@@ -36,7 +35,6 @@ import static java.lang.reflect.Array.getLength;
 import java.util.*;
 import static java.util.Collections.synchronizedMap;
 
-@SuppressWarnings({"unchecked"})
 public class PropertyAccessor {
     private int start = 0;
     private int cursor = 0;
@@ -49,7 +47,6 @@ public class PropertyAccessor {
     private Object curr;
 
     private boolean first = true;
-    private boolean nullHandle = false;
 
     private VariableResolverFactory variableFactory;
 
@@ -164,15 +161,6 @@ public class PropertyAccessor {
                     case DONE:
                 }
 
-                if (nullHandle) {
-                    if (curr == null) {
-                        return null;
-                    }
-                    else {
-                        nullHandle = false;
-                    }
-                }
-
                 first = false;
             }
 
@@ -206,7 +194,6 @@ public class PropertyAccessor {
 
         try {
             int oLength = length;
-
             length = findAbsoluteLast(property);
 
             if ((curr = get()) == null)
@@ -238,6 +225,8 @@ public class PropertyAccessor {
                 }
                 else if (curr.getClass().isArray()) {
                     Array.set(curr, eval(ex, this.ctx, this.variableFactory, Integer.class), convert(value, getBaseComponentType(curr.getClass())));
+
+                    //           ((Object[]) curr)[eval(ex, this.ctx, this.variableFactory, Integer.class)] = convert(value, ctx.getClass().getComponentType());
                 }
 
                 else {
@@ -306,11 +295,7 @@ public class PropertyAccessor {
             case '[':
                 return COL;
             case '.':
-                // ++cursor;
-                if (property[cursor = ++start] == '?') {
-                    cursor = ++start;
-                    nullHandle = true;
-                }
+                ++cursor;
         }
 
         while (cursor < length && isWhitespace(property[cursor])) cursor++;
@@ -543,6 +528,24 @@ public class PropertyAccessor {
      */
     @SuppressWarnings({"unchecked"})
     private Object getMethod(Object ctx, String name) throws Exception {
+        if (first && variableFactory != null && variableFactory.isResolveable(name)) {
+            Object ptr = variableFactory.getVariableResolver(name).getValue();
+            if (ptr instanceof Method) {
+                ctx = ((Method) ptr).getDeclaringClass();
+                name = ((Method) ptr).getName();
+            }
+            else if (ptr instanceof MethodStub) {
+                ctx = ((MethodStub) ptr).getClassReference();
+                name = ((MethodStub) ptr).getMethodName();
+            }
+            else {
+                throw new OptimizationFailure("attempt to optimize a method call for a reference that does not point to a method: "
+                        + name + " (reference is type: " + (ctx != null ? ctx.getClass().getName() : null) + ")");
+            }
+
+            first = false;
+        }
+
         int st = cursor;
         String tk = ((cursor = balancedCapture(property, cursor, '(')) - st) > 1 ?
                 new String(property, st + 1, cursor - st - 1) : "";
@@ -559,29 +562,6 @@ public class PropertyAccessor {
             for (int i = 0; i < subtokens.length; i++) {
                 args[i] = eval(subtokens[i], thisReference, variableFactory);
             }
-        }
-
-        if (first && variableFactory != null && variableFactory.isResolveable(name)) {
-            Object ptr = variableFactory.getVariableResolver(name).getValue();
-            if (ptr instanceof Method) {
-                ctx = ((Method) ptr).getDeclaringClass();
-                name = ((Method) ptr).getName();
-            }
-            else if (ptr instanceof MethodStub) {
-                ctx = ((MethodStub) ptr).getClassReference();
-                name = ((MethodStub) ptr).getMethodName();
-            }
-            else if (ptr instanceof Function) {
-
-
-                return ((Function) ptr).call(ctx, thisReference, variableFactory, args);
-            }
-            else {
-                throw new OptimizationFailure("attempt to optimize a method call for a reference that does not point to a method: "
-                        + name + " (reference is type: " + (ctx != null ? ctx.getClass().getName() : null) + ")");
-            }
-
-            first = false;
         }
 
         /**

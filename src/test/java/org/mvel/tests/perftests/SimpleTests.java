@@ -1,67 +1,37 @@
 package org.mvel.tests.perftests;
 
-import org.mvel.MVEL;
-import org.mvel.integration.impl.DefaultLocalVariableResolverFactory;
-import org.mvel.util.ParseTools;
-import org.mvel.util.QuickSort;
+import junit.framework.TestResult;
+import junit.framework.TestSuite;
+import org.mvel.tests.main.CoreConfidenceTests;
 import sun.misc.Unsafe;
 
-import java.io.File;
-import java.io.IOException;
 import java.io.PrintStream;
-import java.io.Serializable;
 import java.lang.reflect.Field;
 
 public class SimpleTests {
-    private static final double COUNT = 10000;
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
+        //   Unsafe unsafe = getUnsafe();
+
+
+        TestSuite testSuite = new TestSuite(CoreConfidenceTests.class);
+        TestResult result = new TestResult();
+
         PrintStream ps = System.out;
 
         System.setOut(new PrintStream(new NullOutputStream()));
-        try {
-            for (int i = 0; i < 10; i++) {
-                testQuickSortMVEL(ps);
-                testQuickSortNative(ps);
-            }
-        }
-        catch (Throwable t) {
-            t.printStackTrace();
+        System.setErr(new PrintStream(new NullOutputStream()));
+
+        testSuite.run(result);
+        long time;
+
+        for (int i = 0; i < 100; i++) {
+            time = System.currentTimeMillis();
+            testSuite.run(result);
+            ps.println("Result: " + (System.currentTimeMillis() - time));
         }
 
         System.setOut(ps);
-    }
-
-
-    private static void testQuickSortMVEL(PrintStream ps) throws IOException {
-        double time;
-
-        time = System.currentTimeMillis();
-
-        char[] sourceFile = ParseTools.loadFromFile(new File("samples/scripts/quicksort.mvel"));
-        Serializable c = MVEL.compileExpression(sourceFile);
-
-        DefaultLocalVariableResolverFactory vrf = new DefaultLocalVariableResolverFactory();
-
-        for (int i = 0; i < COUNT; i++) {
-            MVEL.executeExpression(c, vrf);
-        }
-
-        ps.println("Result: " + (time = System.currentTimeMillis() - time));
-        ps.println("Rate  : " + (COUNT / (time / 1000)) + " per second.");
-    }
-
-    private static void testQuickSortNative(PrintStream ps) {
-        double time;
-
-        time = System.currentTimeMillis();
-
-        for (int i = 0; i < COUNT; i++) {
-            QuickSort.quickSort(new int[]{50, 20, 21, 209, 10, 77, 8, 9, 55, 73, 41, 99});
-        }
-
-        ps.println("Result: " + (time = System.currentTimeMillis() - time));
-        ps.println("Rate  : " + (COUNT / (time / 1000)) + " per second.");
     }
 
     private static Unsafe getUnsafe() {
@@ -76,4 +46,13 @@ public class SimpleTests {
     }
 
     private static final Unsafe unsafe__ = getUnsafe();
+
+    private static void setBoolean(Field f, Object o, boolean v) {
+        unsafe__.putBoolean(o, unsafe__.objectFieldOffset(f), v);
+    }
+
+    private static Object newInstance(Class clazz) throws Exception {
+        return (unsafe__.allocateInstance(clazz));
+    }
+
 }

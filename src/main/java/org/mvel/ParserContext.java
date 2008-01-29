@@ -1,8 +1,6 @@
 package org.mvel;
 
-import org.mvel.ast.Function;
 import org.mvel.ast.LineLabel;
-import org.mvel.compiler.AbstractParser;
 import org.mvel.integration.Interceptor;
 import org.mvel.util.MethodStub;
 import static org.mvel.util.ParseTools.getSimpleClassName;
@@ -27,10 +25,8 @@ public class ParserContext implements Serializable {
 
     protected Map<String, Interceptor> interceptors;
 
-    private ArrayList<String> indexedVariables;
     private Map<String, Class> variables;
     private Map<String, Class> inputs;
-    private Map<String, Function> globalFunctions;
 
     private List<ErrorDetail> errorList;
 
@@ -46,7 +42,6 @@ public class ParserContext implements Serializable {
     private boolean debugSymbols = false;
     private boolean blockSymbols = false;
     private boolean executableCodeReached = false;
-    private boolean indexAllocation = false;
 
 
     public ParserContext() {
@@ -64,6 +59,10 @@ public class ParserContext implements Serializable {
         setImports(imports);
         this.interceptors = interceptors;
         this.sourceFile = sourceFile;
+    }
+
+    public boolean hasVariable(String name) {
+        return (variables != null && variables.containsKey(name));
     }
 
     public boolean hasVarOrInput(String name) {
@@ -110,10 +109,6 @@ public class ParserContext implements Serializable {
 
     public MethodStub getStaticImport(String name) {
         return imports != null ? (MethodStub) imports.get(name) : null;
-    }
-
-    public Object getStaticOrClassImport(String name) {
-        return (imports != null && imports.containsKey(name) ? imports.get(name) : AbstractParser.LITERALS.get(name));
     }
 
     public void addPackageImport(String packageName) {
@@ -171,7 +166,7 @@ public class ParserContext implements Serializable {
     }
 
     public void addImport(String name, Class cls) {
-        if (this.imports == null) this.imports = new LinkedHashMap<String, Object>();
+        if (this.imports == null) this.imports = new HashMap<String, Object>();
         this.imports.put(name, cls);
     }
 
@@ -180,24 +175,23 @@ public class ParserContext implements Serializable {
     }
 
     public void addImport(String name, MethodStub method) {
-        if (this.imports == null) this.imports = new LinkedHashMap<String, Object>();
+        if (this.imports == null) this.imports = new HashMap<String, Object>();
         this.imports.put(name, method);
     }
 
     public void initializeTables() {
-        if (variables == null) variables = new LinkedHashMap<String, Class>();
-        if (inputs == null) inputs = new LinkedHashMap<String, Class>();
+        if (variables == null) variables = new HashMap<String, Class>();
+        if (inputs == null) inputs = new HashMap<String, Class>();
     }
 
     public void addVariable(String name, Class type) {
-        initializeTables();
         if (variables.containsKey(name)) return;
         if (type == null) type = Object.class;
         variables.put(name, type);
     }
 
     public void addInput(String name, Class type) {
-        if (inputs == null) inputs = new LinkedHashMap<String, Class>();
+        if (inputs == null) inputs = new HashMap<String, Class>();
         if (inputs.containsKey(name)) return;
         if (type == null) type = Object.class;
         inputs.put(name, type);
@@ -337,7 +331,7 @@ public class ParserContext implements Serializable {
     }
 
     public void addKnownLine(String sourceName, int lineNumber) {
-        if (sourceMap == null) sourceMap = new LinkedHashMap<String, Set<Integer>>();
+        if (sourceMap == null) sourceMap = new HashMap<String, Set<Integer>>();
         if (!sourceMap.containsKey(sourceName)) sourceMap.put(sourceName, new HashSet<Integer>());
         sourceMap.get(sourceName).add(lineNumber);
     }
@@ -359,27 +353,6 @@ public class ParserContext implements Serializable {
         return (imports != null && imports.size() != 0) || (packageImports != null && packageImports.size() != 0);
     }
 
-    public void declareFunction(Function function) {
-        if (globalFunctions == null) globalFunctions = new LinkedHashMap<String, Function>();
-        globalFunctions.put(function.getName(), function);
-    }
-
-    public Function getFunction(String name) {
-        if (globalFunctions == null) return null;
-        return globalFunctions.get(name);
-    }
-
-    public Map getFunctions() {
-        return globalFunctions;
-    }
-
-    public boolean hasFunction(String name) {
-        return globalFunctions != null && globalFunctions.containsKey(name);
-    }
-
-    public boolean hasFunction() {
-        return globalFunctions != null && globalFunctions.size() != 0;
-    }
 
     public boolean isBlockSymbols() {
         return blockSymbols;
@@ -395,52 +368,5 @@ public class ParserContext implements Serializable {
 
     public void setExecutableCodeReached(boolean executableCodeReached) {
         this.executableCodeReached = executableCodeReached;
-    }
-
-    private void initIndexedVariables() {
-        if (indexedVariables == null) indexedVariables = new ArrayList<String>();
-    }
-
-    public ArrayList getIndexedVariables() {
-        initIndexedVariables();
-        return indexedVariables;
-    }
-
-    public void addIndexedVariables(String[] variables) {
-        initIndexedVariables();
-        for (String s : variables) {
-            if (!indexedVariables.contains(s))
-                indexedVariables.add(s);
-        }
-    }
-
-    public void addIndexedVariable(String variable) {
-        initIndexedVariables();
-        if (!indexedVariables.contains(variable)) indexedVariables.add(variable);
-    }
-
-    public void addIndexedVariables(Collection<String> variables) {
-        initIndexedVariables();
-        for (String s : variables) {
-            if (!indexedVariables.contains(s))
-                indexedVariables.add(s);
-        }
-    }
-
-    public int variableIndexOf(String name) {
-        //   initializeTables();
-        return indexedVariables != null ? indexedVariables.indexOf(name) : -1;
-    }
-
-    public boolean hasIndexedVariables() {
-        return indexedVariables != null && indexedVariables.size() != 0;
-    }
-
-    public boolean isIndexAllocation() {
-        return indexAllocation;
-    }
-
-    public void setIndexAllocation(boolean indexAllocation) {
-        this.indexAllocation = indexAllocation;
     }
 }

@@ -1,23 +1,6 @@
-/**
- * MVEL (The MVFLEX Expression Language)
- *
- * Copyright (C) 2007 Christopher Brock, MVFLEX/Valhalla Project and the Codehaus
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
 package org.mvel.ast;
 
+import org.mvel.ASTNode;
 import org.mvel.CompileException;
 import org.mvel.integration.VariableResolverFactory;
 import static org.mvel.util.ArrayTools.findLast;
@@ -36,9 +19,11 @@ public class StaticImportNode extends ASTNode {
     private String methodName;
     private transient Method method;
 
-    public StaticImportNode(char[] expr) {
+    public StaticImportNode(char[] expr, int fields) {
+        super(expr, fields);
+
         try {
-            declaringClass = currentThread().getContextClassLoader().loadClass(new String(subset(expr, 0, findLast('.', this.name = expr))));
+            declaringClass = currentThread().getContextClassLoader().loadClass(new String(subset(expr, 0, findLast('.', expr))));
             methodName = new String(subset(expr, findLast('.', expr) + 1));
 
             if (resolveMethod() == null) {
@@ -55,6 +40,7 @@ public class StaticImportNode extends ASTNode {
         for (Method meth : declaringClass.getMethods()) {
             if (isStatic(meth.getModifiers()) && methodName.equals(meth.getName())) {
                 return method = meth;
+                //      return;
             }
         }
         return null;

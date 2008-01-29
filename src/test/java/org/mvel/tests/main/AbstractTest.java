@@ -1,12 +1,12 @@
 package org.mvel.tests.main;
 
 import junit.framework.TestCase;
+import org.mvel.CompiledExpression;
+import org.mvel.ExpressionCompiler;
 import org.mvel.MVEL;
 import static org.mvel.MVEL.compileExpression;
 import static org.mvel.MVEL.executeExpression;
 import org.mvel.ParserContext;
-import org.mvel.compiler.CompiledExpression;
-import org.mvel.compiler.ExpressionCompiler;
 import static org.mvel.debug.DebugTools.decompile;
 import org.mvel.integration.impl.MapVariableResolverFactory;
 import static org.mvel.optimizers.OptimizerFactory.setDefaultOptimizer;
@@ -130,7 +130,7 @@ public abstract class AbstractTest extends TestCase {
                 }
 
                 try {
-                    Thread.sleep(250);
+                    Thread.sleep(333);
                 }
                 catch (InterruptedException e) {
                     break;
@@ -201,8 +201,10 @@ public abstract class AbstractTest extends TestCase {
         }
 
         public void run() {
+            System.out.println("initiate thread");
             try {
                 Object result = runSingleTest(expression);
+                System.out.println("add result: " + result);
                 results.add(result);
             }
             catch (Throwable e) {
@@ -212,6 +214,7 @@ public abstract class AbstractTest extends TestCase {
             }
 
 
+            System.out.println("Thread Exiting.");
         }
     }
 
@@ -219,17 +222,8 @@ public abstract class AbstractTest extends TestCase {
         return _test(ex);
     }
 
-
-    protected static Object testCompiledSimple(String ex) {
-        return MVEL.executeExpression(MVEL.compileExpression(ex));
-    }
-
     protected static Object testCompiledSimple(String ex, Map map) {
         return MVEL.executeExpression(MVEL.compileExpression(ex), map);
-    }
-
-    protected static Object testCompiledSimple(String ex, Object base, Map map) {
-        return MVEL.executeExpression(MVEL.compileExpression(ex), base, map);
     }
 
     protected static Object _test(String ex) {
