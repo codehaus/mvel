@@ -1,8 +1,6 @@
 package org.mvel.sh;
 
-import static org.mvel.MVEL.compileExpression;
-import static org.mvel.MVEL.executeExpression;
-import org.mvel.MVEL;
+import static org.mvel.MVEL.*;
 import static org.mvel.TemplateInterpreter.evalToString;
 import org.mvel.integration.impl.DefaultLocalVariableResolverFactory;
 import org.mvel.integration.impl.MapVariableResolverFactory;
@@ -35,7 +33,6 @@ public class ShellSession {
     private PrintStream out = System.out;
     private String prompt;
     private String commandBuffer;
-
 
     public void run() {
         System.out.println("Starting session...");
@@ -97,10 +94,8 @@ public class ShellSession {
                 printPrompt();
 
                 if (commandBuffer == null) {
-                    System.out.println("{INPUT}");
                     commandBuffer = readBuffer.readLine();
                 }
-                System.out.println("EXEC: " + commandBuffer);
 
                 if (commands.containsKey((inTokens =
                         inBuffer.append(commandBuffer).toString().split("\\s"))[0])) {
@@ -139,7 +134,7 @@ public class ShellSession {
                             outputBuffer = executeExpression(compileExpression(inBuffer.toString()), lvrf);
                         }
                         else {
-                            outputBuffer = MVEL.eval(inBuffer.toString(), lvrf);
+                            outputBuffer = eval(inBuffer.toString(), lvrf);
                         }
                     }
                     catch (Exception e) {
@@ -154,24 +149,20 @@ public class ShellSession {
                         else {
                             paths = env.get("$PATH").split("(:|;)");
                         }
-
+               
                         boolean successfulExec = false;
 
                         for (String execPath : paths) {
                             if ((execFile = new File(execPath + "/" + s)).exists() && execFile.isFile()) {
-
-                                System.out.println("[Executing:" + execFile.getAbsolutePath() + "]");
-
                                 successfulExec = true;
 
-                                String[] execString = new String[inTokens.length - 1];
+                                String[] execString = new String[inTokens.length];
+                                execString[0] = execFile.getAbsolutePath();
 
-                                if (inTokens.length > 1) {
-                                    arraycopy(inTokens, 1, execString, 1, inTokens.length - 1);
-                                }
+                                System.arraycopy(inTokens, 1, execString, 1, inTokens.length - 1);
 
                                 try {
-                                    final Process p = getRuntime().exec(execFile.getAbsolutePath(), execString);
+                                    final Process p = getRuntime().exec(execString);
                                     final OutputStream outStream = p.getOutputStream();
 
                                     final InputStream inStream = p.getInputStream();
@@ -223,8 +214,6 @@ public class ShellSession {
                                             Thread runningThread = new Thread(new Runnable() {
                                                 public void run() {
                                                     try {
-
-
                                                         String read;
                                                         while (runState.isRunning()) {
                                                             while ((read = readBuffer.readLine()) != null) {
