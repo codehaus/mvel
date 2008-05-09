@@ -1,14 +1,13 @@
 package org.mvel.tests.main;
 
 import junit.framework.TestCase;
+import org.mvel.CompiledExpression;
+import org.mvel.ExpressionCompiler;
 import org.mvel.MVEL;
 import static org.mvel.MVEL.compileExpression;
 import static org.mvel.MVEL.executeExpression;
 import org.mvel.ParserContext;
-import org.mvel.compiler.CompiledExpression;
-import org.mvel.compiler.ExpressionCompiler;
 import static org.mvel.debug.DebugTools.decompile;
-import org.mvel.debug.DebugTools;
 import org.mvel.integration.impl.MapVariableResolverFactory;
 import static org.mvel.optimizers.OptimizerFactory.setDefaultOptimizer;
 import org.mvel.tests.main.res.*;
@@ -71,10 +70,14 @@ public abstract class AbstractTest extends TestCase {
 
         map.put("derived", new DerivedClass());
 
-        map.put("ipaddr", "10.1.1.2");
-
         map.put("dt1", new Date(currentTimeMillis() - 100000));
         map.put("dt2", new Date(currentTimeMillis()));
+
+        map.put("ipaddr", "10.1.1.2");
+
+        Map map2 = new HashMap();
+        map2.put("foo", new Foo());
+        map.put("submap", map2);
         return map;
     }
 
@@ -133,7 +136,7 @@ public abstract class AbstractTest extends TestCase {
                 }
 
                 try {
-                    Thread.sleep(250);
+                    Thread.sleep(333);
                 }
                 catch (InterruptedException e) {
                     break;
@@ -204,8 +207,10 @@ public abstract class AbstractTest extends TestCase {
         }
 
         public void run() {
+            System.out.println("initiate thread");
             try {
                 Object result = runSingleTest(expression);
+                System.out.println("add result: " + result);
                 results.add(result);
             }
             catch (Throwable e) {
@@ -215,6 +220,7 @@ public abstract class AbstractTest extends TestCase {
             }
 
 
+            System.out.println("Thread Exiting.");
         }
     }
 
@@ -222,17 +228,8 @@ public abstract class AbstractTest extends TestCase {
         return _test(ex);
     }
 
-
-    protected static Object testCompiledSimple(String ex) {
-        return MVEL.executeExpression(MVEL.compileExpression(ex));
-    }
-
     protected static Object testCompiledSimple(String ex, Map map) {
         return MVEL.executeExpression(MVEL.compileExpression(ex), map);
-    }
-
-    protected static Object testCompiledSimple(String ex, Object base, Map map) {
-        return MVEL.executeExpression(MVEL.compileExpression(ex), base, map);
     }
 
     protected static Object _test(String ex) {
@@ -243,15 +240,15 @@ public abstract class AbstractTest extends TestCase {
         Object first = null, second = null, third = null, fourth = null, fifth = null, sixth = null, seventh = null,
                 eighth = null;
 
-         System.out.println(DebugTools.decompile((Serializable) compiled));
+        //  System.out.println(DebugTools.decompile((Serializable) compiled));
 
         if (!Boolean.getBoolean("mvel.disable.jit")) {
 
-            setDefaultOptimizer("dynamic");
+            setDefaultOptimizer("ASM");
 
             try {
                 first = executeExpression(compiled, new Base(), createTestMap());
-            }                                      
+            }
             catch (Exception e) {
                 failErrors.append("\nFIRST TEST: { " + ex + " }: EXCEPTION REPORT: \n\n");
 

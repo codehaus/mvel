@@ -1,21 +1,3 @@
-/**
- * MVEL (The MVFLEX Expression Language)
- *
- * Copyright (C) 2007 Christopher Brock, MVFLEX/Valhalla Project and the Codehaus
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
 package org.mvel.math;
 
 import org.mvel.CompileException;
@@ -24,19 +6,10 @@ import static org.mvel.DataConversion.convert;
 import org.mvel.DataTypes;
 import static org.mvel.DataTypes.EMPTY;
 import org.mvel.Operator;
-import static org.mvel.Soundex.soundex;
 import static org.mvel.Operator.GTHAN;
 import static org.mvel.Operator.GETHAN;
 import static org.mvel.Operator.LTHAN;
 import static org.mvel.Operator.LETHAN;
-import static org.mvel.Operator.BW_AND;
-import static org.mvel.Operator.BW_OR;
-import static org.mvel.Operator.BW_SHIFT_LEFT;
-import static org.mvel.Operator.BW_SHIFT_RIGHT;
-import static org.mvel.Operator.BW_USHIFT_RIGHT;
-import static org.mvel.Operator.BW_XOR;
-import static org.mvel.Operator.BW_USHIFT_LEFT;
-import static org.mvel.Operator.SOUNDEX;
 import static org.mvel.util.ParseTools.resolveType;
 import static org.mvel.util.PropertyTools.isNumber;
 
@@ -185,9 +158,6 @@ public class JDK14CompatabilityMath implements MathProcessor {
                     return Boolean.FALSE;
                 }
 
-
-            case SOUNDEX:
-                return soundex(String.valueOf(val1)).equals(soundex(String.valueOf(val2)));
         }
 
         throw new CompileException("could not perform numeric operation on non-numeric types: left-type="
@@ -246,18 +216,6 @@ public class JDK14CompatabilityMath implements MathProcessor {
                     case Operator.NEQUAL:
                         return ((Integer) val1).intValue() != ((Integer) val2).intValue() ? Boolean.TRUE : Boolean.FALSE;
 
-                    case BW_AND:
-                        return (Integer) val1 & (Integer) val2;
-                    case BW_OR:
-                        return (Integer) val1 | (Integer) val2;
-                    case BW_SHIFT_LEFT:
-                        return (Integer) val1 << (Integer) val2;
-                    case BW_SHIFT_RIGHT:
-                        return (Integer) val1 >> (Integer) val2;
-                    case BW_USHIFT_RIGHT:
-                        return (Integer) val1 >>> (Integer) val2;
-                    case BW_XOR:
-                        return (Integer) val1 ^ (Integer) val2;
                 }
 
             case DataTypes.SHORT:
@@ -290,20 +248,6 @@ public class JDK14CompatabilityMath implements MathProcessor {
                         return ((Short) val1).shortValue() == ((Short) val2).shortValue() ? Boolean.TRUE : Boolean.FALSE;
                     case Operator.NEQUAL:
                         return ((Short) val1).shortValue() != ((Short) val2).shortValue() ? Boolean.TRUE : Boolean.FALSE;
-
-
-                    case BW_AND:
-                        return (Short) val1 & (Short) val2;
-                    case BW_OR:
-                        return (Short) val1 | (Short) val2;
-                    case BW_SHIFT_LEFT:
-                        return (Short) val1 << (Short) val2;
-                    case BW_SHIFT_RIGHT:
-                        return (Short) val1 >> (Short) val2;
-                    case BW_USHIFT_RIGHT:
-                        return (Short) val1 >>> (Short) val2;
-                    case BW_XOR:
-                        return (Short) val1 ^ (Short) val2;
                 }
 
             case DataTypes.LONG:
@@ -336,22 +280,6 @@ public class JDK14CompatabilityMath implements MathProcessor {
                         return ((Long) val1).longValue() == ((Long) val2).longValue() ? Boolean.TRUE : Boolean.FALSE;
                     case Operator.NEQUAL:
                         return ((Long) val1).longValue() != ((Long) val2).longValue() ? Boolean.TRUE : Boolean.FALSE;
-
-                    case BW_AND:
-                        return (Long) val1 & (Long) val2;
-                    case BW_OR:
-                        return (Long) val1 | (Long) val2;
-                    case BW_SHIFT_LEFT:
-                        return (Long) val1 << (Long) val2;
-                    case BW_USHIFT_LEFT:
-                        throw new UnsupportedOperationException("unsigned left-shift not supported");
-
-                    case BW_SHIFT_RIGHT:
-                        return (Long) val1 >> (Long) val2;
-                    case BW_USHIFT_RIGHT:
-                        return (Long) val1 >>> (Long) val2;
-                    case BW_XOR:
-                        return (Long) val1 ^ (Long) val2;
                 }
 
             case DataTypes.DOUBLE:
@@ -382,14 +310,6 @@ public class JDK14CompatabilityMath implements MathProcessor {
                         return ((Double) val1).doubleValue() == ((Double) val2).doubleValue() ? Boolean.TRUE : Boolean.FALSE;
                     case Operator.NEQUAL:
                         return ((Double) val1).doubleValue() != ((Double) val2).doubleValue() ? Boolean.TRUE : Boolean.FALSE;
-
-                    case BW_AND:
-                    case BW_OR:
-                    case BW_SHIFT_LEFT:
-                    case BW_SHIFT_RIGHT:
-                    case BW_USHIFT_RIGHT:
-                    case BW_XOR:
-                        throw new CompileException("bitwise operation on a non-fixed-point number.");
                 }
 
             case DataTypes.FLOAT:
@@ -420,14 +340,6 @@ public class JDK14CompatabilityMath implements MathProcessor {
                         return ((Float) val1).floatValue() == ((Float) val2).floatValue() ? Boolean.TRUE : Boolean.FALSE;
                     case Operator.NEQUAL:
                         return ((Float) val1).floatValue() != ((Float) val2).floatValue() ? Boolean.TRUE : Boolean.FALSE;
-
-                    case BW_AND:
-                    case BW_OR:
-                    case BW_SHIFT_LEFT:
-                    case BW_SHIFT_RIGHT:
-                    case BW_USHIFT_RIGHT:
-                    case BW_XOR:
-                        throw new CompileException("bitwise operation on a non-fixed-point number.");
                 }
 
 
@@ -459,13 +371,6 @@ public class JDK14CompatabilityMath implements MathProcessor {
                     case Operator.NEQUAL:
                         return ((BigInteger) val1).compareTo(((BigInteger) val2)) != 0 ? Boolean.TRUE : Boolean.FALSE;
 
-                    case BW_AND:
-                    case BW_OR:
-                    case BW_SHIFT_LEFT:
-                    case BW_SHIFT_RIGHT:
-                    case BW_USHIFT_RIGHT:
-                    case BW_XOR:
-                        throw new CompileException("bitwise operation on a number greater than 32-bits not possible");
                 }
 
             default:
@@ -508,4 +413,5 @@ public class JDK14CompatabilityMath implements MathProcessor {
 
         throw new ConversionException("cannot convert <" + in + "> to a numeric type");
     }
+
 }

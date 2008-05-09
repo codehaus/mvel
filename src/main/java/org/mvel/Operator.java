@@ -19,8 +19,6 @@
 package org.mvel;
 
 public interface Operator {
-    public static final int NOOP = -1;
-
     /**
      * The index positions of the operator precedence values
      * correspond to the actual operator itself. So ADD is PTABLE[0],
@@ -128,9 +126,13 @@ public interface Operator {
     public static final int IMPORT_STATIC = 95;
     public static final int IMPORT = 96;
     public static final int ASSERT = 97;
-    public static final int UNTYPED_VAR = 98;
+    public static final int TYPED_VAR = 98;
     public static final int RETURN = 99;
 
     public static final int FUNCTION = 100;
-    
+
+    public static final int STK_SWAP = 200;
+    public static final int STK_XSWAP = 201;
+    public static final int STK_X2SWAP = 202;
+
 }

@@ -1,25 +1,9 @@
-/**
- * MVEL (The MVFLEX Expression Language)
- *
- * Copyright (C) 2007 Christopher Brock, MVFLEX/Valhalla Project and the Codehaus
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
 package org.mvel.ast;
 
+import org.mvel.ASTNode;
+import org.mvel.ExecutableStatement;
 import org.mvel.MVEL;
-import org.mvel.compiler.ExecutableStatement;
+import static org.mvel.MVEL.eval;
 import org.mvel.integration.VariableResolverFactory;
 import static org.mvel.util.ParseTools.subCompileExpression;
 
@@ -28,27 +12,23 @@ public class Substatement extends ASTNode {
 
     public Substatement(char[] expr, int fields) {
         this.name = expr;
+        this.fields = fields;
 
-        if (((this.fields = fields) & COMPILE_IMMEDIATE) != 0) {
+        if ((fields & COMPILE_IMMEDIATE) != 0) {
             this.statement = (ExecutableStatement) subCompileExpression(this.name);
             this.egressType = this.statement.getKnownEgressType();
         }
     }
 
     public Object getReducedValueAccelerated(Object ctx, Object thisValue, VariableResolverFactory factory) {
-        return statement.getValue(ctx, thisValue, factory);
+        return valRet(statement.getValue(ctx, thisValue, factory));
     }
 
     public Object getReducedValue(Object ctx, Object thisValue, VariableResolverFactory factory) {
-        return (MVEL.eval(this.name, ctx, factory));
+        return valRet(eval(this.name, ctx, factory));
     }
-
 
     public ExecutableStatement getStatement() {
         return statement;
-    }
-
-    public String toString() {
-        return "(" + new String(name) + ")";
     }
 }

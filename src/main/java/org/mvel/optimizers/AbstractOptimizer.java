@@ -1,29 +1,10 @@
-/**
- * MVEL (The MVFLEX Expression Language)
- *
- * Copyright (C) 2007 Christopher Brock, MVFLEX/Valhalla Project and the Codehaus
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
 package org.mvel.optimizers;
 
-import org.mvel.compiler.AbstractParser;
+import org.mvel.AbstractParser;
 import static org.mvel.util.PropertyTools.isIdentifierPart;
 
-import static org.mvel.util.ParseTools.isWhitespace;
+import static java.lang.Character.isWhitespace;
 import static java.lang.Thread.currentThread;
-import java.lang.reflect.Method;
 
 /**
  * @author Christopher Brock
@@ -60,17 +41,10 @@ public class AbstractOptimizer extends AbstractParser {
                                 return currentThread().getContextClassLoader().loadClass(new String(expr, 0, last));
                             }
                             catch (ClassNotFoundException e) {
-                                Class cls = currentThread().getContextClassLoader().loadClass(new String(expr, 0, i));
-                                String name = new String(expr, i + 1, expr.length - i - 1);
-                                try {
-                                    return cls.getField(name);
-                                }
-                                catch (NoSuchFieldException nfe) {
-                                    for (Method m : cls.getMethods()) {
-                                        if (name.equals(m.getName())) return m;
-                                    }
-                                    return null;
-                                }
+                                // return a field instead
+
+                                return currentThread().getContextClassLoader().loadClass(new String(expr, 0, i))
+                                        .getField(new String(expr, i + 1, expr.length - i - 1));
                             }
                         }
 
@@ -118,11 +92,8 @@ public class AbstractOptimizer extends AbstractParser {
                 return COL;
             case '.':
                 skipWhitespace();
-                if ((start+1) != length && expr[cursor = ++start] == '?') {
-                    cursor = ++start;
-                    fields = -1;
-                }
-                break;
+                cursor = ++start;
+
         }
 
         //noinspection StatementWithEmptyBody
@@ -136,7 +107,7 @@ public class AbstractOptimizer extends AbstractParser {
                 case '(':
                     return METH;
                 default:
-                    return BEAN;
+                    return 0;
             }
         }
 

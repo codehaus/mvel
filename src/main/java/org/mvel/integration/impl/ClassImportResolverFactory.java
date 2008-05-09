@@ -23,7 +23,6 @@ import org.mvel.integration.VariableResolverFactory;
 import static org.mvel.util.ParseTools.createClass;
 import static org.mvel.util.ParseTools.getSimpleClassName;
 import org.mvel.ParserContext;
-import org.mvel.ParserConfiguration;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -39,7 +38,7 @@ public class ClassImportResolverFactory extends BaseVariableResolverFactory {
         variableResolvers = new HashMap<String, VariableResolver>();
     }
 
-    public ClassImportResolverFactory(ParserConfiguration ctx, VariableResolverFactory nextFactory) {
+    public ClassImportResolverFactory(ParserContext ctx, VariableResolverFactory nextFactory) {
         packageImports = ctx.getPackageImports();
         Map<String, Object> classes = ctx.getImports();
 
@@ -89,9 +88,6 @@ public class ClassImportResolverFactory extends BaseVariableResolverFactory {
                     return true;
                 }
                 catch (ClassNotFoundException e) {
-                    // do nothing;
-                }
-                catch (NoClassDefFoundError e) {
                     // do nothing;
                 }
             }

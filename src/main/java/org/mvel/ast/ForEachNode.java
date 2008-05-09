@@ -1,33 +1,13 @@
-/**
- * MVEL (The MVFLEX Expression Language)
- *
- * Copyright (C) 2007 Christopher Brock, MVFLEX/Valhalla Project and the Codehaus
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
 package org.mvel.ast;
 
 import org.mvel.CompileException;
+import org.mvel.ExecutableStatement;
 import org.mvel.MVEL;
-import org.mvel.compiler.ExecutableStatement;
 import org.mvel.integration.VariableResolverFactory;
 import org.mvel.integration.impl.DefaultLocalVariableResolverFactory;
 import org.mvel.integration.impl.ItemResolverFactory;
 import static org.mvel.util.ParseTools.subCompileExpression;
 import static org.mvel.util.ParseTools.subset;
-import org.mvel.util.PropertyTools;
-import static org.mvel.util.PropertyTools.createStringTrimmed;
 
 /**
  * @author Christopher Brock
@@ -40,20 +20,13 @@ public class ForEachNode extends BlockNode {
     protected ExecutableStatement compiledBlock;
 
     public ForEachNode(char[] condition, char[] block, int fields) {
-        //    super(condition, fields);
-
-        this.fields = fields;
-
-        handleCond(this.name = condition);
-
-        this.block = block;
-
-        if ((fields & COMPILE_IMMEDIATE) != 0) {
-            this.compiledBlock = (ExecutableStatement) subCompileExpression(block);
-        }
+        super(condition, fields);
+        handleCond(condition);
+        this.compiledBlock = (ExecutableStatement) subCompileExpression(this.block = block);
     }
 
     public Object getReducedValueAccelerated(Object ctx, Object thisValue, VariableResolverFactory factory) {
+        //   Object ret = null;
 
         ItemResolverFactory.ItemResolver itemR = new ItemResolverFactory.ItemResolver(item);
         ItemResolverFactory itemFactory = new ItemResolverFactory(itemR, new DefaultLocalVariableResolverFactory(factory));
@@ -93,36 +66,35 @@ public class ForEachNode extends BlockNode {
     }
 
     public Object getReducedValue(Object ctx, Object thisValue, VariableResolverFactory factory) {
+
         ItemResolverFactory.ItemResolver itemR = new ItemResolverFactory.ItemResolver(item);
         ItemResolverFactory itemFactory = new ItemResolverFactory(itemR, new DefaultLocalVariableResolverFactory(factory));
 
         Object iterCond = MVEL.eval(cond, thisValue, factory);
 
-        ExecutableStatement cBlockLocal = (ExecutableStatement) subCompileExpression(block);
-
         if (iterCond instanceof Iterable) {
             for (Object o : (Iterable) iterCond) {
                 itemR.setValue(o);
-                cBlockLocal.getValue(ctx, thisValue, itemFactory);
+                compiledBlock.getValue(ctx, thisValue, itemFactory);
             }
         }
         else if (iterCond instanceof Object[]) {
             for (Object o : (Object[]) iterCond) {
                 itemR.setValue(o);
-                cBlockLocal.getValue(ctx, thisValue, itemFactory);
+                compiledBlock.getValue(ctx, thisValue, itemFactory);
             }
         }
         else if (iterCond instanceof CharSequence) {
             for (Object o : iterCond.toString().toCharArray()) {
                 itemR.setValue(o);
-                cBlockLocal.getValue(ctx, thisValue, itemFactory);
+                compiledBlock.getValue(ctx, thisValue, itemFactory);
             }
         }
         else if (iterCond instanceof Integer) {
             int max = (Integer) iterCond + 1;
             for (int i = 1; i != max; i++) {
                 itemR.setValue(i);
-                cBlockLocal.getValue(ctx, thisValue, itemFactory);
+                compiledBlock.getValue(ctx, thisValue, itemFactory);
             }
         }
         else {
@@ -139,11 +111,8 @@ public class ForEachNode extends BlockNode {
         if (cursor == condition.length || condition[cursor] != ':')
             throw new CompileException("expected : in foreach");
 
-        item = createStringTrimmed(condition, 0, cursor);
-        this.cond = subset(condition, ++cursor);
+        item = new String(condition, 0, cursor).trim();
 
-        if ((fields & COMPILE_IMMEDIATE) != 0) {
-            this.condition = (ExecutableStatement) subCompileExpression(this.cond);
-        }
+        this.condition = (ExecutableStatement) subCompileExpression(this.cond = subset(condition, ++cursor));
     }
 }

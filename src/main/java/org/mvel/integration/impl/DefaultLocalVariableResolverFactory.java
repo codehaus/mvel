@@ -26,6 +26,4 @@ public class DefaultLocalVariableResolverFactory extends MapVariableResolverFact
     public DefaultLocalVariableResolverFactory(VariableResolverFactory nextFactory) {
         super(new HashMap<String, Object>(), nextFactory);
     }
-
-
 }

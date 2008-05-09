@@ -1,33 +1,18 @@
-/**
- * MVEL (The MVFLEX Expression Language)
- *
- * Copyright (C) 2007 Christopher Brock, MVFLEX/Valhalla Project and the Codehaus
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
 package org.mvel.util;
 
+import org.mvel.ASTLinkedList;
+import org.mvel.ASTNode;
 import org.mvel.Operator;
 import org.mvel.debug.DebugTools;
 import static org.mvel.Operator.PTABLE;
-import org.mvel.compiler.CompiledExpression;
-import org.mvel.ast.*;
-
-import java.util.Map;
-import java.util.LinkedHashMap;
+import org.mvel.ast.And;
+import org.mvel.ast.BinaryOperation;
+import org.mvel.ast.EndOfStatement;
+import org.mvel.ast.Or;
 
 public class CompilerTools {
+
+
     /**
      * Optimize the AST, by reducing any stack-based-operations to dedicated nodes where possible.
      *
@@ -35,7 +20,7 @@ public class CompilerTools {
      * @param secondPassOptimization - perform a second pass optimization to optimize boolean expressions.
      * @return optimized AST
      */
-      public static ASTLinkedList optimizeAST(ASTLinkedList astLinkedList, boolean secondPassOptimization) {
+    public static ASTLinkedList optimizeAST(ASTLinkedList astLinkedList, boolean secondPassOptimization) {
         ASTLinkedList optimizedAst = new ASTLinkedList();
         ASTNode tk, tkOp, tkOp2;
 
@@ -77,7 +62,7 @@ public class CompilerTools {
                             bo.setRight(new BinaryOperation(op2, bo.getRight(), astLinkedList.nextNode()));
                         }
                         else {
-               //             System.out.println(DebugTools.getOperatorName(op2) + " < " + DebugTools.getOperatorName(op));
+                            System.out.println(DebugTools.getOperatorName(op2) + " < " + DebugTools.getOperatorName(op));
                             bo = new BinaryOperation(op2, bo, astLinkedList.nextNode());
                         }
 
@@ -182,23 +167,23 @@ public class CompilerTools {
         return optimizedAst;
     }
 
-    /**
-     * Returns an ordered Map of all functions declared within an compiled script.
-     *
-     * @param compile
-     * @return - ordered Map
-     */
-    public static Map<String, Function> extractAllDeclaredFunctions(CompiledExpression compile) {
-        Map<String, Function> allFunctions = new LinkedHashMap<String, Function>();
-        ASTIterator instructions = new ASTLinkedList(compile.getInstructions());
+    public static boolean isOperator(char item) {
+        switch (item) {
+            case'+':
+            case'-':
+            case'*':
+            case'/':
+            case'&':
+            case'|':
+            case'^':
+            case'.':
+            case'>':
+            case'<':
 
-        ASTNode n;
-        while (instructions.hasMoreNodes()) {
-            if ((n = instructions.nextNode()) instanceof Function) {
-                allFunctions.put(n.getName(), (Function) n);
-            }
+                return true;
+            default:
+                return false;
         }
-
-        return allFunctions;
     }
+
 }
