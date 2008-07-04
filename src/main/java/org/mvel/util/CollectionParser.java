@@ -1,27 +1,8 @@
-/**
- * MVEL (The MVFLEX Expression Language)
- *
- * Copyright (C) 2007 Christopher Brock, MVFLEX/Valhalla Project and the Codehaus
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
 package org.mvel.util;
 
 import static org.mvel.util.ParseTools.balancedCapture;
-import static org.mvel.util.PropertyTools.createStringTrimmed;
 
-import static org.mvel.util.ParseTools.isWhitespace;
+import static java.lang.Character.isWhitespace;
 import static java.lang.System.arraycopy;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -124,13 +105,17 @@ public class CollectionParser {
                     continue;
 
                 case '(':
-                    cursor = balancedCapture(property, cursor, property[cursor]);
+                    if ((cursor = balancedCapture(property, cursor, property[cursor])) == -1) {
+                        throw new RuntimeException("unbalanced braces inside inline collection");
+                    }
 
                     break;
 
                 case '\"':
                 case '\'':
-                    cursor = balancedCapture(property, cursor, property[cursor]);
+                    if ((cursor = balancedCapture(property, cursor, property[cursor])) == -1) {
+                        throw new RuntimeException("unterminated string literal starting at index " + start + " {" + property[start] + "}: " + new String(property));
+                    }
 
                     break;
 
@@ -139,7 +124,7 @@ public class CollectionParser {
                         list.add(new String(property, start, cursor - start));
                     }
                     else {
-                        map.put(curr, createStringTrimmed(property, start, cursor - start));
+                        map.put(curr, new String(property, start, cursor - start).trim());
                     }
 
                     start = cursor + 1;
@@ -151,7 +136,7 @@ public class CollectionParser {
                         map = new HashMap<Object, Object>();
                         type = MAP;
                     }
-                    curr = createStringTrimmed(property, start, cursor - start);
+                    curr = new String(property, start, cursor - start).trim();
 
                     start = cursor + 1;
                     break;
@@ -162,11 +147,11 @@ public class CollectionParser {
             if (cursor < (length - 1)) cursor++;
 
             if (type == MAP) {
-                map.put(curr, createStringTrimmed(property, start, cursor - start));
+                map.put(curr, new String(property, start, cursor - start).trim());
             }
             else {
                 if (cursor < length) cursor++;
-                list.add(createStringTrimmed(property, start, cursor - start));
+                list.add(new String(property, start, cursor - start).trim());
             }
         }
 
@@ -185,11 +170,7 @@ public class CollectionParser {
             start++;
 
         char[] newA = new char[end - start];
-        //arraycopy(property, start, newA, 0, end - start);
-        for (int i = 0; i < newA.length; i++) {
-            newA[i] = property[i + start];
-        }
-
+        arraycopy(property, start, newA, 0, end - start);
         return newA;
     }
 

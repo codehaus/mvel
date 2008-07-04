@@ -16,9 +16,10 @@
  * limitations under the License.
  *
  */
+
 package org.mvel.optimizers.impl.refl;
 
-import org.mvel.compiler.AccessorNode;
+import org.mvel.AccessorNode;
 import org.mvel.integration.VariableResolverFactory;
 
 import java.util.Map;

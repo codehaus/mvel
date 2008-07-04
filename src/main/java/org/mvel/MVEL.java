@@ -21,33 +21,30 @@ package org.mvel;
 
 import static org.mvel.DataConversion.convert;
 import static org.mvel.MVELRuntime.execute;
-import org.mvel.compiler.*;
 import org.mvel.integration.Interceptor;
 import org.mvel.integration.VariableResolverFactory;
 import org.mvel.integration.impl.MapVariableResolverFactory;
 import org.mvel.optimizers.impl.refl.GetterAccessor;
 import org.mvel.optimizers.impl.refl.ReflectiveAccessorOptimizer;
-import static org.mvel.util.ParseTools.*;
+import org.mvel.util.ParseTools;
+import static org.mvel.util.ParseTools.handleParserEgress;
 
-import java.io.File;
-import java.io.IOException;
 import java.io.Serializable;
 import static java.lang.Boolean.getBoolean;
 import static java.lang.String.valueOf;
-import java.util.HashMap;
 import java.util.Map;
 
 public class MVEL {
     public static final String NAME = "MVEL (MVFLEX Expression Language)";
-    public static final String VERSION = "2.0";
-    public static final String VERSION_SUB = "pre-alpha2";
-    public static final String CODENAME = "enceladus";
+    public static final String VERSION = "1.3";
+    public static final String VERSION_SUB = "5";
+    public static final String CODENAME = "horizon";
 
     static boolean DEBUG_FILE = getBoolean("mvel.debug.fileoutput");
     static String ADVANCED_DEBUGGING_FILE = System.getProperty("mvel.debugging.file") == null ? "mvel_debug.txt"
             : System.getProperty("mvel.debugging.file");
     static boolean ADVANCED_DEBUG = getBoolean("mvel.advanced_debugging");
-    public static boolean THREAD_SAFE = getBoolean("mvel.threadsafety");
+    static boolean THREAD_SAFE = getBoolean("mvel.threadsafety");
     static boolean WEAK_CACHE = getBoolean("mvel.weak_caching");
     static boolean NO_JIT = getBoolean("mvel.disable.jit");
 
@@ -68,6 +65,7 @@ public class MVEL {
     public static void setThreadSafe(boolean threadSafe) {
         THREAD_SAFE = threadSafe;
         PropertyAccessor.configureFactory();
+        TemplateInterpreter.configureFactory();
         MVELInterpretedRuntime.configureFactory();
     }
 
@@ -133,9 +131,10 @@ public class MVEL {
     public static Serializable compileExpression(String expression, Map<String, Object> imports,
                                                  Map<String, Interceptor> interceptors, String sourceName) {
 
-        return optimizeTree(new ExpressionCompiler(expression)
+        return ParseTools.optimizeTree(new ExpressionCompiler(expression)
                 .compile(new ParserContext(imports, interceptors, sourceName)));
     }
+
 
     /**
      * Compiles an expression and returns a Serializable object containing the compiled
@@ -148,6 +147,7 @@ public class MVEL {
         return compileExpression(expression, null, null, null);
     }
 
+
     public static Serializable compileExpression(String expression, Map<String, Object> imports) {
         return compileExpression(expression, imports, null, null);
     }
@@ -156,6 +156,7 @@ public class MVEL {
         return compileExpression(expression, imports, interceptors, null);
     }
 
+
     /**
      * Compiles an expression and returns a Serializable object containing the compiled
      * expression.
@@ -163,13 +164,13 @@ public class MVEL {
      * @param expression   - the expression to be compiled
      * @param imports      -
      * @param interceptors -
-     * @param sourceName -
      * @return -
      */
     public static Serializable compileExpression(char[] expression, Map<String, Object> imports,
                                                  Map<String, Interceptor> interceptors, String sourceName) {
-        return optimizeTree(new ExpressionCompiler(expression).compile(new ParserContext(imports, interceptors, sourceName)));
+        return ParseTools.optimizeTree(new ExpressionCompiler(expression).compile(new ParserContext(imports, interceptors, sourceName)));
     }
+
 
     public static Serializable compileExpression(char[] expression) {
         return compileExpression(expression, null, null, null);
@@ -198,6 +199,7 @@ public class MVEL {
     public static void executeSetExpression(Serializable compiledSet, Object ctx, VariableResolverFactory vrf, Object value) {
         ((CompiledSetExpression) compiledSet).setValue(ctx, vrf, value);
     }
+
 
     public static Object executeExpression(Object compiledExpression) {
         try {
@@ -488,31 +490,6 @@ public class MVEL {
             return valueOf(handleParserEgress(end.getValue(), false));
         }
     }
-
-    public static Object evalFile(File file) throws IOException {
-        return _evalFile(file, null, new MapVariableResolverFactory(new HashMap()));
-    }
-
-    public static Object evalFile(File file, Object ctx) throws IOException {
-        return _evalFile(file, ctx, new MapVariableResolverFactory(new HashMap()));
-    }
-
-    public static Object evalFile(File file, Map vars) throws IOException {
-        return evalFile(file, null, vars);
-    }
-
-    public static Object evalFile(File file, Object ctx, Map vars) throws IOException {
-        return _evalFile(file, ctx, new MapVariableResolverFactory(vars));
-    }
-
-    public static Object evalFile(File file, Object ctx, VariableResolverFactory factory) throws IOException {
-        return _evalFile(file, ctx, factory);
-    }
-
-    private static Object _evalFile(File file, Object ctx, VariableResolverFactory factory) throws IOException {
-        return eval(loadFromFile(file), ctx, factory);
-    }
-
 
     /**
      * Evaluate an expression in Boolean-only mode.

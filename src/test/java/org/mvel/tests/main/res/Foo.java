@@ -56,6 +56,7 @@ public class Foo {
         this.collectionTest = collectionTest;
     }
 
+
     public int getCountTest() {
         return countTest;
     }
