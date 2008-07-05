@@ -65,8 +65,4 @@ public class Bar {
     public static int staticMethod() {
         return 1;
     }
-
-    public boolean equals(Object o) {
-        return o instanceof Bar;
-    }
 }

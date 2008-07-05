@@ -1,36 +1,13 @@
-/**
- * MVEL (The MVFLEX Expression Language)
- *
- * Copyright (C) 2007 Christopher Brock, MVFLEX/Valhalla Project and the Codehaus
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
 package org.mvel.debug;
 
-import org.mvel.Operator;
+import org.mvel.*;
 import static org.mvel.Operator.ADD;
 import static org.mvel.Operator.SUB;
-import org.mvel.ast.ASTNode;
 import org.mvel.ast.BinaryOperation;
 import org.mvel.ast.NestedStatement;
 import org.mvel.ast.Substatement;
-import org.mvel.compiler.CompiledExpression;
-import org.mvel.compiler.ExecutableAccessor;
-import org.mvel.compiler.ExecutableLiteral;
 import org.mvel.integration.VariableResolver;
 import org.mvel.integration.VariableResolverFactory;
-import org.mvel.util.ASTIterator;
 import static org.mvel.util.ParseTools.getSimpleClassName;
 
 import java.io.Serializable;
@@ -61,10 +38,10 @@ public class DebugTools {
     }
 
     private static String decompile(CompiledExpression cExp, boolean nest, DecompileContext context) {
-        ASTIterator iter = cExp.getInstructions();
+        ASTIterator iter = cExp.getTokens();
         ASTNode tk;
 
-        //   int node = 0;
+     //   int node = 0;
 
         StringBuffer sbuf = new StringBuffer();
 
@@ -106,9 +83,9 @@ public class DebugTools {
                 sbuf.append("REFERENCE :: ").append(getSimpleClassName(tk.getClass())).append(":").append(tk.getName());
             }
             else if (tk instanceof BinaryOperation) {
-                BinaryOperation bo = (BinaryOperation) tk;
-                sbuf.append("OPERATION [" + getOperatorName(bo.getOperation()) + "] {").append(bo.getLeft().getName())
-                        .append("} {").append(bo.getRight().getName()).append("}");
+               BinaryOperation bo = (BinaryOperation) tk;
+               sbuf.append("OPERATION [" + getOperatorName(bo.getOperation()) + "] {").append(bo.getLeft().getName())
+                       .append("} {").append(bo.getRight().getName()).append("}");
             }
             else {
                 //noinspection StringConcatenationInsideStringBufferAppend
@@ -124,120 +101,6 @@ public class DebugTools {
         return sbuf.toString();
     }
 
-
-    public static String getOperatorSymbol(int operator) {
-             switch (operator) {
-            case ADD:
-                return "+";
-            case SUB:
-                return "-";
-            case Operator.ASSIGN:
-                return "=";
-            case Operator.ASSIGN_ADD:
-                return "=+";
-            case Operator.ASSIGN_STR_APPEND:
-                return "=+";
-            case Operator.ASSIGN_SUB:
-                return "=";
-            case Operator.BW_AND:
-                return "&";
-            case Operator.BW_OR:
-                return "|";
-            case Operator.BW_SHIFT_LEFT:
-                return "<<";
-            case Operator.BW_SHIFT_RIGHT:
-                return ">>";
-            case Operator.BW_USHIFT_LEFT:
-                return "<<<";
-            case Operator.BW_USHIFT_RIGHT:
-                return ">>>";
-            case Operator.BW_XOR:
-                return "^";
-            case Operator.CONTAINS:
-                return "contains";
-            case Operator.CONVERTABLE_TO:
-                return "convertable_to";
-            case Operator.DEC:
-                return "--";
-            case Operator.DEC_ASSIGN:
-                return "++";
-            case Operator.DIV:
-                return "/";
-            case Operator.DO:
-                return "do";
-            case Operator.ELSE:
-                return "else";
-            case Operator.END_OF_STMT:
-                return ";";
-            case Operator.EQUAL:
-                return "==";
-            case Operator.FOR:
-                return "for";
-            case Operator.FOREACH:
-                return "foreach";
-            case Operator.FUNCTION:
-                return "function";
-            case Operator.GETHAN:
-                return ">=";
-            case Operator.GTHAN:
-                return ">";
-            case Operator.IF:
-                return "if";
-            case Operator.INC:
-                return "++";
-            case Operator.INC_ASSIGN:
-                return "++";
-            case Operator.INSTANCEOF:
-                return "instanceof";
-            case Operator.LETHAN:
-                return "<=";
-            case Operator.LTHAN:
-                return "<";
-            case Operator.MOD:
-                return "%";
-            case Operator.MULT:
-                return "*";
-            case Operator.NEQUAL:
-                return "!=";
-            case Operator.NEW:
-                return "new";
-
-            case Operator.AND:
-                return "&&";
-
-            case Operator.OR:
-                return "||";
-            case Operator.POWER:
-                return "**";
-            case Operator.PROJECTION:
-                return "PROJECT";
-            case Operator.REGEX:
-                return "REGEX";
-            case Operator.RETURN:
-                return "RETURN";
-            case Operator.SIMILARITY:
-                return "SIMILARITY";
-            case Operator.SOUNDEX:
-                return "SOUNDEX";
-            case Operator.STR_APPEND:
-                return "+";
-            case Operator.SWITCH:
-                return "SWITCH";
-            case Operator.TERNARY:
-                return "TERNARY_IF";
-            case Operator.TERNARY_ELSE:
-                return "TERNARY_ELSE";
-            case Operator.WHILE:
-                return "while";
-            case Operator.CHOR:
-                return "or";
-
-
-        }
-
-
-        return "UNKNOWN_OPERATOR";
-    }
 
     public static String getOperatorName(int operator) {
         switch (operator) {
@@ -315,10 +178,6 @@ public class DebugTools {
                 return "NOT_EQUAL";
             case Operator.NEW:
                 return "NEW_OBJECT";
-
-            case Operator.AND:
-                return "AND";
-
             case Operator.OR:
                 return "OR";
             case Operator.POWER:
@@ -346,7 +205,10 @@ public class DebugTools {
             case Operator.CHOR:
                 return "CHAINED_OR";
 
-
+            case Operator.STK_SWAP:
+                return "STK_SWAP";
+            case Operator.STK_XSWAP:
+                return "STK_XSWAP";
         }
 
 

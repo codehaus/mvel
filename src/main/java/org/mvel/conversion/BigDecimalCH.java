@@ -44,7 +44,7 @@ public class BigDecimalCH implements ConversionHandler {
     }
 
     static {
-        CNV.put(Object.class,
+         CNV.put(Object.class,
                 new Converter() {
                     public BigDecimal convert(Object o) {
                         return new BigDecimal(String.valueOf(o));

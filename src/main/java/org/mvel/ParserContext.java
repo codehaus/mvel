@@ -1,12 +1,13 @@
 package org.mvel;
 
-import org.mvel.ast.Function;
 import org.mvel.ast.LineLabel;
 import org.mvel.integration.Interceptor;
 import org.mvel.util.MethodStub;
 import static org.mvel.util.ParseTools.getSimpleClassName;
+import static org.mvel.util.PropertyTools.contains;
 
 import java.io.Serializable;
+import static java.lang.Thread.currentThread;
 import java.lang.reflect.Method;
 import java.util.*;
 
@@ -20,12 +21,13 @@ public class ParserContext implements Serializable {
     private int lineCount = 1;
     private int lineOffset;
 
-    private ParserConfiguration parserConfiguration = new ParserConfiguration();
+    protected Map<String, Object> imports;
+    protected Set<String> packageImports;
 
-    private ArrayList<String> indexedVariables;
+    protected Map<String, Interceptor> interceptors;
+
     private Map<String, Class> variables;
     private Map<String, Class> inputs;
-    private Map<String, Function> globalFunctions;
 
     private List<ErrorDetail> errorList;
 
@@ -36,14 +38,12 @@ public class ParserContext implements Serializable {
 
     private boolean compiled = false;
     private boolean strictTypeEnforcement = false;
-    private boolean strongTyping = false;
-
     private boolean fatalError = false;
     private boolean retainParserState = false;
     private boolean debugSymbols = false;
     private boolean blockSymbols = false;
     private boolean executableCodeReached = false;
-    private boolean indexAllocation = false;
+
 
     public ParserContext() {
     }
@@ -56,13 +56,14 @@ public class ParserContext implements Serializable {
         this.rootParser = rootParser;
     }
 
-    public ParserContext(ParserConfiguration parserConfiguration) {
-        this.parserConfiguration = parserConfiguration;
+    public ParserContext(Map<String, Object> imports, Map<String, Interceptor> interceptors, String sourceFile) {
+        setImports(imports);
+        this.interceptors = interceptors;
+        this.sourceFile = sourceFile;
     }
 
-    public ParserContext(Map<String, Object> imports, Map<String, Interceptor> interceptors, String sourceFile) {
-        this.sourceFile = sourceFile;
-        this.parserConfiguration = new ParserConfiguration(imports, interceptors);
+    public boolean hasVariable(String name) {
+        return (variables != null && variables.containsKey(name));
     }
 
     public boolean hasVarOrInput(String name) {
@@ -90,10 +91,6 @@ public class ParserContext implements Serializable {
         return this.lineCount = (short) lineCount;
     }
 
-    public int incrementLineCount(int increment) {
-        return this.lineCount += increment;
-    }
-
     public int getLineOffset() {
         return lineOffset;
     }
@@ -108,26 +105,61 @@ public class ParserContext implements Serializable {
     }
 
     public Class getImport(String name) {
-        //   return (imports != null && imports.containsKey(name) ? (Class) imports.get(name) : (Class) AbstractParser.LITERALS.get(name));
-        return parserConfiguration.getImport(name);
+        return (imports != null && imports.containsKey(name) ? (Class) imports.get(name) : (Class) AbstractParser.LITERALS.get(name));
     }
 
     public MethodStub getStaticImport(String name) {
-        //return imports != null ? (MethodStub) imports.get(name) : null;
-        return parserConfiguration.getStaticImport(name);
-    }
-
-    public Object getStaticOrClassImport(String name) {
-        return parserConfiguration.getStaticOrClassImport(name);
+        return imports != null ? (MethodStub) imports.get(name) : null;
     }
 
     public void addPackageImport(String packageName) {
-        parserConfiguration.addPackageImport(packageName);
+        if (packageImports == null) packageImports = new HashSet<String>();
+        packageImports.add(packageName);
     }
 
+    private boolean checkForDynamicImport(String className) {
+        if (packageImports == null) return false;
+
+        int found = 0;
+        Class cls = null;
+        for (String pkg : packageImports) {
+            try {
+                cls = currentThread().getContextClassLoader().loadClass(pkg + "." + className);
+                found++;
+            }
+            catch (ClassNotFoundException e) {
+                // do nothing.
+            }
+            catch (NoClassDefFoundError e) {
+               if (contains(e.getMessage(), "wrong name")) {
+              //  if (e.getMessage().contains("wrong name")) {
+                    // do nothing.  this is a weirdness in the jvm.
+                    // see MVEL-43
+                }
+                else {
+                    throw e;
+                }
+            }
+        }
+
+        if (found > 1) {
+            throw new CompileException("ambiguous class name: " + className);
+        }
+        else if (found == 1) {
+            addImport(className, cls);
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
 
     public boolean hasImport(String name) {
-        return parserConfiguration.hasImport(name);
+        return (imports != null && imports.containsKey(name)) ||
+                (!"this".equals(name) && !"self".equals(name) && !"empty".equals(name) && !"null".equals(name) &&
+                        !"nil".equals(name) && !"true".equals(name) && !"false".equals(name)
+                        && AbstractParser.LITERALS.containsKey(name))
+                || checkForDynamicImport(name);
     }
 
 
@@ -136,7 +168,8 @@ public class ParserContext implements Serializable {
     }
 
     public void addImport(String name, Class cls) {
-        parserConfiguration.addImport(name, cls);
+        if (this.imports == null) this.imports = new HashMap<String, Object>();
+        this.imports.put(name, cls);
     }
 
     public void addImport(String name, Method method) {
@@ -144,48 +177,26 @@ public class ParserContext implements Serializable {
     }
 
     public void addImport(String name, MethodStub method) {
-        parserConfiguration.addImport(name, method);
+        if (this.imports == null) this.imports = new HashMap<String, Object>();
+        this.imports.put(name, method);
     }
 
     public void initializeTables() {
-        if (variables == null) variables = new LinkedHashMap<String, Class>();
-        if (inputs == null) inputs = new LinkedHashMap<String, Class>();
-    }
-
-    public void addVariable(String name, Class type, boolean failIfNewAssignment) {
-        initializeTables();
-        if (variables.containsKey(name) && failIfNewAssignment) throw new CompileException("statically-typed variable already defined in scope: " + name);
-        if (type == null) type = Object.class;
-        variables.put(name, type);
+        if (variables == null) variables = new HashMap<String, Class>();
+        if (inputs == null) inputs = new HashMap<String, Class>();
     }
 
     public void addVariable(String name, Class type) {
-        initializeTables();
         if (variables.containsKey(name)) return;
         if (type == null) type = Object.class;
         variables.put(name, type);
     }
 
-    public void addVariables(Map<String, Class> variables) {
-        if (variables == null) return;
-        initializeTables();
-        for (String name : variables.keySet()) {
-            addVariable(name, variables.get(name));
-        }
-    }
-
     public void addInput(String name, Class type) {
-        if (inputs == null) inputs = new LinkedHashMap<String, Class>();
+        if (inputs == null) inputs = new HashMap<String, Class>();
         if (inputs.containsKey(name)) return;
         if (type == null) type = Object.class;
         inputs.put(name, type);
-    }
-
-    public void addInputs(Map<String, Class> inputs) {
-        if (inputs == null) return;
-        for (String name : inputs.keySet()) {
-            addInput(name, inputs.get(name));
-        }
     }
 
     public void processTables() {
@@ -235,17 +246,6 @@ public class ParserContext implements Serializable {
         this.strictTypeEnforcement = strictTypeEnforcement;
     }
 
-    public boolean isStrongTyping() {
-        return strongTyping;
-    }
-
-    public void setStrongTyping(boolean strongTyping) {
-        if (this.strongTyping = strongTyping) {
-            // implies strict-type enforcement too
-            this.strictTypeEnforcement = true;
-        }
-    }
-
     public boolean isRetainParserState() {
         return retainParserState;
     }
@@ -272,15 +272,15 @@ public class ParserContext implements Serializable {
     }
 
     public Map<String, Interceptor> getInterceptors() {
-        return this.parserConfiguration.getInterceptors();
+        return interceptors;
     }
 
     public void setInterceptors(Map<String, Interceptor> interceptors) {
-        this.parserConfiguration.setInterceptors(interceptors);
+        this.interceptors = interceptors;
     }
 
     public Map<String, Object> getImports() {
-        return this.parserConfiguration.getImports();
+        return imports;
     }
 
     public void setImports(Map<String, Object> imports) {
@@ -333,7 +333,7 @@ public class ParserContext implements Serializable {
     }
 
     public void addKnownLine(String sourceName, int lineNumber) {
-        if (sourceMap == null) sourceMap = new LinkedHashMap<String, Set<Integer>>();
+        if (sourceMap == null) sourceMap = new HashMap<String, Set<Integer>>();
         if (!sourceMap.containsKey(sourceName)) sourceMap.put(sourceName, new HashSet<Integer>());
         sourceMap.get(sourceName).add(lineNumber);
     }
@@ -352,30 +352,9 @@ public class ParserContext implements Serializable {
     }
 
     public boolean hasImports() {
-        return parserConfiguration.hasImports();
+        return (imports != null && imports.size() != 0) || (packageImports != null && packageImports.size() != 0);
     }
 
-    public void declareFunction(Function function) {
-        if (globalFunctions == null) globalFunctions = new LinkedHashMap<String, Function>();
-        globalFunctions.put(function.getName(), function);
-    }
-
-    public Function getFunction(String name) {
-        if (globalFunctions == null) return null;
-        return globalFunctions.get(name);
-    }
-
-    public Map getFunctions() {
-        return globalFunctions;
-    }
-
-    public boolean hasFunction(String name) {
-        return globalFunctions != null && globalFunctions.containsKey(name);
-    }
-
-    public boolean hasFunction() {
-        return globalFunctions != null && globalFunctions.size() != 0;
-    }
 
     public boolean isBlockSymbols() {
         return blockSymbols;
@@ -393,53 +372,7 @@ public class ParserContext implements Serializable {
         this.executableCodeReached = executableCodeReached;
     }
 
-    private void initIndexedVariables() {
-        if (indexedVariables == null) indexedVariables = new ArrayList<String>();
-    }
-
-    public ArrayList<String> getIndexedVariables() {
-        initIndexedVariables();
-        return indexedVariables;
-    }
-
-    public void addIndexedVariables(String[] variables) {
-        initIndexedVariables();
-        for (String s : variables) {
-            if (!indexedVariables.contains(s))
-                indexedVariables.add(s);
-        }
-    }
-
-    public void addIndexedVariable(String variable) {
-        initIndexedVariables();
-        if (!indexedVariables.contains(variable)) indexedVariables.add(variable);
-    }
-
-    public void addIndexedVariables(Collection<String> variables) {
-        initIndexedVariables();
-        for (String s : variables) {
-            if (!indexedVariables.contains(s))
-                indexedVariables.add(s);
-        }
-    }
-
-    public int variableIndexOf(String name) {
-        return indexedVariables != null ? indexedVariables.indexOf(name) : -1;
-    }
-
-    public boolean hasIndexedVariables() {
-        return indexedVariables != null && indexedVariables.size() != 0;
-    }
-
-    public boolean isIndexAllocation() {
-        return indexAllocation;
-    }
-
-    public void setIndexAllocation(boolean indexAllocation) {
-        this.indexAllocation = indexAllocation;
-    }
-
-    public ParserConfiguration getParserConfiguration() {
-        return parserConfiguration;
+    public Set<String> getPackageImports() {
+        return packageImports;
     }
 }
