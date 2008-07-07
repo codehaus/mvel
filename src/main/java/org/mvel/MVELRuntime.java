@@ -3,19 +3,18 @@ package org.mvel;
 import static org.mvel.DataConversion.canConvert;
 import static org.mvel.Operator.*;
 import static org.mvel.Soundex.soundex;
-import org.mvel.ast.ASTNode;
 import org.mvel.ast.LineLabel;
-import org.mvel.compiler.CompiledExpression;
 import org.mvel.debug.Debugger;
 import org.mvel.debug.DebuggerContext;
 import org.mvel.integration.VariableResolverFactory;
+import org.mvel.integration.impl.TypeInjectionResolverFactoryImpl;
 import org.mvel.integration.impl.ClassImportResolverFactory;
-import org.mvel.util.ASTLinkedList;
 import org.mvel.util.ExecutionStack;
 import static org.mvel.util.ParseTools.containsCheck;
 import static org.mvel.util.PropertyTools.isEmpty;
 import static org.mvel.util.PropertyTools.similarity;
 import org.mvel.util.Stack;
+import org.mvel.util.StringAppender;
 
 import static java.lang.String.valueOf;
 import static java.lang.Thread.currentThread;
@@ -23,7 +22,6 @@ import static java.lang.Thread.currentThread;
 /**
  * This class contains the runtime for running compiled MVEL expressions.
  */
-@SuppressWarnings({"CaughtExceptionImmediatelyRethrown"})
 public class MVELRuntime {
 //    private static ThreadLocal<Map<String, Set<Integer>>> threadBreakpoints;
 //    private static ThreadLocal<Debugger> threadDebugger;
@@ -41,10 +39,11 @@ public class MVELRuntime {
      * @see org.mvel.MVEL
      */
     public static Object execute(boolean debugger, final CompiledExpression expression, final Object ctx, VariableResolverFactory variableFactory) {
-        final ASTLinkedList node = new ASTLinkedList(expression.getInstructions().firstNode());
+        final ASTLinkedList node = new ASTLinkedList(expression.getTokens().firstNode());
 
         if (expression.isImportInjectionRequired()) {
-            variableFactory = new ClassImportResolverFactory(expression.getParserContext().getParserConfiguration(), variableFactory);
+      //      variableFactory = new TypeInjectionResolverFactoryImpl(expression.getParserContext().getImports(), variableFactory);
+               variableFactory = new ClassImportResolverFactory(expression.getParserContext(), variableFactory);
         }
 
         Stack stk = new ExecutionStack();
@@ -66,9 +65,19 @@ public class MVELRuntime {
                      * The consequence of this of course, is that it's not ideal to compile expressions with
                      * debugging symbols which you plan to use in a production enviroment.
                      */
-                    if (debugger || (debugger = hasDebuggerContext())) {
+                    if (!debugger && hasDebuggerContext()) {
+                        debugger = true;
+                    }
+
+                    /**
+                     * If we're not debugging, we'll just skip over this.
+                     */
+                    if (debugger) {
+                        LineLabel label = (LineLabel) tk;
+                        DebuggerContext context = debuggerContext.get();
+
                         try {
-                            debuggerContext.get().checkBreak((LineLabel) tk, variableFactory, expression);
+                            context.checkBreak(label, variableFactory, expression);
                         }
                         catch (NullPointerException e) {
                             // do nothing for now.  this isn't as calus as it seems.   
@@ -76,14 +85,16 @@ public class MVELRuntime {
                     }
                     continue;
                 }
-                else if (stk.isEmpty()) {
+
+                if (stk.isEmpty()) {
                     stk.push(tk.getReducedValueAccelerated(ctx, ctx, variableFactory));
                 }
 
-                switch (operator = tk.getOperator()) {
-                    case NOOP:
-                        continue;
+                if (!tk.isOperator()) {
+                    continue;
+                }
 
+                switch (operator = tk.getOperator()) {
                     case TERNARY:
                         if (!(Boolean) stk.pop()) {
                             //noinspection StatementWithEmptyBody
@@ -106,7 +117,6 @@ public class MVELRuntime {
                         }
 
                         continue;
-
                 }
 
                 stk.push(node.nextNode().getReducedValueAccelerated(ctx, ctx, variableFactory), operator);
@@ -114,12 +124,11 @@ public class MVELRuntime {
                 try {
                     while (stk.size() > 1) {
                         operator = (Integer) stk.pop();
+                        v1 = stk.pop();
+                        v2 = stk.pop();
 
                         switch (operator) {
                             case CHOR:
-                                v1 = stk.pop();
-                                v2 = stk.pop();
-
                                 if (!isEmpty(v2) || !isEmpty(v1)) {
                                     stk.clear();
                                     stk.push(!isEmpty(v2) ? v2 : v1);
@@ -128,31 +137,64 @@ public class MVELRuntime {
                                 break;
 
                             case INSTANCEOF:
-                                if ((v1 = stk.pop()) instanceof Class)
-                                    stk.push(((Class) v1).isInstance(stk.pop()));
+                                if (v1 instanceof Class)
+                                    stk.push(((Class) v1).isInstance(v2));
                                 else
-                                    stk.push(currentThread().getContextClassLoader().loadClass(valueOf(v1)).isInstance(stk.pop()));
+                                    stk.push(currentThread().getContextClassLoader().loadClass(valueOf(v1)).isInstance(v2));
 
                                 break;
 
                             case CONVERTABLE_TO:
-                                if ((v1 = stk.pop()) instanceof Class)
-                                    stk.push(canConvert((stk.pop()).getClass(), (Class) v1));
+                                if (v1 instanceof Class)
+                                    stk.push(canConvert(v2.getClass(), (Class) v1));
                                 else
-                                    stk.push(canConvert((stk.pop()).getClass(), currentThread().getContextClassLoader().loadClass(valueOf(v1))));
+                                    stk.push(canConvert(v2.getClass(), currentThread().getContextClassLoader().loadClass(valueOf(v1))));
                                 break;
 
                             case CONTAINS:
-                                v1 = stk.pop();
-                                stk.push(containsCheck(stk.pop(), v1));
+                                stk.push(containsCheck(v2, v1));
+                                break;
+
+                            case BW_AND:
+                                stk.push((Integer) v2 & (Integer) v1);
+                                break;
+
+                            case BW_OR:
+                                stk.push((Integer) v2 | (Integer) v1);
+                                break;
+
+                            case BW_XOR:
+                                stk.push((Integer) v2 ^ (Integer) v1);
+                                break;
+
+                            case BW_SHIFT_LEFT:
+                                stk.push((Integer) v2 << (Integer) v1);
+                                break;
+
+                            case BW_USHIFT_LEFT:
+                                int iv2 = (Integer) v2;
+                                if (iv2 < 0) iv2 *= -1;
+                                stk.push(iv2 << (Integer) v1);
+                                break;
+
+                            case BW_SHIFT_RIGHT:
+                                stk.push((Integer) v2 >> (Integer) v1);
+                                break;
+
+                            case BW_USHIFT_RIGHT:
+                                stk.push((Integer) v2 >>> (Integer) v1);
+                                break;
+
+                            case STR_APPEND:
+                                stk.push(new StringAppender(valueOf(v2)).append(valueOf(v1)).toString());
                                 break;
 
                             case SOUNDEX:
-                                stk.push(soundex(valueOf(stk.pop())).equals(soundex(valueOf(stk.pop()))));
+                                stk.push(soundex(valueOf(v1)).equals(soundex(valueOf(v2))));
                                 break;
 
                             case SIMILARITY:
-                                stk.push(similarity(valueOf(stk.pop()), valueOf(stk.pop())));
+                                stk.push(similarity(valueOf(v1), valueOf(v2)));
                                 break;
                         }
                     }
@@ -165,7 +207,7 @@ public class MVELRuntime {
                 }
             }
 
-            return stk.pop();
+            return stk.peek();
         }
         catch (NullPointerException e) {
             if (tk != null && tk.isOperator() && !node.hasMoreNodes()) {

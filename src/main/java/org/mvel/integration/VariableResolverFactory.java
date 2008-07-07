@@ -37,8 +37,6 @@ public interface VariableResolverFactory extends Serializable {
      */
     public VariableResolver createVariable(String name, Object value);
 
-    public VariableResolver createIndexedVariable(int index, String name, Object value);
-
 
     /**
      * Creates a new variable, and assigns a static type. It is expected the underlying factory and resolver
@@ -50,11 +48,6 @@ public interface VariableResolverFactory extends Serializable {
      * @return instance of the variable resolver associated with the variable
      */
     public VariableResolver createVariable(String name, Object value, Class<?> type);
-
-    public VariableResolver createIndexedVariable(int index, String name, Object value, Class<?> typee);
-
-    public VariableResolver setIndexedVariableResolver(int index, VariableResolver variableResolver);
-
 
     /**
      * Returns the next factory in the factory chain.  MVEL uses a hierarchical variable resolution strategy,
@@ -87,8 +80,6 @@ public interface VariableResolverFactory extends Serializable {
     public VariableResolver getVariableResolver(String name);
 
 
-    public VariableResolver getIndexedVariableResolver(int index);
-
     /**
      * Deterimines whether or not the current VariableResolverFactory is the physical target for the actual
      * variable.
@@ -115,8 +106,4 @@ public interface VariableResolverFactory extends Serializable {
      * @return
      */
     public Set<String> getKnownVariables();
-
-    public int variableIndexOf(String name);
-
-    public boolean isIndexedFactory();
 }
