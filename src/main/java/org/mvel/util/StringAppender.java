@@ -1,24 +1,5 @@
-/**
- * MVEL (The MVFLEX Expression Language)
- *
- * Copyright (C) 2007 Christopher Brock, MVFLEX/Valhalla Project and the Codehaus
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
 package org.mvel.util;
 
-import static java.lang.System.arraycopy;
 
 public class StringAppender implements CharSequence {
     private static final int DEFAULT_SIZE = 15;
@@ -59,16 +40,7 @@ public class StringAppender implements CharSequence {
         for (int i = 0; i < chars.length; size++) {
             str[size] = chars[i++];
         }
-  //      size += chars.length;
-        return this;
-    }
-
-    public StringAppender append(char[] chars, int start, int length) {
-        if (length > (capacity - size)) grow(length);
-        int x = start + length;
-        for (int i = start; i < x; i++) {
-            str[size++] = chars[i];
-        }
+        size += chars.length;
         return this;
     }
 
@@ -81,6 +53,7 @@ public class StringAppender implements CharSequence {
         for (int i = 0; size < capacity; size++) {
             str[size] = s.charAt(i++);
         }
+        size += s.length();
         return this;
     }
 
@@ -111,19 +84,19 @@ public class StringAppender implements CharSequence {
     private void grow(int s) {
         if (capacity == 0) capacity = DEFAULT_SIZE;
         final char[] newArray = new char[capacity += s * 2];
-        arraycopy(str, 0, newArray, 0, size);
+        System.arraycopy(str, 0, newArray, 0, size);
         str = newArray;
     }
 
     public char[] getChars(int start, int count) {
         char[] chars = new char[count];
-        arraycopy(str, start, chars, 0, count);
+        System.arraycopy(str, start, chars, 0, count);
         return chars;
     }
 
     public char[] toChars() {
         char[] chars = new char[size];
-        arraycopy(str, 0, chars, 0, size);
+        System.arraycopy(str, 0, chars, 0, size);
         return chars;
     }
 
