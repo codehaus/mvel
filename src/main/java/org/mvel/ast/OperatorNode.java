@@ -1,12 +1,15 @@
 package org.mvel.ast;
 
+import org.mvel.ASTNode;
 import org.mvel.integration.VariableResolverFactory;
 
 public class OperatorNode extends ASTNode {
+
     private Integer operator;
 
     public OperatorNode(Integer operator) {
-        this.literal = this.operator = operator;
+        assert operator != null;
+       this.operator = operator;
     }
 
     public boolean isOperator() {
@@ -22,10 +25,10 @@ public class OperatorNode extends ASTNode {
     }
 
     public Object getReducedValueAccelerated(Object ctx, Object thisValue, VariableResolverFactory factory) {
-        return literal;
+        return operator;
     }
 
     public Object getReducedValue(Object ctx, Object thisValue, VariableResolverFactory factory) {
-        return literal;
+        return operator;
     }
 }

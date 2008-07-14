@@ -1,56 +1,33 @@
-/**
- * MVEL (The MVFLEX Expression Language)
- *
- * Copyright (C) 2007 Christopher Brock, MVFLEX/Valhalla Project and the Codehaus
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
 package org.mvel.util;
 
 import org.mvel.*;
-import static org.mvel.MVEL.getDebuggingOutputFileName;
+import static org.mvel.AbstractParser.getCurrentThreadParserContext;
+import static org.mvel.AbstractParser.isReservedWord;
 import static org.mvel.DataConversion.canConvert;
-import org.mvel.ast.ASTNode;
-import org.mvel.compiler.*;
-import static org.mvel.compiler.AbstractParser.getCurrentThreadParserContext;
-import static org.mvel.compiler.AbstractParser.isReservedWord;
-import static org.mvel.compiler.AbstractParser.LITERALS;
 import org.mvel.integration.ResolverTools;
 import org.mvel.integration.VariableResolverFactory;
-import static org.mvel.integration.ResolverTools.insertFactory;
 import org.mvel.integration.impl.ClassImportResolverFactory;
+import org.mvel.integration.impl.DefaultLocalVariableResolverFactory;
+import org.mvel.integration.impl.LocalVariableResolverFactory;
 import org.mvel.integration.impl.StaticMethodImportResolverFactory;
-import org.mvel.integration.impl.TypeInjectionResolverFactoryImpl;
 import org.mvel.math.MathProcessor;
-import static org.mvel.util.PropertyTools.createStringTrimmed;
-import sun.misc.Unsafe;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.Serializable;
+import static java.lang.Character.isWhitespace;
 import static java.lang.Double.parseDouble;
 import static java.lang.String.valueOf;
 import static java.lang.System.arraycopy;
 import static java.lang.Thread.currentThread;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import static java.lang.Class.forName;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
-import static java.nio.ByteBuffer.allocateDirect;
-import java.nio.channels.ReadableByteChannel;
 import java.util.*;
+
+import sun.net.www.ParseUtil;
 
 
 /**
@@ -66,11 +43,11 @@ public class ParseTools {
         try {
             double version = parseDouble(System.getProperty("java.version").substring(0, 3));
             if (version == 1.4) {
-                MATH_PROCESSOR = (MathProcessor) forName("org.mvel.math.JDK14CompatabilityMath").newInstance();
+                MATH_PROCESSOR = (MathProcessor)  Class.forName("org.mvel.math.JDK14CompatabilityMath").newInstance();
                 JDK_14_COMPATIBILITY = true;
             }
             else if (version > 1.4) {
-                MATH_PROCESSOR = (MathProcessor) forName("org.mvel.math.IEEEFloatingPointMath").newInstance();
+                MATH_PROCESSOR = (MathProcessor)  Class.forName("org.mvel.math.IEEEFloatingPointMath").newInstance();
                 JDK_14_COMPATIBILITY = false;
             }
             else {
@@ -124,7 +101,6 @@ public class ParseTools {
                     i = captureStringLiteral('\'', parm, i, parm.length);
                     continue;
 
-
                 case '"':
                     i = captureStringLiteral('"', parm, i, parm.length);
                     continue;
@@ -145,12 +121,12 @@ public class ParseTools {
         }
 
         if (start < (length + offset) && i > start) {
-            String s = createStringTrimmed(parm, start, i - start);
+            String s = new String(parm, start, i - start).trim();
             if (s.length() > 0)
                 list.add(s);
         }
         else if (list.size() == 0) {
-            String s = createStringTrimmed(parm, start, length);
+            String s = new String(parm, start, length).trim();
             if (s.length() > 0)
                 list.add(s);
         }
@@ -170,84 +146,84 @@ public class ParseTools {
 
 
     public static Method getBestCandidate(Class[] arguments, String method, Class decl, Method[] methods) {
-        if (methods.length == 0) {
-            return null;
-        }
-        Class[] parmTypes;
-        Method bestCandidate = null;
-        int bestScore = 0;
-        int score = 0;
+          if (methods.length == 0) {
+              return null;
+          }
+          Class[] parmTypes;
+          Method bestCandidate = null;
+          int bestScore = 0;
+          int score = 0;
 
-        Integer hash = createClassSignatureHash(decl, arguments);
+          Integer hash = createClassSignatureHash(decl, arguments);
 
-        Map<Integer, Method> methCache = RESOLVED_METH_CACHE.get(method);
-        if (methCache != null) {
-            if ((bestCandidate = methCache.get(hash)) != null) return bestCandidate;
-        }
+          Map<Integer, Method> methCache = RESOLVED_METH_CACHE.get(method);
+          if (methCache != null) {
+              if ((bestCandidate = methCache.get(hash)) != null) return bestCandidate;
+          }
 
-        for (Method meth : methods) {
-            if (method.equals(meth.getName())) {
-                if ((parmTypes = meth.getParameterTypes()).length != arguments.length)
-                    continue;
-                else if (arguments.length == 0 && parmTypes.length == 0) {
-                    bestCandidate = meth;
-                    break;
-                }
+          for (Method meth : methods) {
+              if (method.equals(meth.getName())) {
+                  if ((parmTypes = meth.getParameterTypes()).length != arguments.length)
+                      continue;
+                  else if (arguments.length == 0 && parmTypes.length == 0) {
+                      bestCandidate = meth;
+                      break;
+                  }
 
-                for (int i = 0; i < arguments.length; i++) {
-                    if (arguments[i] == null) {
-                        if (!parmTypes[i].isPrimitive()) {
-                            score += 5;
-                        }
-                        else {
-                            score = 0;
-                            break;
-                        }
-                    }
-                    else if (parmTypes[i] == arguments[i]) {
-                        score += 5;
-                    }
-                    else if (parmTypes[i].isPrimitive() && boxPrimitive(parmTypes[i]) == arguments[i]) {
-                        score += 4;
-                    }
-                    else if (arguments[i].isPrimitive() && unboxPrimitive(arguments[i]) == parmTypes[i]) {
-                        score += 4;
-                    }
-                    else if (isNumericallyCoercible(arguments[i], parmTypes[i])) {
-                        score += 3;
-                    }
-                    else if (parmTypes[i].isAssignableFrom(arguments[i])) {
-                        score += 2;
-                    }
-                    else if (canConvert(parmTypes[i], arguments[i]) || arguments[i] == Object.class) {
-                        score += 1;
-                    }
-                    else {
-                        score = 0;
-                        break;
-                    }
-                }
+                  for (int i = 0; i < arguments.length; i++) {
+                      if (arguments[i] == null) {
+                          if (!parmTypes[i].isPrimitive()) {
+                              score += 5;
+                          }
+                          else {
+                              score = 0;
+                              break;
+                          }
+                      }
+                      else if (parmTypes[i] == arguments[i]) {
+                          score += 5;
+                      }
+                      else if (parmTypes[i].isPrimitive() && boxPrimitive(parmTypes[i]) == arguments[i]) {
+                          score += 4;
+                      }
+                      else if (arguments[i].isPrimitive() && unboxPrimitive(arguments[i]) == parmTypes[i]) {
+                          score += 4;
+                      }
+                      else if (isNumericallyCoercible(arguments[i], parmTypes[i])) {
+                          score += 3;
+                      }
+                      else if (parmTypes[i].isAssignableFrom(arguments[i])) {
+                          score += 2;
+                      }
+                      else if (canConvert(parmTypes[i], arguments[i]) || arguments[i] == Object.class) {
+                          score += 1;
+                      }
+                      else {
+                          score = 0;
+                          break;
+                      }
+                  }
 
-                if (score != 0 && score > bestScore) {
-                    bestCandidate = meth;
-                    bestScore = score;
-                }
-                score = 0;
-            }
-        }
+                  if (score != 0 && score > bestScore) {
+                      bestCandidate = meth;
+                      bestScore = score;
+                  }
+                  score = 0;
+              }
+          }
 
-        if (bestCandidate != null) {
-            //        methCache = RESOLVED_METH_CACHE.get(method);
-            if (methCache == null) {
-                RESOLVED_METH_CACHE.put(method, methCache = new WeakHashMap<Integer, Method>());
-            }
+          if (bestCandidate != null) {
+              if (methCache == null) {
+                  RESOLVED_METH_CACHE.put(method, methCache = new WeakHashMap<Integer, Method>());
+              }
 
-            methCache.put(hash, bestCandidate);
-        }
+              methCache.put(hash, bestCandidate);
+          }
 
-        return bestCandidate;
-    }
+          return bestCandidate;
+      }
 
+    
     public static Method getExactMatch(String name, Class[] args, Class returnType, Class cls) {
         for (Method meth : cls.getMethods()) {
             if (name.equals(meth.getName()) && returnType == meth.getReturnType()) {
@@ -257,6 +233,7 @@ public class ParseTools {
                 for (int i = 0; i < parameterTypes.length; i++) {
                     if (parameterTypes[i] != args[i]) return null;
                 }
+
                 return meth;
             }
         }
@@ -273,7 +250,8 @@ public class ParseTools {
         do {
             for (Class iface : cls.getInterfaces()) {
                 if ((m = getExactMatch(name, args, rt, iface)) != null) {
-                    if ((best = m).getDeclaringClass().getSuperclass() != null) {
+                    best = m;
+                    if (m.getDeclaringClass().getSuperclass() != null) {
                         cls = m.getDeclaringClass();
                     }
                 }
@@ -283,6 +261,7 @@ public class ParseTools {
 
         return best;
     }
+
 
     private static Map<Class, Map<Integer, Constructor>> RESOLVED_CONST_CACHE = new WeakHashMap<Class, Map<Integer, Constructor>>(10);
     private static Map<Constructor, Class[]> CONSTRUCTOR_PARMS_CACHE = new WeakHashMap<Constructor, Class[]>(10);
@@ -298,7 +277,7 @@ public class ParseTools {
         }
     }
 
-    public static Constructor getBestConstructorCanadidate(Object[] arguments, Class cls) {
+   public static Constructor getBestConstructorCanadidate(Object[] arguments, Class cls) {
         Class[] parmTypes;
         Constructor bestCandidate = null;
         int bestScore = 0;
@@ -374,8 +353,6 @@ public class ParseTools {
 
         return bestCandidate;
     }
-
-
     private static Map<ClassLoader, Map<String, Class>> CLASS_RESOLVER_CACHE = new WeakHashMap<ClassLoader, Map<String, Class>>(1, 1.0f);
     private static Map<Class, Constructor[]> CLASS_CONSTRUCTOR_CACHE = new WeakHashMap<Class, Constructor[]>(10);
 
@@ -408,14 +385,13 @@ public class ParseTools {
                 /**
                  * Now try the system classloader.
                  */
-                cls = forName(className);
+                cls = Class.forName(className);
             }
 
             cache.put(className, cls);
             return cls;
         }
     }
-
 
     public static Constructor[] getConstructors(Class cls) {
         Constructor[] cns = CLASS_CONSTRUCTOR_CACHE.get(cls);
@@ -457,7 +433,7 @@ public class ParseTools {
                     continue;
                 case ')':
                     if (1 == depth--) {
-                        return new String[]{new String(cs, 0, ++i), createStringTrimmed(cs, i, cs.length - i)};
+                        return new String[]{new String(cs, 0, ++i), new String(cs, i, cs.length - i).trim()};
                     }
             }
         }
@@ -643,24 +619,23 @@ public class ParseTools {
         return stmt;
     }
 
-
-    public static TypeInjectionResolverFactoryImpl findTypeInjectionResolverFactory(VariableResolverFactory factory) {
+    public static VariableResolverFactory finalLocalVariableFactory(VariableResolverFactory factory) {
         VariableResolverFactory v = factory;
         while (v != null) {
-            if (v instanceof TypeInjectionResolverFactoryImpl) {
-                return (TypeInjectionResolverFactoryImpl) v;
+            if (v instanceof LocalVariableResolverFactory) {
+                return v;
             }
+
             v = v.getNextFactory();
         }
 
         if (factory == null) {
-            throw new OptimizationFailure("unable to import classes.  no variable resolver factory available.");
+            throw new OptimizationFailure("unable to assign variables.  no variable resolver factory available.");
         }
         else {
-            return ResolverTools.appendFactory(factory, new TypeInjectionResolverFactoryImpl());
+            return new DefaultLocalVariableResolverFactory(new HashMap<String, Object>()).setNextFactory(factory);
         }
     }
-
 
     public static ClassImportResolverFactory findClassImportResolverFactory(VariableResolverFactory factory) {
         VariableResolverFactory v = factory;
@@ -675,7 +650,7 @@ public class ParseTools {
             throw new OptimizationFailure("unable to import classes.  no variable resolver factory available.");
         }
         else {
-            return insertFactory(factory, new ClassImportResolverFactory());
+            return ResolverTools.insertFactory(factory, new ClassImportResolverFactory());
         }
     }
 
@@ -692,14 +667,14 @@ public class ParseTools {
             throw new OptimizationFailure("unable to import classes.  no variable resolver factory available.");
         }
         else {
-            return insertFactory(factory, new StaticMethodImportResolverFactory());
+            return ResolverTools.insertFactory(factory, new StaticMethodImportResolverFactory());
         }
     }
 
     public static Class findClass(VariableResolverFactory factory, String name) throws ClassNotFoundException {
         try {
-            if (LITERALS.containsKey(name)) {
-                return (Class) LITERALS.get(name);
+            if (AbstractParser.LITERALS.containsKey(name)) {
+                return (Class) AbstractParser.LITERALS.get(name);
             }
             else if (factory != null && factory.isResolveable(name)) {
                 return (Class) factory.getVariableResolver(name).getValue();
@@ -730,6 +705,7 @@ public class ParseTools {
 
     public static char[] subset(char[] array, int start, int length) {
         char[] newArray = new char[length];
+        //  arraycopy(array, start, newArray, 0, length);
 
         for (int i = 0; i < newArray.length; i++) {
             newArray[i] = array[i + start];
@@ -740,6 +716,7 @@ public class ParseTools {
 
     public static char[] subset(char[] array, int start) {
         char[] newArray = new char[array.length - start];
+        //    arraycopy(array, start, newArray, 0, newArray.length);
 
         for (int i = 0; i < newArray.length; i++) {
             newArray[i] = array[i + start];
@@ -748,52 +725,7 @@ public class ParseTools {
         return newArray;
     }
 
-    private static Map<Class, Integer> typeResolveMap = new HashMap<Class, Integer>();
-
-    static {
-        Map<Class, Integer> t = typeResolveMap;
-        t.put(BigDecimal.class, DataTypes.BIG_DECIMAL);
-        t.put(BigInteger.class, DataTypes.BIG_INTEGER);
-        t.put(String.class, DataTypes.STRING);
-
-        t.put(int.class, DataTypes.INTEGER);
-        t.put(Integer.class, DataTypes.W_INTEGER);
-
-        t.put(short.class, DataTypes.SHORT);
-        t.put(Short.class, DataTypes.W_SHORT);
-
-        t.put(float.class, DataTypes.FLOAT);
-        t.put(Float.class, DataTypes.W_FLOAT);
-
-        t.put(double.class, DataTypes.DOUBLE);
-        t.put(Double.class, DataTypes.W_DOUBLE);
-
-        t.put(long.class, DataTypes.LONG);
-        t.put(Long.class, DataTypes.W_LONG);
-
-        t.put(boolean.class, DataTypes.BOOLEAN);
-        t.put(Boolean.class, DataTypes.W_BOOLEAN);
-
-        t.put(byte.class, DataTypes.BYTE);
-        t.put(Byte.class, DataTypes.W_BYTE);
-
-
-        t.put(char.class, DataTypes.CHAR);
-        t.put(Character.class, DataTypes.W_CHAR);
-
-        t.put(BlankLiteral.class, DataTypes.EMPTY);
-
-    }
-
     public static int resolveType(Class cls) {
-        Integer i = typeResolveMap.get(cls);
-        if (i == null) return DataTypes.OBJECT;
-        else {
-            return i;
-        }
-    }
-
-    public static int __resolveType(Class cls) {
         if (cls == null)
             return 0;
         if (BigDecimal.class == cls)
@@ -843,6 +775,7 @@ public class ParseTools {
         if (BlankLiteral.class == cls)
             return DataTypes.EMPTY;
 
+
         if (Unit.class.isAssignableFrom(cls))
             return DataTypes.UNIT;
 
@@ -857,15 +790,17 @@ public class ParseTools {
         Class boxedTarget = target.isPrimitive() ? boxPrimitive(target) : target;
 
         if (boxedTarget != null && Number.class.isAssignableFrom(target)) {
-            if ((boxedTarget = parm.isPrimitive() ? boxPrimitive(parm) : parm) != null) {
-                return Number.class.isAssignableFrom(boxedTarget);
+            Class boxedParm = parm.isPrimitive() ? boxPrimitive(parm) : parm;
+
+            if (boxedParm != null) {
+                return Number.class.isAssignableFrom(boxedParm);
             }
         }
         return false;
     }
 
     public static Object handleParserEgress(Object result, boolean returnBigDecimal) {
-        if (result instanceof BigDecimal) {
+       if (result instanceof BigDecimal) {
             int scale = ((BigDecimal) result).scale();
 
             if (returnBigDecimal) return result;
@@ -882,6 +817,7 @@ public class ParseTools {
         else {
             return result;
         }
+
     }
 
     public static Method determineActualTargetMethod(Method method) {
@@ -938,14 +874,15 @@ public class ParseTools {
         for (; i < parms.length; i++) {
             switch (parms[i]) {
                 case '=':
-                    parmName = createStringTrimmed(parms, start, ++i - start - 1);
+                    //    i++;
+                    parmName = new String(parms, start, ++i - start - 1).trim();
                     capture = true;
                     start = i;
                     break;
 
                 case ',':
                     if (capture) {
-                        allParms.put(parmName, createStringTrimmed(parms, start, i - start));
+                        allParms.put(parmName, new String(parms, start, i - start).trim());
                         start = ++i;
                         capture = false;
                         break;
@@ -954,11 +891,12 @@ public class ParseTools {
         }
 
         if (capture) {
-            allParms.put(parmName, createStringTrimmed(parms, start, i - start));
+            allParms.put(parmName, new String(parms, start, i - start).trim());
         }
 
         return allParms;
     }
+
 
     /**
      * This is an important aspect of the core parser tools.  This method is used throughout the core parser
@@ -973,10 +911,10 @@ public class ParseTools {
      * If a balanced capture is performed from position 15, we get "(bar - foo)" back.<br>
      * Etc.
      *
-     * @param chars -
-     * @param start -
-     * @param type  -
-     * @return -
+     * @param chars
+     * @param start
+     * @param type
+     * @return
      */
     public static int balancedCapture(char[] chars, int start, char type) {
         int depth = 1;
@@ -1023,6 +961,7 @@ public class ParseTools {
                 throw new CompileException("unbalanced braces ( ... )", chars, start);
             default:
                 throw new CompileException("unterminated string literal", chars, start);
+
         }
     }
 
@@ -1083,8 +1022,10 @@ public class ParseTools {
                 throw new CompileException("unbalanced braces ( ... )", chars, start);
             default:
                 throw new CompileException("unterminated string literal", chars, start);
+
         }
     }
+
 
     public static String handleStringEscapes(char[] input) {
         int escapes = 0;
@@ -1148,12 +1089,12 @@ public class ParseTools {
 
     public static void checkNameSafety(String name) {
         if (isReservedWord(name)) {
-            throw new CompileException("illegal use of reserved word: " + name);
+            throw new CompileException("reserved word in assignment: " + name);
         }
     }
 
     public static FileWriter getDebugFileWriter() throws IOException {
-        return new FileWriter(new File(getDebuggingOutputFileName()), true);
+        return new FileWriter(new File(MVEL.getDebuggingOutputFileName()), true);
     }
 
     public static boolean isPrimitiveWrapper(Class clazz) {
@@ -1170,18 +1111,10 @@ public class ParseTools {
         return optimizeTree(new ExpressionCompiler(expression)._compile());
     }
 
-    public static Serializable subCompileExpression(char[] expression, ParserContext ctx) {
-        return optimizeTree(new ExpressionCompiler(expression, ctx)._compile());
-    }
-
-    public static Serializable subCompileExpression(String expression, ParserContext ctx) {
-        return optimizeTree(new ExpressionCompiler(expression, ctx)._compile());
-    }
-
     public static Serializable optimizeTree(final CompiledExpression compiled) {
-        ASTIterator nodes = compiled.getInstructions();
+        ASTIterator nodes = compiled.getTokens();
 
-        /**
+        /**                                            g
          * If there is only one token, and it's an identifier, we can optimize this as an accessor expression.
          */
         if (MVEL.isOptimizationEnabled() && nodes.size() == 1) {
@@ -1195,15 +1128,10 @@ public class ParseTools {
                     return new ExecutableLiteral(tk.getLiteralValue());
                 }
             }
-            return tk.canSerializeAccessor() ? new ExecutableAccessorSafe(tk, false, compiled.getKnownEgressType()) :
-                    new ExecutableAccessor(tk, false, compiled.getKnownEgressType());
+            return new ExecutableAccessor(tk, false, compiled.getKnownEgressType());
         }
 
         return compiled;
-    }
-
-    public static boolean isWhitespace(char c) {
-        return c <= '\u0020';
     }
 
     public static String repeatChar(char c, int times) {
@@ -1212,61 +1140,6 @@ public class ParseTools {
             n[i] = c;
         }
         return new String(n);
-    }
-
-    public static char[] loadFromFile(File file) throws IOException {
-        if (!file.exists())
-            throw new CompileException("cannot find file: " + file.getName());
-
-        FileInputStream inStream = null;
-        ReadableByteChannel fc = null;
-        try {
-            fc = (inStream = new FileInputStream(file)).getChannel();
-            ByteBuffer buf = allocateDirect(10);
-
-            StringAppender sb = new StringAppender((int) file.length());
-
-            int read = 0;
-            while (read >= 0) {
-                buf.rewind();
-                read = fc.read(buf);
-                buf.rewind();
-
-                for (; read > 0; read--) {
-                    sb.append((char) buf.get());
-                }
-            }
-
-            //noinspection unchecked
-            return sb.toChars();
-        }
-        catch (FileNotFoundException e) {
-            // this can't be thrown, we check for this explicitly.
-        }
-        finally {
-            if (inStream != null) inStream.close();
-            if (fc != null) fc.close();
-        }
-
-        return null;
-    }
-
-
-    private static Unsafe _getUnsafe() {
-        try {
-            Field field = Unsafe.class.getDeclaredField("theUnsafe");
-            field.setAccessible(true);
-            return (Unsafe) field.get(null);
-        }
-        catch (Exception ex) {
-            throw new RuntimeException("can't get Unsafe instance", ex);
-        }
-    }
-
-    private static final Unsafe unsafe__ = _getUnsafe();
-
-    public static Unsafe getUnsafe() {
-        return unsafe__;
     }
 
 }

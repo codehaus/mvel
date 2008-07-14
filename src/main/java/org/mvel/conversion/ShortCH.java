@@ -1,28 +1,9 @@
-/**
- * MVEL (The MVFLEX Expression Language)
- *
- * Copyright (C) 2007 Christopher Brock, MVFLEX/Valhalla Project and the Codehaus
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
 package org.mvel.conversion;
 
 import org.mvel.ConversionException;
 import org.mvel.ConversionHandler;
 
 import static java.lang.String.valueOf;
-import static java.lang.Short.parseShort;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.HashMap;
@@ -35,12 +16,6 @@ public class ShortCH implements ConversionHandler {
      */
     private static final Short TRUE = (short) 1;
     private static final Short FALSE = (short) 0;
-
-    private static Converter stringConverter = new Converter() {
-        public Short convert(Object o) {
-            return parseShort(((String) o));
-        }
-    };
 
     private static final Map<Class, Converter> CNV =
             new HashMap<Class, Converter>();
@@ -60,13 +35,17 @@ public class ShortCH implements ConversionHandler {
 
     static {
         CNV.put(String.class,
-                stringConverter
+                new Converter() {
+                    public Short convert(Object o) {
+                        return Short.parseShort(((String) o));
+                    }
+                }
         );
 
         CNV.put(Object.class,
                 new Converter() {
                     public Object convert(Object o) {
-                        return stringConverter.convert(valueOf(o));
+                        return CNV.get(String.class).convert(valueOf(o));
                     }
                 }
         );

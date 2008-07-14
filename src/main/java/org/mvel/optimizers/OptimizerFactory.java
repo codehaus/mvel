@@ -21,25 +21,21 @@ package org.mvel.optimizers;
 import org.mvel.CompileException;
 import org.mvel.optimizers.impl.asm.ASMAccessorOptimizer;
 import org.mvel.optimizers.impl.refl.ReflectiveAccessorOptimizer;
-import org.mvel.optimizers.dynamic.DynamicOptimizer;
 
 import static java.lang.Thread.currentThread;
 import java.util.HashMap;
 import java.util.Map;
 
 public class OptimizerFactory {
-    public static String DYNAMIC = "dynamic";
     public static String SAFE_REFLECTIVE = "reflective";
 
-    private static String defaultOptimizer;
+    private static String defaultOptimizer = "ASM";
     private static final Map<String, AccessorOptimizer> accessorCompilers = new HashMap<String, AccessorOptimizer>();
 
-    private static ThreadLocal<Class<? extends AccessorOptimizer>> threadOptimizer
-            = new ThreadLocal<Class<? extends AccessorOptimizer>>();
+    private static ThreadLocal<Class<? extends AccessorOptimizer>> threadOptimizer;
 
     static {
         accessorCompilers.put(SAFE_REFLECTIVE, new ReflectiveAccessorOptimizer());
-        accessorCompilers.put(DYNAMIC, new DynamicOptimizer());
         /**
          * By default, activate the JIT if ASM is present in the classpath
          */
@@ -59,9 +55,7 @@ public class OptimizerFactory {
         }
 
         if (Boolean.getBoolean("mvel.disable.jit"))
-            setDefaultOptimizer(SAFE_REFLECTIVE);
-        else
-            setDefaultOptimizer(DYNAMIC);
+            defaultOptimizer = SAFE_REFLECTIVE;
     }
 
     public static AccessorOptimizer getDefaultAccessorCompiler() {
@@ -83,6 +77,9 @@ public class OptimizerFactory {
     }
 
     public static AccessorOptimizer getThreadAccessorOptimizer() {
+        if (threadOptimizer == null) {
+            threadOptimizer = new ThreadLocal<Class<? extends AccessorOptimizer>>();
+        }
         if (threadOptimizer.get() == null) {
             threadOptimizer.set(getDefaultAccessorCompiler().getClass());
         }
@@ -96,19 +93,20 @@ public class OptimizerFactory {
     }
 
     public static void setThreadAccessorOptimizer(Class<? extends AccessorOptimizer> optimizer) {
-        if (optimizer == null) throw new RuntimeException("null optimizer");
+        if (threadOptimizer == null) {
+            threadOptimizer = new ThreadLocal<Class<? extends AccessorOptimizer>>();
+        }
         threadOptimizer.set(optimizer);
     }
 
     public static void setDefaultOptimizer(String name) {
         try {
             //noinspection unchecked
-            AccessorOptimizer ao = accessorCompilers.get(defaultOptimizer = name);
-            ao.init();
-            setThreadAccessorOptimizer(ao.getClass());
+            setThreadAccessorOptimizer(accessorCompilers.get(defaultOptimizer = name).getClass());
         }
         catch (Exception e) {
             throw new CompileException("unable to instantiate accessor compiler", e);
+
         }
     }
 }

@@ -1,22 +1,5 @@
-/**
- * MVEL (The MVFLEX Expression Language)
- *
- * Copyright (C) 2007 Christopher Brock, MVFLEX/Valhalla Project and the Codehaus
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
 package org.mvel.util;
+
 
 import org.mvel.DataTypes;
 
@@ -30,13 +13,10 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import static java.lang.reflect.Modifier.PUBLIC;
 import static java.lang.reflect.Modifier.isPublic;
-import static org.mvel.util.ParseTools.isWhitespace;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.math.MathContext;
 import java.util.Collection;
 import java.util.Map;
-import java.util.WeakHashMap;
 
 public class PropertyTools {
 //    private static final Pattern truePattern = compile("(on|yes|true|1|hi|high|y)");
@@ -128,17 +108,11 @@ public class PropertyTools {
         return getSetter(clazz, property);
     }
 
-    private static final Map<String, Field> FIELD_CACHE = new WeakHashMap<String, Field>();
-
     public static Member getFieldOrAccessor(Class clazz, String property) {
         if (property.charAt(property.length() - 1) == ')') return getGetter(clazz, property);
 
         try {
-            String key = clazz.hashCode() + property;
-            Field fld = FIELD_CACHE.get(key);
-            if (fld == null) {
-                FIELD_CACHE.put(key, fld = clazz.getField(property));
-            }
+            Field fld = clazz.getField(property);
 
             if ((fld.getModifiers() & PUBLIC) != 0) return fld;
         }
@@ -196,7 +170,7 @@ public class PropertyTools {
                 return parseDouble(new String(val));
             case DataTypes.BIG_DECIMAL:
                 // @todo: new String() only needed for jdk1.4, remove when we move to jdk1.5
-                return new BigDecimal(new String(val), MathContext.DECIMAL128);
+                return new BigDecimal(new String(val));
             default:
                 return new String(val);
         }
@@ -265,6 +239,7 @@ public class PropertyTools {
                 || val instanceof Float || val instanceof Double || val instanceof Long
                 || val instanceof Short || val instanceof Character;
     }
+
 
     public static boolean isNumber(final String val) {
         int len = val.length();
@@ -343,43 +318,6 @@ public class PropertyTools {
         return -1;
     }
 
-    public static int findLast(char[] c, char find) {
-        for (int i = c.length - 1; i != -1; i--) if (c[i] == find) return i;
-        return -1;
-    }
-
-    public static String createStringTrimmed(char[] s) {
-        int start = 0, end = s.length;
-        while (start != end && s[start] <= '\u0020') start++;
-        while (end != start && s[end - 1] <= '\u0020') end--;
-
-        return new String(s, start, end - start);
-    }
-
-    public static String createStringTrimmed(char[] s, int start, int length) {
-        int end = start + length;
-        while (start != end&& s[start] <= '\u0020') {
-            start++;
-        }
-        while (end != start && s[end - 1] <= '\u0020') {
-            end--;
-        }
-        return new String(s, start, end - start);
-    }
-
-
-    public static boolean endsWith(char[] c, char[] test) {
-        if (test.length > c.length) return false;
-
-        int tD = test.length - 1;
-        int cD = c.length - 1;
-        while (tD != -1) {
-            if (c[cD--] != test[tD--]) return false;
-        }
-
-        return true;
-    }
-
     public static boolean equals(char[] obj1, String obj2) {
         for (int i = 0; i < obj1.length && i < obj2.length(); i++) {
             if (obj1[i] == obj2.charAt(i)) return false;
@@ -396,6 +334,7 @@ public class PropertyTools {
     public static boolean isDigit(final int c) {
         return c >= '0' && c <= '9';
     }
+
 
     public static float similarity(String s1, String s2) {
         if (s1 == null || s2 == null)
@@ -449,10 +388,11 @@ public class PropertyTools {
         return cls;
     }
 
-        public static Class getSubComponentType(Class cls) {
+    public static Class getSubComponentType(Class cls) {
         if (cls.isArray()) {
             cls = cls.getComponentType();
         }
-        return cls;
+        return cls;   
     }
+
 }
