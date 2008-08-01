@@ -1,21 +1,3 @@
-/**
- * MVEL (The MVFLEX Expression Language)
- *
- * Copyright (C) 2007 Christopher Brock, MVFLEX/Valhalla Project and the Codehaus
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
 package org.mvel.integration;
 
 /**
@@ -31,13 +13,13 @@ public class ResolverTools {
      * @param newFactory The new factory
      * @return An instance of the new factory
      */
-    public static <T extends VariableResolverFactory> T appendFactory(VariableResolverFactory root, T newFactory) {
-        if (root.getNextFactory() == null) {
-            root.setNextFactory(newFactory);
+    public static VariableResolverFactory appendFactory(VariableResolverFactory root, VariableResolverFactory newFactory) {
+        VariableResolverFactory vrf = root;
+
+        if (vrf.getNextFactory() == null) {
+            vrf.setNextFactory(newFactory);
         }
         else {
-            VariableResolverFactory vrf = root;
-
             while (vrf.getNextFactory() != null) {
                 vrf = vrf.getNextFactory();
             }

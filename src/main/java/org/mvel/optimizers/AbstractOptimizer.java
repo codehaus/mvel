@@ -1,30 +1,10 @@
-/**
- * MVEL (The MVFLEX Expression Language)
- *
- * Copyright (C) 2007 Christopher Brock, MVFLEX/Valhalla Project and the Codehaus
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
 package org.mvel.optimizers;
 
-import org.mvel.compiler.AbstractParser;
+import org.mvel.AbstractParser;
 import static org.mvel.util.PropertyTools.isIdentifierPart;
 
-import static org.mvel.util.ParseTools.isWhitespace;
-
+import static java.lang.Character.isWhitespace;
 import static java.lang.Thread.currentThread;
-import java.lang.reflect.Method;
 
 /**
  * @author Christopher Brock
@@ -61,55 +41,23 @@ public class AbstractOptimizer extends AbstractParser {
                                 return currentThread().getContextClassLoader().loadClass(new String(expr, 0, last));
                             }
                             catch (ClassNotFoundException e) {
-                                Class cls = currentThread().getContextClassLoader().loadClass(new String(expr, 0, i));
-                                String name = new String(expr, i + 1, expr.length - i - 1);
-                                try {
-                                    return cls.getField(name);
-                                }
-                                catch (NoSuchFieldException nfe) {
-                                    for (Method m : cls.getMethods()) {
-                                        if (name.equals(m.getName())) return m;
-                                    }
-                                    return null;
-                                }
+                                // return a field instead
+
+                                return currentThread().getContextClassLoader().loadClass(new String(expr, 0, i))
+                                        .getField(new String(expr, i + 1, expr.length - i - 1));
                             }
                         }
 
                         meth = false;
                         last = i;
                         break;
-
                     case ')':
-                        i--;
-
-                        for (int d = 1; i > 0 && d != 0; i--) {
-                            switch (expr[i]) {
-                                case ')':
-                                    d++;
-                                    break;
-                                case '(':
-                                    d--;
-                                    break;
-                                case '"':
-                                case '\'':
-                                    char s = expr[i];
-                                    while (i > 0 && (expr[i] != s && expr[i - 1] != '\\')) i--;
-                            }
-                        }
-
-                        meth = true;
-
-                        last = i++;
-
+                        if (depth++ == 0)
+                            meth = true;
                         break;
-
-//                    case ')':
-//                        if (depth++ == 0)
-//                            meth = true;
-//                        break;
-//                    case '(':
-//                        depth--;
-//                        break;
+                    case '(':
+                        depth--;
+                        break;
 
                     case '\'':
                         while (--i > 0) {
@@ -144,11 +92,8 @@ public class AbstractOptimizer extends AbstractParser {
                 return COL;
             case '.':
                 skipWhitespace();
-                if ((start + 1) != length && expr[cursor = ++start] == '?') {
-                    cursor = ++start;
-                    fields = -1;
-                }
-                break;
+                cursor = ++start;
+
         }
 
         //noinspection StatementWithEmptyBody
@@ -162,7 +107,7 @@ public class AbstractOptimizer extends AbstractParser {
                 case '(':
                     return METH;
                 default:
-                    return BEAN;
+                    return 0;
             }
         }
 
@@ -182,17 +127,13 @@ public class AbstractOptimizer extends AbstractParser {
             while (isWhitespace(expr[cursor]) && ++cursor != length) ;
     }
 
-    /**
-     * @param c
-     * @return true if end of char[] is reached, false is the character is encountered.
-     */
     protected boolean scanTo(char c) {
-        for (; cursor < length; cursor++) {
+        for (; cursor != length; cursor++) {
             if (expr[cursor] == c) {
-                return false;
+                return true;
             }
         }
-        return true;
+        return false;
     }
 
     protected int containsStringLiteralTermination() {

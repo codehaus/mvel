@@ -1,8 +1,8 @@
 package org.mvel.optimizers.impl.refl;
 
+import org.mvel.AccessorNode;
 import org.mvel.CompileException;
 import static org.mvel.DataConversion.convert;
-import org.mvel.compiler.AccessorNode;
 import org.mvel.integration.VariableResolverFactory;
 
 import java.lang.reflect.Method;
@@ -10,7 +10,8 @@ import java.lang.reflect.Method;
 public class SetterAccessor implements AccessorNode {
     private AccessorNode nextNode;
     private final Method method;
-    private Class<?> targetType;
+    
+    private Class<? extends Object> targetType;
 
     private boolean coercionRequired = false;
 
@@ -41,6 +42,7 @@ public class SetterAccessor implements AccessorNode {
     public Object getValue(Object ctx, Object elCtx, VariableResolverFactory vars) {
         return null;
     }
+
 
     public SetterAccessor(Method method) {
         this.method = method;

@@ -18,15 +18,16 @@
  */
 package org.mvel.optimizers.impl.refl;
 
+import org.mvel.AccessorNode;
 import org.mvel.CompileException;
-import org.mvel.compiler.AccessorNode;
 import org.mvel.integration.VariableResolverFactory;
 
 public class VariableAccessor implements AccessorNode {
     private AccessorNode nextNode;
     private String property;
 
-    public VariableAccessor(String property) {
+
+    public VariableAccessor(String property, VariableResolverFactory vrf) {
         this.property = property;
     }
 

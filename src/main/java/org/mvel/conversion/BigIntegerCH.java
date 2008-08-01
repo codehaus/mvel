@@ -58,7 +58,6 @@ public class BigIntegerCH implements ConversionHandler {
                 }
         );
 
-        
 
         CNV.put(BigDecimal.class,
                 new Converter() {

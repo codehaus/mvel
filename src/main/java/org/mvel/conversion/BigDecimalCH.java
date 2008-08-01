@@ -5,7 +5,6 @@ import org.mvel.ConversionHandler;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.math.MathContext;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -45,10 +44,10 @@ public class BigDecimalCH implements ConversionHandler {
     }
 
     static {
-        CNV.put(Object.class,
+         CNV.put(Object.class,
                 new Converter() {
                     public BigDecimal convert(Object o) {
-                        return new BigDecimal(String.valueOf(o), MathContext.DECIMAL128);
+                        return new BigDecimal(String.valueOf(o));
                     }
                 }
         );
@@ -65,7 +64,7 @@ public class BigDecimalCH implements ConversionHandler {
         CNV.put(BigInteger.class,
                 new Converter() {
                     public BigDecimal convert(Object o) {
-                        return new BigDecimal(((BigInteger) o).doubleValue(), MathContext.DECIMAL128);
+                        return new BigDecimal(((BigInteger) o).doubleValue());
                     }
                 }
         );
@@ -73,7 +72,7 @@ public class BigDecimalCH implements ConversionHandler {
         CNV.put(String.class,
                 new Converter() {
                     public BigDecimal convert(Object o) {
-                        return new BigDecimal((String) o, MathContext.DECIMAL128);
+                        return new BigDecimal((String) o);
                     }
                 }
         );
@@ -81,7 +80,7 @@ public class BigDecimalCH implements ConversionHandler {
         CNV.put(Double.class,
                 new Converter() {
                     public BigDecimal convert(Object o) {
-                        return new BigDecimal(((Double) o).doubleValue(), MathContext.DECIMAL128);
+                        return new BigDecimal(((Double) o).doubleValue());
                     }
                 }
         );
@@ -89,7 +88,7 @@ public class BigDecimalCH implements ConversionHandler {
         CNV.put(Float.class,
                 new Converter() {
                     public BigDecimal convert(Object o) {
-                        return new BigDecimal(((Float) o).doubleValue(), MathContext.DECIMAL128);
+                        return new BigDecimal(((Float) o).doubleValue());
                     }
                 }
         );
@@ -98,7 +97,7 @@ public class BigDecimalCH implements ConversionHandler {
         CNV.put(Short.class,
                 new Converter() {
                     public BigDecimal convert(Object o) {
-                        return new BigDecimal(((Short) o).doubleValue(), MathContext.DECIMAL128);
+                        return new BigDecimal(((Short) o).doubleValue());
                     }
                 }
         );
@@ -106,7 +105,7 @@ public class BigDecimalCH implements ConversionHandler {
         CNV.put(Long.class,
                 new Converter() {
                     public BigDecimal convert(Object o) {
-                        return new BigDecimal(((Long) o).doubleValue(), MathContext.DECIMAL128);
+                        return new BigDecimal(((Long) o).doubleValue());
                     }
                 }
         );
@@ -114,7 +113,7 @@ public class BigDecimalCH implements ConversionHandler {
         CNV.put(Integer.class,
                 new Converter() {
                     public BigDecimal convert(Object o) {
-                        return new BigDecimal(((Integer) o).doubleValue(), MathContext.DECIMAL128);
+                        return new BigDecimal(((Integer) o).doubleValue());
                     }
                 }
         );
@@ -122,7 +121,7 @@ public class BigDecimalCH implements ConversionHandler {
         CNV.put(String.class,
                 new Converter() {
                     public BigDecimal convert(Object o) {
-                        return new BigDecimal((String) o, MathContext.DECIMAL128);
+                        return new BigDecimal((String) o);
                     }
                 }
         );
@@ -131,7 +130,7 @@ public class BigDecimalCH implements ConversionHandler {
                 new Converter() {
                     public BigDecimal convert(Object o) {
                         // @todo: new String() only needed for jdk1.4, remove when we move to jdk1.5
-                        return new BigDecimal(new String((char[]) o), MathContext.DECIMAL128);
+                        return new BigDecimal(new String((char[]) o));
                     }
                 }
 
