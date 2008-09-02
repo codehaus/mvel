@@ -1,30 +1,11 @@
-/**
- * MVEL (The MVFLEX Expression Language)
- *
- * Copyright (C) 2007 Christopher Brock, MVFLEX/Valhalla Project and the Codehaus
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
 package org.mvel.util;
 
 import static org.mvel.util.ParseTools.balancedCapture;
+import static org.mvel.util.ParseTools.subCompileExpression;
 import static org.mvel.util.PropertyTools.createStringTrimmed;
 import static org.mvel.util.PropertyTools.isIdentifierPart;
 
-import static org.mvel.util.ParseTools.isWhitespace;
-import static org.mvel.util.ParseTools.subCompileExpression;
-
+import static java.lang.Character.isWhitespace;
 import static java.lang.System.arraycopy;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -60,10 +41,10 @@ public class CollectionParser {
         this.type = type;
     }
 
-    public Object parseCollection(char[] property, boolean subcompile) {
+ public Object parseCollection(char[] property, boolean subcompile) {
         this.cursor = 0;
         if ((this.length = (this.property = property).length) > 0)
-            while (length > 0 && isWhitespace(property[length - 1]))
+            while (length > 0 && Character.isWhitespace(property[length - 1]))
                 length--;
 
         return parseCollection(subcompile);
@@ -104,7 +85,7 @@ public class CollectionParser {
 
                 case '[':
                     if (cursor > 0 && isIdentifierPart(property[cursor-1])) continue;
-                    
+
                     if (newType == -1) {
                         newType = LIST;
                     }
@@ -197,11 +178,7 @@ public class CollectionParser {
             start++;
 
         char[] newA = new char[end - start];
-        //arraycopy(property, start, newA, 0, end - start);
-        for (int i = 0; i < newA.length; i++) {
-            newA[i] = property[i + start];
-        }
-
+        arraycopy(property, start, newA, 0, end - start);
         return newA;
     }
 

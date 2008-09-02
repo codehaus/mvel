@@ -1,21 +1,3 @@
-/**
- * MVEL (The MVFLEX Expression Language)
- *
- * Copyright (C) 2007 Christopher Brock, MVFLEX/Valhalla Project and the Codehaus
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
 package org.mvel.math;
 
 import org.mvel.CompileException;
@@ -24,19 +6,7 @@ import static org.mvel.DataConversion.convert;
 import org.mvel.DataTypes;
 import static org.mvel.DataTypes.EMPTY;
 import org.mvel.Operator;
-import static org.mvel.Soundex.soundex;
-import static org.mvel.Operator.GTHAN;
-import static org.mvel.Operator.GETHAN;
-import static org.mvel.Operator.LTHAN;
-import static org.mvel.Operator.LETHAN;
-import static org.mvel.Operator.BW_AND;
-import static org.mvel.Operator.BW_OR;
-import static org.mvel.Operator.BW_SHIFT_LEFT;
-import static org.mvel.Operator.BW_SHIFT_RIGHT;
-import static org.mvel.Operator.BW_USHIFT_RIGHT;
-import static org.mvel.Operator.BW_XOR;
-import static org.mvel.Operator.BW_USHIFT_LEFT;
-import static org.mvel.Operator.SOUNDEX;
+import static org.mvel.Operator.*;
 import static org.mvel.util.ParseTools.resolveType;
 import static org.mvel.util.PropertyTools.isNumber;
 
@@ -48,8 +18,8 @@ import java.math.BigInteger;
  * @author Christopher Brock
  */
 public class JDK14CompatabilityMath implements MathProcessor {
-    public static final int ROUND_MODE = BigDecimal.ROUND_CEILING;
-    public static final int SCALE = 128;
+    public static final int ROUND_MODE = BigDecimal.ROUND_HALF_EVEN;
+    public static final int SCALE = 16;
 
 
     public Object doOperation(Object val1, int operation, Object val2) {
@@ -78,6 +48,8 @@ public class JDK14CompatabilityMath implements MathProcessor {
     }
 
     private static Object doBigDecimalArithmetic(BigDecimal val1, int operation, BigDecimal val2) {
+    	if (val1.scale() > 16) val1 = val1.setScale(16, ROUND_MODE);
+    	if (val2.scale() > 16) val2 = val2.setScale(16, ROUND_MODE);
         switch (operation) {
             case Operator.ADD:
                 return val1.add(val2);
@@ -115,7 +87,7 @@ public class JDK14CompatabilityMath implements MathProcessor {
             else if ((type1 > 99 && (type2 > 99)) || (isNumber(val1) && isNumber(val2))) {
                 return doBigDecimalArithmetic(getBigDecimalFromType(val1, type1), operation, getBigDecimalFromType(val2, type2));
             }
-            else if ((type1 == 15 || type2 == 15) && type1 != type2 && type1 != EMPTY && type2 != EMPTY) {
+            else if (operation != Operator.ADD && (type1 == 15 || type2 == 15) && type1 != type2 && type1 != EMPTY && type2 != EMPTY) {
                 return doOperationNonNumeric(convert(val1, Boolean.class), operation, convert(val2, Boolean.class));
             }
             // Fix for: MVEL-56
@@ -134,6 +106,7 @@ public class JDK14CompatabilityMath implements MathProcessor {
     private static Object doOperationNonNumeric(Object val1, int operation, Object val2) {
         switch (operation) {
             case Operator.ADD:
+            	System.out.println("<" + valueOf(val1) + "> + <" + valueOf(val2) + ">");
                 return valueOf(val1) + valueOf(val2);
 
             case Operator.EQUAL:
@@ -159,7 +132,7 @@ public class JDK14CompatabilityMath implements MathProcessor {
             case GETHAN:
                 if (val1 instanceof Comparable) {
                     //noinspection unchecked
-                    return val2 != null &&  ((Comparable) val1).compareTo(val2) >= 0 ? Boolean.TRUE : Boolean.FALSE;
+                    return val2 != null && ((Comparable) val1).compareTo(val2) >= 0 ? Boolean.TRUE : Boolean.FALSE;
                 }
                 else {
                     return Boolean.FALSE;
@@ -185,9 +158,6 @@ public class JDK14CompatabilityMath implements MathProcessor {
                     return Boolean.FALSE;
                 }
 
-
-            case SOUNDEX:
-                return soundex(String.valueOf(val1)).equals(soundex(String.valueOf(val2)));
         }
 
         throw new CompileException("could not perform numeric operation on non-numeric types: left-type="
@@ -223,7 +193,7 @@ public class JDK14CompatabilityMath implements MathProcessor {
                     case Operator.SUB:
                         return ((Integer) val1) - ((Integer) val2);
                     case Operator.DIV:
-                        return new BigDecimal((Integer) val1).divide(new BigDecimal((Integer) val2), SCALE, ROUND_MODE);
+                        return new BigDecimal(((Integer) val1).doubleValue()).divide(new BigDecimal(((Integer) val2).doubleValue()), SCALE, ROUND_MODE);
                     case Operator.MULT:
                         return ((Integer) val1) * ((Integer) val2);
                     case Operator.POWER:
@@ -246,18 +216,6 @@ public class JDK14CompatabilityMath implements MathProcessor {
                     case Operator.NEQUAL:
                         return ((Integer) val1).intValue() != ((Integer) val2).intValue() ? Boolean.TRUE : Boolean.FALSE;
 
-                    case BW_AND:
-                        return (Integer) val1 & (Integer) val2;
-                    case BW_OR:
-                        return (Integer) val1 | (Integer) val2;
-                    case BW_SHIFT_LEFT:
-                        return (Integer) val1 << (Integer) val2;
-                    case BW_SHIFT_RIGHT:
-                        return (Integer) val1 >> (Integer) val2;
-                    case BW_USHIFT_RIGHT:
-                        return (Integer) val1 >>> (Integer) val2;
-                    case BW_XOR:
-                        return (Integer) val1 ^ (Integer) val2;
                 }
 
             case DataTypes.SHORT:
@@ -268,7 +226,7 @@ public class JDK14CompatabilityMath implements MathProcessor {
                     case Operator.SUB:
                         return ((Short) val1) - ((Short) val2);
                     case Operator.DIV:
-                        return new BigDecimal((Short) val1).divide(new BigDecimal((Short) val2), SCALE, ROUND_MODE);
+                        return new BigDecimal(((Short) val1).doubleValue()).divide(new BigDecimal(((Short) val2).doubleValue()), SCALE, ROUND_MODE);
                     case Operator.MULT:
                         return ((Short) val1) * ((Short) val2);
                     case Operator.POWER:
@@ -290,20 +248,6 @@ public class JDK14CompatabilityMath implements MathProcessor {
                         return ((Short) val1).shortValue() == ((Short) val2).shortValue() ? Boolean.TRUE : Boolean.FALSE;
                     case Operator.NEQUAL:
                         return ((Short) val1).shortValue() != ((Short) val2).shortValue() ? Boolean.TRUE : Boolean.FALSE;
-
-
-                    case BW_AND:
-                        return (Short) val1 & (Short) val2;
-                    case BW_OR:
-                        return (Short) val1 | (Short) val2;
-                    case BW_SHIFT_LEFT:
-                        return (Short) val1 << (Short) val2;
-                    case BW_SHIFT_RIGHT:
-                        return (Short) val1 >> (Short) val2;
-                    case BW_USHIFT_RIGHT:
-                        return (Short) val1 >>> (Short) val2;
-                    case BW_XOR:
-                        return (Short) val1 ^ (Short) val2;
                 }
 
             case DataTypes.LONG:
@@ -314,7 +258,7 @@ public class JDK14CompatabilityMath implements MathProcessor {
                     case Operator.SUB:
                         return ((Long) val1) - ((Long) val2);
                     case Operator.DIV:
-                        return new BigDecimal((Long) val1).divide(new BigDecimal((Long) val2), SCALE, ROUND_MODE);
+                        return new BigDecimal(((Long) val1).doubleValue()).divide(new BigDecimal(((Long) val2).doubleValue()), SCALE, ROUND_MODE);
                     case Operator.MULT:
                         return ((Long) val1) * ((Long) val2);
                     case Operator.POWER:
@@ -336,22 +280,6 @@ public class JDK14CompatabilityMath implements MathProcessor {
                         return ((Long) val1).longValue() == ((Long) val2).longValue() ? Boolean.TRUE : Boolean.FALSE;
                     case Operator.NEQUAL:
                         return ((Long) val1).longValue() != ((Long) val2).longValue() ? Boolean.TRUE : Boolean.FALSE;
-
-                    case BW_AND:
-                        return (Long) val1 & (Long) val2;
-                    case BW_OR:
-                        return (Long) val1 | (Long) val2;
-                    case BW_SHIFT_LEFT:
-                        return (Long) val1 << (Long) val2;
-                    case BW_USHIFT_LEFT:
-                        throw new UnsupportedOperationException("unsigned left-shift not supported");
-
-                    case BW_SHIFT_RIGHT:
-                        return (Long) val1 >> (Long) val2;
-                    case BW_USHIFT_RIGHT:
-                        return (Long) val1 >>> (Long) val2;
-                    case BW_XOR:
-                        return (Long) val1 ^ (Long) val2;
                 }
 
             case DataTypes.DOUBLE:
@@ -362,7 +290,7 @@ public class JDK14CompatabilityMath implements MathProcessor {
                     case Operator.SUB:
                         return ((Double) val1) - ((Double) val2);
                     case Operator.DIV:
-                        return new BigDecimal((Double) val1).divide(new BigDecimal((Double) val2), SCALE, ROUND_MODE);
+                        return new BigDecimal(((Double) val1).doubleValue()).divide(new BigDecimal(((Double) val2).doubleValue()), SCALE, ROUND_MODE);
                     case Operator.MULT:
                         return ((Double) val1) * ((Double) val2);
                     case Operator.POWER:
@@ -382,14 +310,6 @@ public class JDK14CompatabilityMath implements MathProcessor {
                         return ((Double) val1).doubleValue() == ((Double) val2).doubleValue() ? Boolean.TRUE : Boolean.FALSE;
                     case Operator.NEQUAL:
                         return ((Double) val1).doubleValue() != ((Double) val2).doubleValue() ? Boolean.TRUE : Boolean.FALSE;
-
-                    case BW_AND:
-                    case BW_OR:
-                    case BW_SHIFT_LEFT:
-                    case BW_SHIFT_RIGHT:
-                    case BW_USHIFT_RIGHT:
-                    case BW_XOR:
-                        throw new CompileException("bitwise operation on a non-fixed-point number.");
                 }
 
             case DataTypes.FLOAT:
@@ -400,7 +320,7 @@ public class JDK14CompatabilityMath implements MathProcessor {
                     case Operator.SUB:
                         return ((Float) val1) - ((Float) val2);
                     case Operator.DIV:
-                        return new BigDecimal((Float) val1).divide(new BigDecimal((Float) val2), SCALE, ROUND_MODE);
+                        return new BigDecimal(((Float) val1).doubleValue()).divide(new BigDecimal(((Float) val2).doubleValue()), SCALE, ROUND_MODE);
                     case Operator.MULT:
                         return ((Float) val1) * ((Float) val2);
                     case Operator.POWER:
@@ -420,14 +340,6 @@ public class JDK14CompatabilityMath implements MathProcessor {
                         return ((Float) val1).floatValue() == ((Float) val2).floatValue() ? Boolean.TRUE : Boolean.FALSE;
                     case Operator.NEQUAL:
                         return ((Float) val1).floatValue() != ((Float) val2).floatValue() ? Boolean.TRUE : Boolean.FALSE;
-
-                    case BW_AND:
-                    case BW_OR:
-                    case BW_SHIFT_LEFT:
-                    case BW_SHIFT_RIGHT:
-                    case BW_USHIFT_RIGHT:
-                    case BW_XOR:
-                        throw new CompileException("bitwise operation on a non-fixed-point number.");
                 }
 
 
@@ -459,13 +371,6 @@ public class JDK14CompatabilityMath implements MathProcessor {
                     case Operator.NEQUAL:
                         return ((BigInteger) val1).compareTo(((BigInteger) val2)) != 0 ? Boolean.TRUE : Boolean.FALSE;
 
-                    case BW_AND:
-                    case BW_OR:
-                    case BW_SHIFT_LEFT:
-                    case BW_SHIFT_RIGHT:
-                    case BW_USHIFT_RIGHT:
-                    case BW_XOR:
-                        throw new CompileException("bitwise operation on a number greater than 32-bits not possible");
                 }
 
             default:
@@ -484,23 +389,25 @@ public class JDK14CompatabilityMath implements MathProcessor {
     public static BigDecimal getBigDecimalFromType(Object in, int type) {
         if (in == null)
             return new BigDecimal(0);
+
+
         switch (type) {
             case DataTypes.BIG_DECIMAL:
                 return (BigDecimal) in;
             case DataTypes.BIG_INTEGER:
-                return new BigDecimal((BigInteger) in, SCALE);
+                return new BigDecimal(((BigInteger) in).doubleValue());
             case DataTypes.W_INTEGER:
                 return new BigDecimal(((Integer) in).doubleValue());
             case DataTypes.W_LONG:
-                return new BigDecimal(((Long) in).doubleValue());
+                 return new BigDecimal(((Long)in).doubleValue());
             case DataTypes.STRING:
                 return new BigDecimal((String) in);
             case DataTypes.W_FLOAT:
-                return new BigDecimal(((Float) in).doubleValue());
+                return new BigDecimal(((Float) in).toString()).setScale(16, ROUND_MODE);
             case DataTypes.W_DOUBLE:
-                return new BigDecimal(((Double) in).doubleValue());
+                return new BigDecimal(((Double) in).doubleValue()).setScale(16, ROUND_MODE);
             case DataTypes.W_SHORT:
-                return new BigDecimal(((Short) in).doubleValue());
+                return new BigDecimal(((Double)in).doubleValue());
             case DataTypes.W_BOOLEAN:
                 return BigDecimal.valueOf(((Boolean) in) ? 1 : 0);
 
@@ -508,4 +415,5 @@ public class JDK14CompatabilityMath implements MathProcessor {
 
         throw new ConversionException("cannot convert <" + in + "> to a numeric type");
     }
+
 }

@@ -21,9 +21,7 @@ package org.mvel;
 import static org.mvel.DataConversion.canConvert;
 import static org.mvel.DataConversion.convert;
 import static org.mvel.MVEL.eval;
-import org.mvel.ast.Function;
 import org.mvel.integration.VariableResolverFactory;
-import org.mvel.integration.PropertyHandlerFactory;
 import org.mvel.util.MethodStub;
 import org.mvel.util.ParseTools;
 import static org.mvel.util.ParseTools.*;
@@ -31,15 +29,12 @@ import static org.mvel.util.PropertyTools.*;
 import org.mvel.util.StringAppender;
 
 import static java.lang.Character.isJavaIdentifierPart;
-
-import static org.mvel.util.ParseTools.isWhitespace;
-
+import static java.lang.Character.isWhitespace;
 import java.lang.reflect.*;
 import static java.lang.reflect.Array.getLength;
 import java.util.*;
 import static java.util.Collections.synchronizedMap;
 
-@SuppressWarnings({"unchecked"})
 public class PropertyAccessor {
     private int start = 0;
     private int cursor = 0;
@@ -52,7 +47,6 @@ public class PropertyAccessor {
     private Object curr;
 
     private boolean first = true;
-    private boolean nullHandle = false;
 
     private VariableResolverFactory variableFactory;
 
@@ -167,15 +161,6 @@ public class PropertyAccessor {
                     case DONE:
                 }
 
-                if (nullHandle) {
-                    if (curr == null) {
-                        return null;
-                    }
-                    else {
-                        nullHandle = false;
-                    }
-                }
-
                 first = false;
             }
 
@@ -209,13 +194,13 @@ public class PropertyAccessor {
 
         try {
             int oLength = length;
-
             length = findAbsoluteLast(property);
 
             if ((curr = get()) == null)
                 throw new PropertyAccessException("cannot bind to null context: " + new String(property));
 
             length = oLength;
+
 
             if (nextToken() == COL) {
                 int start = ++cursor;
@@ -225,7 +210,7 @@ public class PropertyAccessor {
                 if (cursor == length)
                     throw new PropertyAccessException("unterminated '['");
 
-                if (scanTo(']'))
+                if (!scanTo(']'))
                     throw new PropertyAccessException("unterminated '['");
 
                 String ex = new String(property, start, cursor - start);
@@ -240,6 +225,8 @@ public class PropertyAccessor {
                 }
                 else if (curr.getClass().isArray()) {
                     Array.set(curr, eval(ex, this.ctx, this.variableFactory, Integer.class), convert(value, getBaseComponentType(curr.getClass())));
+
+                    //           ((Object[]) curr)[eval(ex, this.ctx, this.variableFactory, Integer.class)] = convert(value, ctx.getClass().getComponentType());
                 }
 
                 else {
@@ -308,11 +295,7 @@ public class PropertyAccessor {
             case '[':
                 return COL;
             case '.':
-                // ++cursor;
-                if (property[cursor = ++start] == '?') {
-                    cursor = ++start;
-                    nullHandle = true;
-                }
+                ++cursor;
         }
 
         while (cursor < length && isWhitespace(property[cursor])) cursor++;
@@ -371,7 +354,6 @@ public class PropertyAccessor {
         if (nestedMap == null) {
             READ_PROPERTY_RESOLVER_CACHE.put(cls, nestedMap = new WeakHashMap<Integer, Member>());
         }
-
         nestedMap.put(property, member);
     }
 
@@ -460,7 +442,7 @@ public class PropertyAccessor {
             return ((Map) ctx).get(property);
         }
         else if ("length".equals(property) && ctx.getClass().isArray()) {
-            return getLength(ctx);
+            return Array.getLength(ctx);
         }
         else if (ctx instanceof Class) {
             Class c = (Class) ctx;
@@ -469,9 +451,6 @@ public class PropertyAccessor {
                     return m;
                 }
             }
-        }
-        else if (PropertyHandlerFactory.hasPropertyHandler(cls)) {
-            return PropertyHandlerFactory.getPropertyHandler(cls).getProperty(property, ctx, variableFactory);
         }
 
         throw new PropertyAccessException("could not access property (" + property + ")");
@@ -483,19 +462,13 @@ public class PropertyAccessor {
             while (isWhitespace(property[cursor]) && ++cursor < length) ;
     }
 
-
-    /**
-     *
-     * @param c
-     * @return - returns true is end of statement is hit, false if the scan scar is countered.
-     */
     private boolean scanTo(char c) {
         for (; cursor < length; cursor++) {
             if (property[cursor] == c) {
-                return false;
+                return true;
             }
         }
-        return true;
+        return false;
     }
 
     /**
@@ -520,7 +493,7 @@ public class PropertyAccessor {
 
         Object item;
 
-        if (scanTo(']'))
+        if (!scanTo(']'))
             throw new PropertyAccessException("unterminated '['");
 
         // String ex = new String(property, start, cursor++ - start);
@@ -541,8 +514,8 @@ public class PropertyAccessor {
             for (int i = 0; i < count; i++) iter.next();
             return iter.next();
         }
-        else if (ctx.getClass().isArray()) {
-            return Array.get(ctx, (Integer) item);
+        else if (ctx instanceof Object[]) {
+            return ((Object[]) ctx)[(Integer) item];
         }
         else if (ctx instanceof CharSequence) {
             return ((CharSequence) ctx).charAt((Integer) item);
@@ -562,6 +535,24 @@ public class PropertyAccessor {
      */
     @SuppressWarnings({"unchecked"})
     private Object getMethod(Object ctx, String name) throws Exception {
+        if (first && variableFactory != null && variableFactory.isResolveable(name)) {
+            Object ptr = variableFactory.getVariableResolver(name).getValue();
+            if (ptr instanceof Method) {
+                ctx = ((Method) ptr).getDeclaringClass();
+                name = ((Method) ptr).getName();
+            }
+            else if (ptr instanceof MethodStub) {
+                ctx = ((MethodStub) ptr).getClassReference();
+                name = ((MethodStub) ptr).getMethodName();
+            }
+            else {
+                throw new OptimizationFailure("attempt to optimize a method call for a reference that does not point to a method: "
+                        + name + " (reference is type: " + (ctx != null ? ctx.getClass().getName() : null) + ")");
+            }
+
+            first = false;
+        }
+
         int st = cursor;
         String tk = ((cursor = balancedCapture(property, cursor, '(')) - st) > 1 ?
                 new String(property, st + 1, cursor - st - 1) : "";
@@ -578,27 +569,6 @@ public class PropertyAccessor {
             for (int i = 0; i < subtokens.length; i++) {
                 args[i] = eval(subtokens[i], thisReference, variableFactory);
             }
-        }
-
-        if (first && variableFactory != null && variableFactory.isResolveable(name)) {
-            Object ptr = variableFactory.getVariableResolver(name).getValue();
-            if (ptr instanceof Method) {
-                ctx = ((Method) ptr).getDeclaringClass();
-                name = ((Method) ptr).getName();
-            }
-            else if (ptr instanceof MethodStub) {
-                ctx = ((MethodStub) ptr).getClassReference();
-                name = ((MethodStub) ptr).getMethodName();
-            }
-            else if (ptr instanceof Function) {
-                return ((Function) ptr).call(ctx, thisReference, variableFactory, args);
-            }
-            else {
-                throw new OptimizationFailure("attempt to optimize a method call for a reference that does not point to a method: "
-                        + name + " (reference is type: " + (ctx != null ? ctx.getClass().getName() : null) + ")");
-            }
-
-            first = false;
         }
 
         /**
@@ -631,6 +601,7 @@ public class PropertyAccessor {
             /**
              * Try to find an instance method from the class target.
              */
+
             if ((m = getBestCandidate(args, name, cls, cls.getMethods())) != null) {
                 addMethodCache(cls, createSignature(name, tk), m);
                 parameterTypes = m.getParameterTypes();
@@ -674,8 +645,7 @@ public class PropertyAccessor {
             catch (IllegalAccessException e) {
                 try {
                     m = getWidenedTarget(m);
-                    addMethodCache(cls, createSignature(name, tk), m);
-                                       
+
                     return m.invoke(ctx, args);
                 }
                 catch (Exception e2) {
@@ -687,10 +657,6 @@ public class PropertyAccessor {
 
     private static int createSignature(String name, String args) {
         return name.hashCode() + args.hashCode();
-    }
-
-    public int getCursorPosition() {
-        return cursor;
     }
 
 }

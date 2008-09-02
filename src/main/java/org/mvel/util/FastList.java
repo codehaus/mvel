@@ -20,13 +20,9 @@ package org.mvel.util;
 
 import org.mvel.ImmutableElementException;
 
-import java.io.Externalizable;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
 import java.util.*;
 
-public class FastList extends AbstractList implements Externalizable {
+public class FastList extends AbstractList {
     private Object[] elements;
     private int size = 0;
 
@@ -39,22 +35,6 @@ public class FastList extends AbstractList implements Externalizable {
 
     public FastList(Object[] elements) {
         this.size = (this.elements = elements).length;
-    }
-    
-    public void writeExternal(ObjectOutput out) throws IOException {
-        out.writeInt( size );
-        for ( int i = 0; i < size; i++) {
-            out.writeObject( elements[i] );
-        }
-    }
-    
-    public void readExternal(ObjectInput in) throws IOException,
-                                            ClassNotFoundException {
-        size = in.readInt();
-        elements = new Object[size];
-        for ( int i = 0; i < size; i++) {
-            elements[i] = in.readObject();
-        }
     }
 
     public Object get(int index) {

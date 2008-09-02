@@ -1,3 +1,4 @@
+
 /**
  * MVEL (The MVFLEX Expression Language)
  *
@@ -18,8 +19,8 @@
  */
 package org.mvel.optimizers.impl.refl;
 
+import org.mvel.AccessorNode;
 import org.mvel.CompileException;
-import org.mvel.compiler.AccessorNode;
 import org.mvel.integration.VariableResolverFactory;
 
 import java.lang.reflect.Field;
@@ -51,18 +52,13 @@ public class FieldAccessor implements AccessorNode {
     }
 
     public Object setValue(Object ctx, Object elCtx, VariableResolverFactory variableFactory, Object value) {
-        try {
-            if (nextNode != null) {
-                return nextNode.setValue(field.get(ctx), elCtx, variableFactory, value);
-            }
-            else {
-                field.set(ctx, value);
-                return value;
-            }
-        }
-        catch (Exception e) {
-            throw new CompileException("unable to access field", e);
-        }
+       try {
+           field.set(ctx, value);
+       }
+       catch (Exception e) {
+           throw new CompileException("unable to access field", e);
+       }
+        return value;
     }
 
     public Field getField() {

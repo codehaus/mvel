@@ -18,10 +18,8 @@
  */
 package org.mvel.optimizers.impl.refl;
 
-import org.mvel.compiler.AccessorNode;
+import org.mvel.AccessorNode;
 import org.mvel.integration.VariableResolverFactory;
-
-import java.lang.reflect.Array;
 
 public class ArrayAccessor implements AccessorNode {
     private AccessorNode nextNode;
@@ -37,21 +35,16 @@ public class ArrayAccessor implements AccessorNode {
 
     public Object getValue(Object ctx, Object elCtx, VariableResolverFactory vars) {
         if (nextNode != null) {
-            return nextNode.getValue(Array.get(ctx, index), elCtx, vars);
+            return nextNode.getValue(((Object[]) ctx)[index], elCtx, vars);
         }
         else {
-            return Array.get(ctx, index);
+            return ((Object[]) ctx)[index];
         }
     }
 
+
     public Object setValue(Object ctx, Object elCtx, VariableResolverFactory variableFactory, Object value) {
-        if (nextNode != null) {
-            return nextNode.setValue(Array.get(ctx, index), elCtx, variableFactory, value);
-        }
-        else {
-            Array.set(ctx, index, value);
-            return value;
-        }
+        return ((Object[]) ctx)[index] = value;
     }
 
     public int getIndex() {

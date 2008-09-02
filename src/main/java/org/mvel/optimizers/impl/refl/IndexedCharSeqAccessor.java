@@ -1,3 +1,4 @@
+
 /**
  * MVEL (The MVFLEX Expression Language)
  *
@@ -18,7 +19,7 @@
  */
 package org.mvel.optimizers.impl.refl;
 
-import org.mvel.compiler.AccessorNode;
+import org.mvel.AccessorNode;
 import org.mvel.integration.VariableResolverFactory;
 
 public class IndexedCharSeqAccessor implements AccessorNode {
@@ -36,16 +37,16 @@ public class IndexedCharSeqAccessor implements AccessorNode {
 
     public Object getValue(Object ctx, Object elCtx, VariableResolverFactory vars) {
         if (nextNode != null) {
-            return nextNode.getValue(((String) ctx).charAt(index), elCtx, vars);
+            return nextNode.getValue(((String)ctx).charAt(index), elCtx, vars);
         }
         else {
-            return ((String) ctx).charAt(index);
+            return ((String)ctx).charAt(index);
         }
     }
 
 
     public Object setValue(Object ctx, Object elCtx, VariableResolverFactory variableFactory, Object value) {
-        // not implemented
+         // not implemented
         return null;
     }
 

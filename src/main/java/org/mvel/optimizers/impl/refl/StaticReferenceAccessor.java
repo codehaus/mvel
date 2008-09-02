@@ -1,3 +1,4 @@
+
 /**
  * MVEL (The MVFLEX Expression Language)
  *
@@ -16,9 +17,10 @@
  * limitations under the License.
  *
  */
+
 package org.mvel.optimizers.impl.refl;
 
-import org.mvel.compiler.AccessorNode;
+import org.mvel.AccessorNode;
 import org.mvel.integration.VariableResolverFactory;
 
 public class StaticReferenceAccessor implements AccessorNode {
@@ -33,11 +35,6 @@ public class StaticReferenceAccessor implements AccessorNode {
         else {
             return literal;
         }
-    }
-
-    public Object setValue(Object ctx, Object elCtx, VariableResolverFactory variableFactory, Object value) {
-        // not implemented
-        return null;
     }
 
     public Object getLiteral() {
@@ -63,4 +60,9 @@ public class StaticReferenceAccessor implements AccessorNode {
         return this.nextNode = nextNode;
     }
 
+
+    public Object setValue(Object ctx, Object elCtx, VariableResolverFactory variableFactory, Object value) {
+        // not implemented
+        return null;
+    }
 }

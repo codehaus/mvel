@@ -20,12 +20,11 @@
 package org.mvel;
 
 import static org.mvel.Operator.*;
-import org.mvel.ast.ASTNode;
 import org.mvel.ast.Substatement;
-import org.mvel.compiler.AbstractParser;
-import org.mvel.compiler.EndWithValue;
 import org.mvel.integration.VariableResolverFactory;
 import org.mvel.integration.impl.MapVariableResolverFactory;
+import static org.mvel.optimizers.OptimizerFactory.setThreadAccessorOptimizer;
+import org.mvel.optimizers.impl.refl.ReflectiveAccessorOptimizer;
 import org.mvel.util.ExecutionStack;
 import static org.mvel.util.ParseTools.findClassImportResolverFactory;
 import static org.mvel.util.ParseTools.handleParserEgress;
@@ -34,15 +33,13 @@ import java.math.BigDecimal;
 import java.util.Map;
 
 
-/**
- * The interpreted runtime.
- */
 @SuppressWarnings({"CaughtExceptionImmediatelyRethrown"})
 public class MVELInterpretedRuntime extends AbstractParser {
     private boolean returnBigDecimal = false;
     private int roundingMode = BigDecimal.ROUND_HALF_DOWN;
 
     Object parse() {
+        setThreadAccessorOptimizer(ReflectiveAccessorOptimizer.class);
         debugSymbols = false;
 
         try {
@@ -110,6 +107,8 @@ public class MVELInterpretedRuntime extends AbstractParser {
                      * proper execution order.
                      */
                     if (tk instanceof Substatement) {
+                        reduceRight();
+
                         if ((tk = nextToken()) != null) {
                             if (isArithmeticOperator(operator = tk.getOperator())) {
                                 stk.push(nextToken().getReducedValue(ctx, ctx, variableFactory), operator);
@@ -124,44 +123,47 @@ public class MVELInterpretedRuntime extends AbstractParser {
                     }
                 }
 
+                if (!tk.isOperator()) {
+                    /**
+                     * There is no operator following the previous token, which means this either a naked identifier
+                     * or method call, etc.
+                     */
+                    continue;
+                }
+
                 switch (procBooleanOperator(operator = tk.getOperator())) {
-                    case OP_TERMINATE:
+                    case -1:
                         return;
-                    case OP_RESET_FRAME:
+                    case 0:
                         continue;
                 }
 
                 stk.push(nextToken().getReducedValue(ctx, ctx, variableFactory), operator);
 
                 switch ((operator = arithmeticFunctionReduction(operator))) {
-                    case OP_TERMINATE:
+                    case -2:
                         return;
-                    case OP_RESET_FRAME:
+                    case -1:
                         continue;
-
                 }
 
                 if (procBooleanOperator(operator) == -1) return;
-
-                // Don't remove the "stk.push(operator); ruduce();" code duplication.
-                // It results in 3 GOTO instructions in the bytecode vs. one.
             }
 
             if (holdOverRegister != null) {
                 stk.push(holdOverRegister);
             }
 
-        }
-        catch (CompileException e) {
-            CompileException c = new CompileException(e.getMessage(), expr, cursor, e.getCursor() == 0, e);
-            c.setLineNumber(line);
-            c.setColumn(cursor - lastLineStart);
-            throw c;
+            if (dStack != null) {
+                while (!dStack.isEmpty()) {
+                    reduceRight();
+                }
+            }
         }
         catch (NullPointerException e) {
             if (tk != null && tk.isOperator() && cursor >= length) {
                 throw new CompileException("incomplete statement: "
-                        + tk.getName() + " (possible use of reserved keyword as identifier: " + tk.getName() + ")", e);
+                        + tk.getName() + " (possible use of reserved keyword as identifier: " + tk.getName() + ")");
             }
             else {
                 throw e;
@@ -171,9 +173,6 @@ public class MVELInterpretedRuntime extends AbstractParser {
 
     private int procBooleanOperator(int operator) {
         switch (operator) {
-            case NOOP:
-                return 0;
-
             case AND:
                 reduceRight();
 
@@ -220,7 +219,6 @@ public class MVELInterpretedRuntime extends AbstractParser {
                     return 0;
                 }
 
-
             case TERNARY_ELSE:
                 return 0;
 
@@ -235,12 +233,13 @@ public class MVELInterpretedRuntime extends AbstractParser {
                  * statement, because that top stack value is the value we want back from the parser.
                  */
 
-                if (hasMore()) {
+                if (!hasNoMore()) {
                     holdOverRegister = stk.pop();
                     stk.clear();
                 }
 
                 return 0;
+
         }
 
         return 1;
@@ -262,8 +261,8 @@ public class MVELInterpretedRuntime extends AbstractParser {
         reduce();
     }
 
-    private boolean hasMore() {
-        return cursor <= length;
+    private boolean hasNoMore() {
+        return cursor >= length;
     }
 
     /**
@@ -379,9 +378,7 @@ public class MVELInterpretedRuntime extends AbstractParser {
     }
 
     protected boolean hasImport(String name) {
-        if (pCtx == null) pCtx = getParserContext();
-
-        if (pCtx.hasImport(name)) {
+        if (getParserContext().hasImport(name)) {
             return true;
         }
         else {
@@ -391,9 +388,7 @@ public class MVELInterpretedRuntime extends AbstractParser {
     }
 
     protected Class getImport(String name) {
-        if (pCtx == null) pCtx = getParserContext();
-
-        if (pCtx.hasImport(name)) return pCtx.getImport(name);
+        if (getParserContext().hasImport(name)) return getParserContext().getImport(name);
 
         VariableResolverFactory vrf = findClassImportResolverFactory(variableFactory);
         return (Class) vrf.getVariableResolver(name).getValue();

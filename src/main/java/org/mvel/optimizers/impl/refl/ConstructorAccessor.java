@@ -1,3 +1,4 @@
+
 /**
  * MVEL (The MVFLEX Expression Language)
  *
@@ -20,7 +21,7 @@ package org.mvel.optimizers.impl.refl;
 
 import org.mvel.CompileException;
 import static org.mvel.DataConversion.convert;
-import org.mvel.compiler.ExecutableStatement;
+import org.mvel.ExecutableStatement;
 import org.mvel.integration.VariableResolverFactory;
 
 import java.lang.reflect.Constructor;
@@ -64,10 +65,6 @@ public class ConstructorAccessor extends BaseAccessor {
         }
     }
 
-    public Object setValue(Object ctx, Object elCtx, VariableResolverFactory variableFactory, Object value) {
-        return null;
-    }
-
 
     private Object[] executeAll(Object ctx, VariableResolverFactory vars) {
         if (length == 0) return GetterAccessor.EMPTY;
@@ -95,4 +92,7 @@ public class ConstructorAccessor extends BaseAccessor {
     }
 
 
+    public Object setValue(Object ctx, Object elCtx, VariableResolverFactory variableFactory, Object value) {
+        return null;
+    }
 }

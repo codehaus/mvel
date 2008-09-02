@@ -18,17 +18,16 @@
  */
 package org.mvel.optimizers;
 
-import org.mvel.compiler.Accessor;
+import org.mvel.Accessor;
+import org.mvel.SetAccessor;
 import org.mvel.integration.VariableResolverFactory;
 
 public interface AccessorOptimizer {
-    public void init();
-
     public Accessor optimizeAccessor(char[] property, Object ctx, Object thisRef, VariableResolverFactory factory, boolean rootThisRef);
 
-    public Accessor optimizeSetAccessor(char[] property, Object ctx, Object thisRef, VariableResolverFactory factory, boolean rootThisRef, Object value);
+    public SetAccessor optimizeSetAccessor(char[] property, Object ctx, Object thisRef, VariableResolverFactory factory, boolean rootThisRef, Object value);
 
-    public Accessor optimizeCollection(Object collectionGraph, char[] property, Object ctx, Object thisRef, VariableResolverFactory factory);
+    public Accessor optimizeCollection(char[] property, Object ctx, Object thisRef, VariableResolverFactory factory);
 
     public Accessor optimizeObjectCreation(char[] property, Object ctx, Object thisRef, VariableResolverFactory factory);
 

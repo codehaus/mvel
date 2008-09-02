@@ -18,15 +18,16 @@
  */
 package org.mvel.optimizers.impl.refl;
 
+import org.mvel.AccessorNode;
 import org.mvel.CompileException;
-import org.mvel.compiler.AccessorNode;
 import org.mvel.integration.VariableResolverFactory;
 
 public class VariableAccessor implements AccessorNode {
     private AccessorNode nextNode;
     private String property;
 
-    public VariableAccessor(String property) {
+
+    public VariableAccessor(String property, VariableResolverFactory vrf) {
         this.property = property;
     }
 
@@ -40,17 +41,6 @@ public class VariableAccessor implements AccessorNode {
         else {
             return vrf.getVariableResolver(property).getValue();
         }
-    }
-
-    public Object setValue(Object ctx, Object elCtx, VariableResolverFactory variableFactory, Object value) {
-        if (nextNode != null) {
-            return nextNode.setValue(variableFactory.getVariableResolver(property).getValue(), elCtx, variableFactory, value);
-        }
-        else {
-            variableFactory.getVariableResolver(property).setValue(value);
-        }
-
-        return value;
     }
 
     public Object getProperty() {
@@ -70,4 +60,8 @@ public class VariableAccessor implements AccessorNode {
     }
 
 
+    public Object setValue(Object ctx, Object elCtx, VariableResolverFactory variableFactory, Object value) {
+        variableFactory.getVariableResolver(property).setValue(value);
+        return value;
+    }
 }
