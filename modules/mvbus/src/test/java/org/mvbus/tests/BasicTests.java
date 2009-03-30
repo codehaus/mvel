@@ -3,6 +3,7 @@ package org.mvbus.tests;
 import junit.framework.TestCase;
 import org.mvbus.tests.resources.Person;
 import org.mvbus.MVBUS;
+import org.mvel2.MVEL;
 
 public class BasicTests extends TestCase {
 
@@ -15,6 +16,8 @@ public class BasicTests extends TestCase {
         p.setFather(father);
 
 
-        System.out.println(MVBUS.marshalPretty(p));
+        Person u = (Person) MVEL.eval(MVBUS.marshalPretty(p));
+
+        assertTrue(p.equals(u));
     }
 }

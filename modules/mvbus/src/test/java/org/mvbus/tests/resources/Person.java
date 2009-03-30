@@ -7,6 +7,9 @@ public class Person {
     private Person mother;
     private Person father;
 
+    public Person() {
+    }
+
     public Person(String name, int age, String[] nicknames) {
         this.name = name;
         this.age = age;
@@ -51,5 +54,27 @@ public class Person {
 
     public void setFather(Person father) {
         this.father = father;
+    }
+
+    public boolean equals(Object o) {
+        if (o instanceof Person) {
+            Person p = (Person) o;
+            return name.equals(p.name) && age == p.age && arrayEquals(nicknames, p.nicknames)
+                    && father.equals(p.father) && mother.equals(p.mother);
+        }
+        return false;
+    }
+
+    private boolean arrayEquals(Object[] a1, Object[] a2) {
+        if (a1 == null && a2 == null) return true;
+        else if (a1 == null || a2 == null) return false;
+        else if (a1.length != a2.length) return false;
+        else {
+            for (int i = 0; i < a1.length; i++) {
+                if (!a1[i].equals(a2[i])) return false;
+            }
+
+            return true;
+        }
     }
 }
