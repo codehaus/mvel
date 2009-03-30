@@ -3,6 +3,7 @@ package org.mvbus.tests;
 import junit.framework.TestCase;
 import org.mvbus.tests.resources.Person;
 import org.mvbus.MVBUS;
+import org.mvel2.MVEL;
 import com.thoughtworks.xstream.XStream;
 
 public class PerformanceTests extends TestCase {
@@ -26,7 +27,7 @@ public class PerformanceTests extends TestCase {
 
         time = System.currentTimeMillis();
         for (int i = 0; i < 10000; i++) {
-            xstream.toXML(p);
+           xstream.toXML(p);
         }
         time = System.currentTimeMillis() - time;
 
