@@ -25,10 +25,20 @@ public class MVBUSEncoder {
 
         try {
             Field[] fields = encodeClass.getDeclaredFields();
+            Object fieldValue;
             for (int i = 0; i < fields.length; i++) {
                 fields[i].setAccessible(true);
+                fieldValue = fields[i].get(toEncode);
+
+                /**
+                 * Don't bother initializing null fields.
+                 */
+                if (fieldValue == null) {
+                    continue;
+                }
+
                 appender.append(fields[i].getName() + (pretty ? " = " : "="));
-                stringify(fields[i].get(toEncode));
+                stringify(fieldValue);
 
                 if (i+1 < fields.length) {
                     appender.append(",");
