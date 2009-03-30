@@ -16,7 +16,11 @@ public class BasicTests extends TestCase {
         p.setFather(father);
 
 
-        Person u = (Person) MVEL.eval(MVBUS.marshalPretty(p));
+        String marshalled = MVBUS.marshalPretty(p);
+
+        System.out.println(marshalled);
+
+        Person u = (Person) MVEL.eval(marshalled);
 
         assertTrue(p.equals(u));
     }
