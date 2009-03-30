@@ -60,7 +60,7 @@ public class Person {
         if (o instanceof Person) {
             Person p = (Person) o;
             return name.equals(p.name) && age == p.age && arrayEquals(nicknames, p.nicknames)
-                    && father.equals(p.father) && mother.equals(p.mother);
+                    && (father == null || father.equals(p.father) && (mother == null || mother.equals(p.mother)));
         }
         return false;
     }
