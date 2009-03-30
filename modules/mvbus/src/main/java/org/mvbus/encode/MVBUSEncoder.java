@@ -37,13 +37,13 @@ public class MVBUSEncoder {
                     continue;
                 }
 
-                appender.append(fields[i].getName() + (pretty ? " = " : "="));
-                stringify(fieldValue);
-
-                if (i+1 < fields.length) {
+                if (i != 0 && i < fields.length) {
                     appender.append(",");
                     prettyCR();
                 }
+
+                appender.append(fields[i].getName() + (pretty ? " = " : "="));
+                stringify(fieldValue);
             }
         }
         catch (Exception e) {
@@ -73,7 +73,7 @@ public class MVBUSEncoder {
             int length = Array.getLength(value);
             for (int i = 0; i < length; i++) {
                 stringify(Array.get(value, i));
-                if (i+1 < length) appender.append(",");
+                if (i + 1 < length) appender.append(",");
             }
             prettyOutdent();
             appender.append("}");
