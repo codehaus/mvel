@@ -112,5 +112,4 @@ public class MVBUSEncoder {
             appender.append("\n").append(ParseTools.repeatChar(' ', --tabDepth * 8));
         }
     }
-
 }
