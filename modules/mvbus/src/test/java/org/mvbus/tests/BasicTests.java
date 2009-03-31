@@ -15,7 +15,6 @@ public class BasicTests extends TestCase {
         p.setMother(mother);
         p.setFather(father);
 
-
         String marshalled = MVBUS.marshalPretty(p);
 
         System.out.println(marshalled);

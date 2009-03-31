@@ -6,6 +6,8 @@ import org.mvel2.util.ParseTools;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
+import java.io.ObjectInputStream;
 
 public class MVBUSEncoder {
     private StringAppender appender;
@@ -17,10 +19,20 @@ public class MVBUSEncoder {
         appender = new StringAppender();
     }
 
+    private static final Class[] EMPTYCLS = new Class[0];
+
+
     public void encode(Object toEncode) {
         Class encodeClass = toEncode.getClass();
 
-        appender.append("new " + encodeClass.getName() + "().{");
+        try {
+            encodeClass.getDeclaredConstructor(EMPTYCLS);
+            appender.append("new " + encodeClass.getName() + "().{");
+        }
+        catch (Exception e) {
+            appender.append("org.mvbus.decode.MVBUSDecoder.instantiate(" + encodeClass.getName() + ").{");
+        }
+
         prettyIndent();
 
         try {

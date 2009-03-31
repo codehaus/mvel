@@ -7,9 +7,6 @@ public class Person {
     private Person mother;
     private Person father;
 
-    public Person() {
-    }
-
     public Person(String name, int age, String[] nicknames) {
         this.name = name;
         this.age = age;
