@@ -1,10 +1,9 @@
 package org.mvbus.tests;
 
-import junit.framework.TestCase;
-import org.mvbus.tests.resources.Person;
-import org.mvbus.MVBUS;
-import org.mvel2.MVEL;
 import com.thoughtworks.xstream.XStream;
+import junit.framework.TestCase;
+import org.mvbus.MVBUS;
+import org.mvbus.tests.resources.Person;
 
 public class PerformanceTests extends TestCase {
     public void testCompareToXStream() {
@@ -15,23 +14,27 @@ public class PerformanceTests extends TestCase {
         p.setMother(mother);
         p.setFather(father);
 
-        long time = System.currentTimeMillis();
-        for (int i = 0; i < 10000; i++) {
-            MVBUS.marshal(p);
+        long time;
+        for (int x = 0; x < 5; x++) {
+            time = System.currentTimeMillis();
+            for (int i = 0; i < 100000; i++) {
+                MVBUS.marshal(p);
+            }
+            time = System.currentTimeMillis() - time;
+
+            System.out.println("MVBus Time:" + time);
+
+            XStream xstream = new XStream();
+
+            time = System.currentTimeMillis();
+            for (int i = 0; i < 100000; i++) {
+                xstream.toXML(p);
+            }
+            time = System.currentTimeMillis() - time;
+
+            System.out.println("XStream Time:" + time);
         }
-        time = System.currentTimeMillis() - time;
 
-        System.out.println("MVBus Time:" + time);
-
-        XStream xstream = new XStream();
-
-        time = System.currentTimeMillis();
-        for (int i = 0; i < 10000; i++) {
-           xstream.toXML(p);
-        }
-        time = System.currentTimeMillis() - time;
-
-        System.out.println("XStream Time:" + time);
 
     }
 }
