@@ -34,7 +34,5 @@ public class PerformanceTests extends TestCase {
 
             System.out.println("XStream Time:" + time);
         }
-
-
     }
 }

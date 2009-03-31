@@ -7,6 +7,7 @@ import org.mvel2.util.ParseTools;
 import java.lang.reflect.Field;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Modifier;
 import java.io.ObjectInputStream;
 
 public class MVBUSEncoder {
@@ -25,47 +26,52 @@ public class MVBUSEncoder {
     public void encode(Object toEncode) {
         Class encodeClass = toEncode.getClass();
 
-        try {
-            encodeClass.getDeclaredConstructor(EMPTYCLS);
-            appender.append("new " + encodeClass.getName() + "().{");
+        if (TypeEncoderFactory.hasEncoder(encodeClass)) {
+            TypeEncoderFactory.getEncoder(encodeClass).encode(this, toEncode);
         }
-        catch (Exception e) {
-            appender.append("org.mvbus.decode.MVBUSDecoder.instantiate(" + encodeClass.getName() + ").{");
-        }
-
-        prettyIndent();
-
-        try {
-            Field[] fields = encodeClass.getDeclaredFields();
-            Object fieldValue;
-            for (int i = 0; i < fields.length; i++) {
-                fields[i].setAccessible(true);
-                fieldValue = fields[i].get(toEncode);
-
-                /**
-                 * Don't bother initializing null fields.
-                 */
-                if (fieldValue == null) {
-                    continue;
-                }
-
-                if (i != 0 && i < fields.length) {
-                    appender.append(",");
-                    prettyCR();
-                }
-
-                appender.append(fields[i].getName() + (pretty ? " = " : "="));
-                stringify(fieldValue);
+        else {
+            try {
+                encodeClass.getDeclaredConstructor(EMPTYCLS);
+                appender.append("new " + encodeClass.getName() + "().{");
             }
+            catch (Exception e) {
+                appender.append("org.mvbus.decode.MVBUSDecoder.instantiate(" + encodeClass.getName() + ").{");
+            }
+
+            prettyIndent();
+
+            try {
+                Field[] fields = encodeClass.getDeclaredFields();
+                Object fieldValue;
+                for (int i = 0; i < fields.length; i++) {
+                    fields[i].setAccessible(true);
+                    fieldValue = fields[i].get(toEncode);
+
+                    /**
+                     * Don't bother initializing null fields.
+                     */
+                    if (fieldValue == null || (fields[i].getModifiers() & (Modifier.STATIC | Modifier.FINAL)) != 0) {
+                        continue;
+                    }
+
+                    if (i != 0 && i < fields.length) {
+                        appender.append(",");
+                        prettyCR();
+                    }
+
+                    appender.append(fields[i].getName() + (pretty ? " = " : "="));
+                    stringify(fieldValue);
+                }
+            }
+            catch (Exception e) {
+                throw new RuntimeException("unable to encode", e);
+            }
+            prettyOutdent();
+            appender.append("}");
         }
-        catch (Exception e) {
-            throw new RuntimeException("unable to encode", e);
-        }
-        prettyOutdent();
-        appender.append("}");
     }
 
-    private void stringify(Object value) {
+    public void stringify(Object value) {
         if (value == null) {
             appender.append("null");
             return;
@@ -90,6 +96,9 @@ public class MVBUSEncoder {
             prettyOutdent();
             appender.append("}");
         }
+        else if (TypeEncoderFactory.hasEncoder(type)) {
+            TypeEncoderFactory.getEncoder(type).encode(this, value);
+        }
         else {
             encode(value);
         }
@@ -105,6 +114,10 @@ public class MVBUSEncoder {
 
     public String getEncoded() {
         return appender.toString();
+    }
+
+    public StringAppender getAppender() {
+        return appender;
     }
 
     private void prettyCR() {
