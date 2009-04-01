@@ -11,8 +11,13 @@ public class BasicTests extends TestCase {
 
     public void testEncodePerson() {
         Person p = new Person("Mike", 30, new String[] { "Dorkus", "Jerkhead"});
+        p.setActive(true);
+
         Person mother = new Person("Sarah", 50, new String[] { "Mommy", "Mom"});
+        mother.setActive(false);
+
         Person father = new Person("John", 55, new String[] { "Dad", "Daddy"});
+        mother.setActive(false);
 
         p.setMother(mother);
         p.setFather(father);
@@ -42,6 +47,5 @@ public class BasicTests extends TestCase {
         assertEquals("proctor", m.get("mark"));
         assertEquals("brock", m.get("mike"));
     }
-
 }
 

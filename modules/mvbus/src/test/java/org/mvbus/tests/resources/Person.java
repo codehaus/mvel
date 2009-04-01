@@ -6,6 +6,7 @@ public class Person {
     private String[] nicknames;
     private Person mother;
     private Person father;
+    private boolean active;
 
     public Person(String name, int age, String[] nicknames) {
         this.name = name;
@@ -53,10 +54,18 @@ public class Person {
         this.father = father;
     }
 
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
     public boolean equals(Object o) {
         if (o instanceof Person) {
             Person p = (Person) o;
-            return name.equals(p.name) && age == p.age && arrayEquals(nicknames, p.nicknames)
+            return name.equals(p.name) && age == p.age && arrayEquals(nicknames, p.nicknames) && active == p.active
                     && (father == null || father.equals(p.father) && (mother == null || mother.equals(p.mother)));
         }
         return false;
