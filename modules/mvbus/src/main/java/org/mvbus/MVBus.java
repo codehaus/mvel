@@ -11,27 +11,27 @@ import java.util.Map;
  *
  * @author Dhanji R. Prasanna (dhanji@gmail com)
  */
-public abstract class MvelBus {
+public abstract class MVBus {
     private final PrintStyle style;
     private final Map<Class<?>, Encoder<?>> encoders;
 
-    public MvelBus(PrintStyle style, Map<Class<?>, Encoder<?>> encoders) {
+    public MVBus(PrintStyle style, Map<Class<?>, Encoder<?>> encoders) {
         this.style = style;
         this.encoders = encoders;
     }
 
-    public static MvelBus createBus() {
+    public static MVBus createBus() {
 
         // build our bus with default configs.
         return createBus(Configuration.DEFAULT);
     }
 
-    public static MvelBus createBus(Configuration config) {
+    public static MVBus createBus(Configuration config) {
         // Grab the configuration
         config.configure();
 
         // Now build our bus accordingly.
-        return new MvelBus(config.style, config.encoders) {};
+        return new MVBus(config.style, config.encoders) {};
     }
 
     public <T> String toMvel(T instance) {

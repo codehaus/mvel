@@ -4,7 +4,6 @@ import junit.framework.TestCase;
 
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Collections;
 
 /**
  * @author Dhanji R. Prasanna (dhanji@gmail com)
@@ -14,7 +13,7 @@ public class MvelBusApiTest extends TestCase {
     public final void testSimpleEncodeAndDecode() {
         Dude dude = new Dude("libertarian", 12, new ArrayList<Dude>());
 
-        final MvelBus bus = MvelBus.createBus();
+        final MVBus bus = MVBus.createBus();
 
         // to & from!
         String script = bus.toMvel(dude);

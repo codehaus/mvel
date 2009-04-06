@@ -2,9 +2,7 @@ package org.mvbus.tests;
 
 import junit.framework.TestCase;
 import org.mvbus.tests.resources.Person;
-import org.mvbus.MVBUS;
-import org.mvbus.MvelBus;
-import org.mvel2.MVEL;
+import org.mvbus.MVBus;
 
 import java.util.HashMap;
 
@@ -23,7 +21,7 @@ public class BasicTests extends TestCase {
         p.setMother(mother);
         p.setFather(father);
 
-        final MvelBus bus = MvelBus.createBus();
+        final MVBus bus = MVBus.createBus();
         String marshalled = bus.toMvel(p);
 
         System.out.println(marshalled);
@@ -39,7 +37,7 @@ public class BasicTests extends TestCase {
         map.put("mark", "proctor");
         map.put("mike", "brock");
 
-        final MvelBus bus = MvelBus.createBus();
+        final MVBus bus = MVBus.createBus();
         String marshalled = bus.toMvel(map);
 
         System.out.println(marshalled);

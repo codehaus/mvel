@@ -2,8 +2,7 @@ package org.mvbus.tests;
 
 import com.thoughtworks.xstream.XStream;
 import junit.framework.TestCase;
-import org.mvbus.MVBUS;
-import org.mvbus.MvelBus;
+import org.mvbus.MVBus;
 import org.mvbus.tests.resources.Person;
 
 public class PerformanceTests extends TestCase {
@@ -15,7 +14,7 @@ public class PerformanceTests extends TestCase {
         p.setMother(mother);
         p.setFather(father);
 
-        final MvelBus bus = MvelBus.createBus();
+        final MVBus bus = MVBus.createBus();
 
         long time;
         for (int x = 0; x < 5; x++) {
