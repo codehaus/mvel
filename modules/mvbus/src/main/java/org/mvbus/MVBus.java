@@ -1,6 +1,7 @@
 package org.mvbus;
 
 import org.mvbus.encode.Encoder;
+import org.mvbus.encode.engines.MvelEncodingEngine;
 import org.mvel2.MVEL;
 
 import java.util.Map;
@@ -36,7 +37,7 @@ public abstract class MVBus {
 
     public <T> String encode(T instance) {
         // TODO(dhanji): inject with a concurrent encoder cache that detects subtypes properly.
-        MVBUSEncoder mve = new MVBUSEncoder();
+        MvelEncodingEngine mve = new MvelEncodingEngine();
         if (PrintStyle.PRETTY == style) {
             mve.setPretty(true);
         }

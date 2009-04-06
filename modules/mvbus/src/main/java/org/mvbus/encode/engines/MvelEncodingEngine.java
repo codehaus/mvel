@@ -1,6 +1,7 @@
-package org.mvbus;
+package org.mvbus.encode.engines;
 
 import org.mvbus.encode.types.Encoders;
+import org.mvbus.encode.EncodingEngine;
 import org.mvel2.util.ParseTools;
 import org.mvel2.util.StringAppender;
 
@@ -10,16 +11,14 @@ import java.lang.reflect.Modifier;
 
 /**
  * This is the default workhorse, the Java to MVEL encoding engine.
- *
- * TODO(dhanji): Can we call this MvelEncodingEngine?
  */
-class MVBUSEncoder implements EncodingEngine {
+public class MvelEncodingEngine implements EncodingEngine {
     private StringAppender appender;
 
     private boolean pretty = false;
     private int tabDepth = 0;
 
-    public MVBUSEncoder() {
+    public MvelEncodingEngine() {
         appender = new StringAppender();
     }
 

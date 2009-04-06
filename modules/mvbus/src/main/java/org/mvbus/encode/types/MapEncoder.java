@@ -1,6 +1,6 @@
 package org.mvbus.encode.types;
 
-import org.mvbus.EncodingEngine;
+import org.mvbus.encode.EncodingEngine;
 import org.mvbus.encode.Encoder;
 
 import java.util.Map;

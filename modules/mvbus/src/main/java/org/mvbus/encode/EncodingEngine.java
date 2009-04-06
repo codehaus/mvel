@@ -1,4 +1,4 @@
-package org.mvbus;
+package org.mvbus.encode;
 
 
 /**
