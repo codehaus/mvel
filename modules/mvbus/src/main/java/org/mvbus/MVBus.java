@@ -13,16 +13,15 @@ import java.util.Map;
  * @author Dhanji R. Prasanna (dhanji@gmail com)
  */
 public abstract class MVBus {
-    private final PrintStyle style;
-    private final Map<Class<?>, Encoder<?>> encoders;
+    private final Configuration config;
+//    private final PrintStyle style;
+//    private final Map<Class<?>, Encoder<?>> encoders;
 
-    public MVBus(PrintStyle style, Map<Class<?>, Encoder<?>> encoders) {
-        this.style = style;
-        this.encoders = encoders;
+    public MVBus(Configuration config) {
+        this.config = config;
     }
 
     public static MVBus createBus() {
-
         // build our bus with default configs.
         return createBus(Configuration.DEFAULT);
     }
@@ -35,20 +34,18 @@ public abstract class MVBus {
         });
     }
 
-    public static MVBus createBus(Configuration config) {
+    public static MVBus createBus(final Configuration config) {
         // Grab the configuration
         config.configure();
 
         // Now build our bus accordingly.
-        return new MVBus(config.style, config.encoders) {};
+        return new MVBus(config) {};
     }
 
     public <T> String encode(T instance) {
         // TODO(dhanji): inject with a concurrent encoder cache that detects subtypes properly.
         MvelEncodingEngine mve = new MvelEncodingEngine();
-        if (PrintStyle.PRETTY == style) {
-            mve.setPretty(true);
-        }
+        mve.init(config);
         mve.encode(instance);
         return mve.getEncoded();
     }
@@ -57,6 +54,4 @@ public abstract class MVBus {
     public <T> T decode(Class<T> type, String script) {
         return MVEL.eval(script, type);
     }
-
-
 }

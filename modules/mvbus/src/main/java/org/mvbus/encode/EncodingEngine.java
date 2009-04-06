@@ -1,5 +1,7 @@
 package org.mvbus.encode;
 
+import org.mvbus.Configuration;
+
 
 /**
  * This is the workhorse. Instances of this interface do the actual work of encoding
@@ -10,6 +12,8 @@ package org.mvbus.encode;
  * @author Dhanji R. Prasanna (dhanji@gmail com)
  */
 public interface EncodingEngine {
+    void init(Configuration config);
+
     void encode(Object o);
     
     void stringify(Object o);

@@ -2,6 +2,8 @@ package org.mvbus.encode.engines;
 
 import org.mvbus.encode.types.Encoders;
 import org.mvbus.encode.EncodingEngine;
+import org.mvbus.Configuration;
+import org.mvbus.PrintStyle;
 import org.mvel2.util.ParseTools;
 import org.mvel2.util.StringAppender;
 
@@ -13,6 +15,8 @@ import java.lang.reflect.Modifier;
  * This is the default workhorse, the Java to MVEL encoding engine.
  */
 public class MvelEncodingEngine implements EncodingEngine {
+    private Configuration config;
+
     private StringAppender appender;
 
     private boolean pretty = false;
@@ -24,13 +28,17 @@ public class MvelEncodingEngine implements EncodingEngine {
 
     private static final Class[] EMPTYCLS = new Class[0];
 
+    public void init(Configuration config) {
+        this.config = config;
+        pretty = config.getStyle() == PrintStyle.PRETTY;
+    }
+
 
     public void encode(Object toEncode) {
         Class encodeClass = toEncode.getClass();
 
-        // TODO(dhanji): Fix typing and add a robust cache that detects subtypes properly.
-        if (Encoders.canEncode(encodeClass)) {
-            Encoders.getEncoder(encodeClass).encode(this, toEncode);
+        if (config.canEncode(encodeClass)) {
+            config.getEncoder(encodeClass).encode(this, toEncode);
         }
         else {
             try {
@@ -99,8 +107,8 @@ public class MvelEncodingEngine implements EncodingEngine {
             prettyOutdent();
             appender.append("}");
         }
-        else if (Encoders.canEncode(type)) {
-            Encoders.getEncoder(type).encode(this, value);
+        else if (config.canEncode(type)) {
+            config.getEncoder(type).encode(this, value);
         }
         else {
             encode(value);
