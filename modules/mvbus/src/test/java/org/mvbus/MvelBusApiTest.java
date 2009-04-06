@@ -16,8 +16,8 @@ public class MvelBusApiTest extends TestCase {
         final MVBus bus = MVBus.createBus();
 
         // to & from!
-        String script = bus.toMvel(dude);
-        Dude readOut = bus.fromMvel(Dude.class, script);
+        String script = bus.encode(dude);
+        Dude readOut = bus.decode(Dude.class, script);
 
         assertEquals(dude, readOut);
         System.out.println(script);

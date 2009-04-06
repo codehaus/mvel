@@ -22,11 +22,11 @@ public class BasicTests extends TestCase {
         p.setFather(father);
 
         final MVBus bus = MVBus.createBus();
-        String marshalled = bus.toMvel(p);
+        String marshalled = bus.encode(p);
 
         System.out.println(marshalled);
 
-        Person u = bus.fromMvel(Person.class, marshalled);
+        Person u = bus.decode(Person.class, marshalled);
 
         assertTrue(p.equals(u));
     }
@@ -38,11 +38,11 @@ public class BasicTests extends TestCase {
         map.put("mike", "brock");
 
         final MVBus bus = MVBus.createBus();
-        String marshalled = bus.toMvel(map);
+        String marshalled = bus.encode(map);
 
         System.out.println(marshalled);
 
-        HashMap m = bus.fromMvel(HashMap.class, marshalled);
+        HashMap m = bus.decode(HashMap.class, marshalled);
 
         assertEquals("prasanna", m.get("dhanji"));
         assertEquals("proctor", m.get("mark"));

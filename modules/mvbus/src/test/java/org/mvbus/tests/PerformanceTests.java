@@ -20,7 +20,7 @@ public class PerformanceTests extends TestCase {
         for (int x = 0; x < 5; x++) {
             time = System.currentTimeMillis();
             for (int i = 0; i < 100000; i++) {
-                bus.toMvel(p);
+                bus.encode(p);
             }
             time = System.currentTimeMillis() - time;
 

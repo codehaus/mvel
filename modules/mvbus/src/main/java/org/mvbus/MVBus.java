@@ -34,7 +34,7 @@ public abstract class MVBus {
         return new MVBus(config.style, config.encoders) {};
     }
 
-    public <T> String toMvel(T instance) {
+    public <T> String encode(T instance) {
         // TODO(dhanji): inject with a concurrent encoder cache that detects subtypes properly.
         MVBUSEncoder mve = new MVBUSEncoder();
         if (PrintStyle.PRETTY == style) {
@@ -45,7 +45,7 @@ public abstract class MVBus {
     }
 
     @SuppressWarnings("unchecked")
-    public <T> T fromMvel(Class<T> type, String script) {
+    public <T> T decode(Class<T> type, String script) {
         return MVEL.eval(script, type);
     }
 }
