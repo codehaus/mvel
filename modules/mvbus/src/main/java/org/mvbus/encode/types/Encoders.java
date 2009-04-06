@@ -16,29 +16,35 @@ public class Encoders {
 
     private final static Map<Class<?>, Encoder<?>> TYPE_ENCODERS
             = new HashMap<Class<?>, Encoder<?>>();
-    private final static Map<Class<?>, Class<?>> TTABLE = new HashMap<Class<?>, Class<?>>();
+//    private final static Map<Class<?>, Class<?>> TTABLE = new HashMap<Class<?>, Class<?>>();
 
     static {
         // init default type encoders here
         TYPE_ENCODERS.put(Map.class, new MapEncoder());
         TYPE_ENCODERS.put(List.class, new ListEncoder());
-
-        // TODO(dhanji): Need a more robust mechanism for detecting subtypes.
-        // Consider super crawl & cache instead.
-        TTABLE.put(HashMap.class, Map.class);
-        TTABLE.put(ArrayList.class, List.class);
     }
 
-    public static boolean canEncode(Class<?> type) {
-        return TYPE_ENCODERS.containsKey(type)|| TTABLE.containsKey(type);
+    public static boolean canEncode(Class<?> clazz) {
+        if (clazz == null) return false;
+        if (!TYPE_ENCODERS.containsKey(clazz)) {
+            do {
+                for (Class c : clazz.getInterfaces()) {
+                    if (TYPE_ENCODERS.containsKey(c)) {
+                        TYPE_ENCODERS.put(clazz, TYPE_ENCODERS.get(c));
+                        return true;
+                    }
+                }
+            }
+            while ((clazz = clazz.getSuperclass()) != null && clazz != Object.class);
+            return false;
+        }
+        else {
+            return true;
+        }
     }
 
     public static Encoder getEncoder(Class<?> type) {
-        if (TTABLE.containsKey(type)) {
-            return TYPE_ENCODERS.get(TTABLE.get(type));
-        } else {
-            return TYPE_ENCODERS.get(type);
-        }
+        return TYPE_ENCODERS.get(type);
     }
 
     /**
