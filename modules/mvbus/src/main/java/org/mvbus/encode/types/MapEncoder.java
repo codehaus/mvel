@@ -1,27 +1,29 @@
 package org.mvbus.encode.types;
 
-import org.mvbus.encode.TypeEncoder;
-import org.mvbus.encode.MVBUSEncoder;
-import org.mvel2.util.StringAppender;
+import org.mvbus.encode.Encoder;
+import org.mvbus.EncodingEngine;
 
 import java.util.Map;
 
-public class MapEncoder implements TypeEncoder {
-    public void encode(MVBUSEncoder encoder, Object inst) {
-        Map<Object,Object> map = (Map) inst;
-        StringAppender a = encoder.getAppender();
-
-        a.append("[");
+/**
+ * A standard java.util.Map encoder. Converts any map and its key/value
+ * pairs to an MVEL expression. Recursively encodes each key and value.
+ */
+class MapEncoder implements Encoder<Map<?, ?>> {
+    public void encode(EncodingEngine encoder, Map<?, ?> map) {
+        encoder.append("[");
 
         int size = map.size();
         int count = 0;
-        for (Map.Entry<Object,Object> entry : map.entrySet()) {
+
+        for (Map.Entry<?, ?> entry : map.entrySet()) {
             encoder.stringify(entry.getKey());
-            a.append(":");
+            encoder.append(":");
             encoder.stringify(entry.getValue());
 
-            if (++count < size) a.append(", ");
+            if (++count < size)
+                encoder.append(", ");
         }
-        a.append("]");
+        encoder.append("]");
     }
 }

@@ -9,7 +9,9 @@ import java.lang.reflect.Constructor;
  * Decoder utility class.  This class contains static methods that can be accessed by the decoding script.  It
  * is not actually used for direct decoding.
  *
- * TODO: Must support all common JVMs.  
+ * TODO: Must support all common JVMs.
+ *
+ * TODO(dhanji): Can we call this class "Decoding" or "DecodeTools" 
  */
 public class MVBUSDecoder {
     public static Object instantiate(Class cls) throws Exception {

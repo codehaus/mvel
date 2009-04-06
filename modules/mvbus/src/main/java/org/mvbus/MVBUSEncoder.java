@@ -1,16 +1,22 @@
-package org.mvbus.encode;
+package org.mvbus;
 
 import org.mvel2.util.StringAppender;
-import org.mvel2.util.PropertyTools;
 import org.mvel2.util.ParseTools;
+import org.mvbus.encode.types.Encoders;
+import org.mvbus.encode.Encoder;
+import org.mvbus.EncodingEngine;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Array;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
-import java.io.ObjectInputStream;
+import java.util.Map;
 
-public class MVBUSEncoder {
+/**
+ * This is the default workhorse, the Java to MVEL encoding engine.
+ *
+ * TODO(dhanji): Can we call this MvelEncodingEngine?
+ */
+class MVBUSEncoder implements EncodingEngine {
     private StringAppender appender;
 
     private boolean pretty = false;
@@ -26,8 +32,9 @@ public class MVBUSEncoder {
     public void encode(Object toEncode) {
         Class encodeClass = toEncode.getClass();
 
-        if (TypeEncoderFactory.hasEncoder(encodeClass)) {
-            TypeEncoderFactory.getEncoder(encodeClass).encode(this, toEncode);
+        // TODO(dhanji): Fix typing and add a robust cache that detects subtypes properly.
+        if (Encoders.canEncode(encodeClass)) {
+            Encoders.getEncoder(encodeClass).encode(this, toEncode);
         }
         else {
             try {
@@ -96,8 +103,8 @@ public class MVBUSEncoder {
             prettyOutdent();
             appender.append("}");
         }
-        else if (TypeEncoderFactory.hasEncoder(type)) {
-            TypeEncoderFactory.getEncoder(type).encode(this, value);
+        else if (Encoders.canEncode(type)) {
+            Encoders.getEncoder(type).encode(this, value);
         }
         else {
             encode(value);
@@ -118,6 +125,10 @@ public class MVBUSEncoder {
 
     public StringAppender getAppender() {
         return appender;
+    }
+    
+    public void append(String str) {
+        appender.append(str);
     }
 
     private void prettyCR() {
