@@ -46,6 +46,6 @@ public abstract class MVBus {
 
     @SuppressWarnings("unchecked")
     public <T> T fromMvel(Class<T> type, String script) {
-        return (T) MVEL.eval(script);
+        return MVEL.eval(script, type);
     }
 }
