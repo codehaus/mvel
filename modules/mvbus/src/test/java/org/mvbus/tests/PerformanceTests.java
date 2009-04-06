@@ -27,7 +27,7 @@ public class PerformanceTests extends TestCase {
 
             System.out.println("MVBus Time:" + time);
 
-            XStream xstream = new XStream();
+            XStream xstream = new XStream();  
 
             time = System.currentTimeMillis();
             for (int i = 0; i < 100000; i++) {
