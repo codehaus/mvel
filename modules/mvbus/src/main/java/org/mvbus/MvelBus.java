@@ -1,6 +1,5 @@
 package org.mvbus;
 
-import org.mvbus.MVBUSEncoder;
 import org.mvbus.encode.Encoder;
 import org.mvel2.MVEL;
 

@@ -1,8 +1,7 @@
 package org.mvbus.encode.types;
 
-import org.mvbus.encode.Encoder;
 import org.mvbus.EncodingEngine;
-import org.mvel2.util.StringAppender;
+import org.mvbus.encode.Encoder;
 
 import java.util.List;
 

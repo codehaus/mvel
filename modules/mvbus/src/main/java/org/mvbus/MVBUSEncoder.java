@@ -1,15 +1,12 @@
 package org.mvbus;
 
-import org.mvel2.util.StringAppender;
-import org.mvel2.util.ParseTools;
 import org.mvbus.encode.types.Encoders;
-import org.mvbus.encode.Encoder;
-import org.mvbus.EncodingEngine;
+import org.mvel2.util.ParseTools;
+import org.mvel2.util.StringAppender;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.Array;
+import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.Map;
 
 /**
  * This is the default workhorse, the Java to MVEL encoding engine.

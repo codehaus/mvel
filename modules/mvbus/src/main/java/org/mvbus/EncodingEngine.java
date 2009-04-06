@@ -1,6 +1,5 @@
 package org.mvbus;
 
-import org.mvel2.util.StringAppender;
 
 /**
  * This is the workhorse. Instances of this interface do the actual work of encoding

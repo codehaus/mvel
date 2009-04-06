@@ -1,7 +1,5 @@
 package org.mvbus;
 
-import org.mvbus.MVBUSEncoder;
-
 // TODO Can we get rid of this?
 public class MVBUS {
     public static String marshal(Object e) {

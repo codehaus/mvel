@@ -3,6 +3,7 @@ package org.mvbus.tests;
 import junit.framework.TestCase;
 import org.mvbus.tests.resources.Person;
 import org.mvbus.MVBUS;
+import org.mvbus.MvelBus;
 import org.mvel2.MVEL;
 
 import java.util.HashMap;
@@ -22,11 +23,12 @@ public class BasicTests extends TestCase {
         p.setMother(mother);
         p.setFather(father);
 
-        String marshalled = MVBUS.marshalPretty(p);
+        final MvelBus bus = MvelBus.createBus();
+        String marshalled = bus.toMvel(p);
 
         System.out.println(marshalled);
 
-        Person u = (Person) MVEL.eval(marshalled);
+        Person u = bus.fromMvel(Person.class, marshalled);
 
         assertTrue(p.equals(u));
     }
@@ -37,11 +39,12 @@ public class BasicTests extends TestCase {
         map.put("mark", "proctor");
         map.put("mike", "brock");
 
-        String marshalled = MVBUS.marshalPretty(map);
+        final MvelBus bus = MvelBus.createBus();
+        String marshalled = bus.toMvel(map);
 
         System.out.println(marshalled);
 
-        HashMap m = (HashMap) MVEL.eval(marshalled);
+        HashMap m = bus.fromMvel(HashMap.class, marshalled);
 
         assertEquals("prasanna", m.get("dhanji"));
         assertEquals("proctor", m.get("mark"));
