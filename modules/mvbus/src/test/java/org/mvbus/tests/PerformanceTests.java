@@ -7,6 +7,8 @@ import org.mvbus.tests.resources.Person;
 
 public class PerformanceTests extends TestCase {
     public void testCompareToXStream() {
+        if (Boolean.getBoolean("mvbus.noperftest")) return;
+
         Person p = new Person("Mike", 30, new String[]{"Dorkus", "Jerkhead"});
         Person mother = new Person("Sarah", 50, new String[]{"Mommy", "Mom"});
         Person father = new Person("John", 55, new String[]{"Dad", "Daddy"});
@@ -17,9 +19,9 @@ public class PerformanceTests extends TestCase {
         final MVBus bus = MVBus.createBus();
 
         long time;
-        for (int x = 0; x < 5; x++) {
+        for (int x = 0; x < 2; x++) {
             time = System.currentTimeMillis();
-            for (int i = 0; i < 100000; i++) {
+            for (int i = 0; i < 25000; i++) {
                 bus.encode(p);
             }
             time = System.currentTimeMillis() - time;
@@ -29,7 +31,7 @@ public class PerformanceTests extends TestCase {
             XStream xstream = new XStream();  
 
             time = System.currentTimeMillis();
-            for (int i = 0; i < 100000; i++) {
+            for (int i = 0; i < 25000; i++) {
                 xstream.toXML(p);
             }
             time = System.currentTimeMillis() - time;
