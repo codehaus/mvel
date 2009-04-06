@@ -27,6 +27,14 @@ public abstract class MVBus {
         return createBus(Configuration.DEFAULT);
     }
 
+    public static MVBus createBus(final PrintStyle printStyle) {
+        return createBus(new Configuration() {
+            protected void configure() {
+               print(printStyle);
+            }
+        });
+    }
+
     public static MVBus createBus(Configuration config) {
         // Grab the configuration
         config.configure();
@@ -49,4 +57,6 @@ public abstract class MVBus {
     public <T> T decode(Class<T> type, String script) {
         return MVEL.eval(script, type);
     }
+
+
 }

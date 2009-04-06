@@ -3,6 +3,7 @@ package org.mvbus.tests;
 import junit.framework.TestCase;
 import org.mvbus.tests.resources.Person;
 import org.mvbus.MVBus;
+import org.mvbus.PrintStyle;
 
 import java.util.HashMap;
 
@@ -21,11 +22,10 @@ public class BasicTests extends TestCase {
         p.setMother(mother);
         p.setFather(father);
 
-        final MVBus bus = MVBus.createBus();
+        MVBus bus = MVBus.createBus(PrintStyle.PRETTY);
         String marshalled = bus.encode(p);
 
         System.out.println(marshalled);
-
         Person u = bus.decode(Person.class, marshalled);
 
         assertTrue(p.equals(u));
