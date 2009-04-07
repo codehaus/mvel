@@ -1,9 +1,11 @@
-package org.mvbus;
+package org.mvbus.tests;
 
 import junit.framework.TestCase;
 
 import java.util.List;
 import java.util.ArrayList;
+
+import org.mvbus.MVBus;
 
 /**
  * @author Dhanji R. Prasanna (dhanji@gmail com)

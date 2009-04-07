@@ -44,7 +44,7 @@ public abstract class MVBus {
     }
 
     public <T> void encodeToStream(T instance, OutputStream stream) {
-        new MvelOutstreamEncodingEngine(stream).init(config).encode(instance);
+        new MvelOutstreamEncodingEngine(stream).init(config).encode(instance).flush();
     }
 
     public <T> String encode(T instance) {
