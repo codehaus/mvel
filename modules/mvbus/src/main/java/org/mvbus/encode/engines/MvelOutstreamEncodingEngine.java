@@ -6,11 +6,10 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 
 public class MvelOutstreamEncodingEngine extends MvelEncodingEngine {
-    private OutputStream outStream;
+
     private OutputAppender<PrintWriter> output;
 
     public MvelOutstreamEncodingEngine(final OutputStream outStream) {
-        this.outStream = outStream;
         output = new OutputAppender<PrintWriter>() {
             private PrintWriter writer = new PrintWriter(outStream);
 
