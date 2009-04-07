@@ -1,12 +1,13 @@
 package org.mvbus;
 
-import org.mvbus.encode.engines.MvelEncodingEngine;
+import org.mvbus.encode.engines.MvelOutstreamEncodingEngine;
+import org.mvbus.encode.engines.MvelSimpleEncodingEngine;
 import org.mvel2.MVEL;
 import org.mvel2.util.ParseTools;
 
-import java.io.OutputStream;
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 /**
  * The front-facing API of MvelBus. All bus transcoding should be done via instances
@@ -16,8 +17,6 @@ import java.io.IOException;
  */
 public abstract class MVBus {
     private final Configuration config;
-//    private final PrintStyle style;
-//    private final Map<Class<?>, Encoder<?>> encoders;
 
     public MVBus(Configuration config) {
         this.config = config;
@@ -45,11 +44,11 @@ public abstract class MVBus {
     }
 
     public <T> void encodeToStream(T instance, OutputStream stream) {
-        new MvelEncodingEngine(stream).init(config).encode(instance);
+        new MvelOutstreamEncodingEngine(stream).init(config).encode(instance);
     }
 
     public <T> String encode(T instance) {
-        return new MvelEncodingEngine().init(config).encode(instance).getEncoded();
+        return new MvelSimpleEncodingEngine().init(config).encode(instance).getEncoded();
     }
 
     public <T> T decodeFromStream(Class<T> type, InputStream instream) throws IOException {
