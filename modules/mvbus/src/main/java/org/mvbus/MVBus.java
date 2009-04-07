@@ -2,7 +2,9 @@ package org.mvbus;
 
 import org.mvbus.encode.engines.MvelOutstreamEncodingEngine;
 import org.mvbus.encode.engines.MvelSimpleEncodingEngine;
+import org.mvbus.util.FunctionAliasResolverFactory;
 import org.mvel2.MVEL;
+import org.mvel2.integration.VariableResolverFactory;
 import org.mvel2.util.ParseTools;
 
 import java.io.IOException;
@@ -17,6 +19,8 @@ import java.io.OutputStream;
  */
 public abstract class MVBus {
     private final Configuration config;
+    private static final FunctionAliasResolverFactory factory = new FunctionAliasResolverFactory();
+
 
     public MVBus(Configuration config) {
         this.config = config;
@@ -30,7 +34,7 @@ public abstract class MVBus {
     public static MVBus createBus(final PrintStyle printStyle) {
         return createBus(new Configuration() {
             protected void configure() {
-               print(printStyle);
+                print(printStyle);
             }
         });
     }
@@ -40,7 +44,8 @@ public abstract class MVBus {
         config.configure();
 
         // Now build our bus accordingly.
-        return new MVBus(config) {};
+        return new MVBus(config) {
+        };
     }
 
     public <T> void encodeToStream(T instance, OutputStream stream) {
@@ -52,15 +57,15 @@ public abstract class MVBus {
     }
 
     public <T> T decodeFromStream(Class<T> type, InputStream instream) throws IOException {
-        return MVEL.eval(ParseTools.readIn(instream, null), type);
+        return MVEL.eval(ParseTools.readIn(instream, null), factory, type);
     }
 
     public <T> T decodeFromStream(Class<T> type, InputStream instream, String encoding) throws IOException {
-        return MVEL.eval(ParseTools.readIn(instream, encoding), type);
+        return MVEL.eval(ParseTools.readIn(instream, encoding), factory, type);
     }
 
     @SuppressWarnings("unchecked")
     public <T> T decode(Class<T> type, String script) {
-        return MVEL.eval(script, type);
+        return MVEL.eval(script, factory, type);
     }
 }
