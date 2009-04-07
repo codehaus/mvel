@@ -1,10 +1,8 @@
 package org.mvbus;
 
-import org.mvbus.encode.Encoder;
 import org.mvbus.encode.engines.MvelEncodingEngine;
 import org.mvel2.MVEL;
 
-import java.util.Map;
 import java.io.OutputStream;
 
 /**
@@ -44,15 +42,11 @@ public abstract class MVBus {
     }
 
     public <T> void encodeToString(T instance, OutputStream stream) {
-
+        new MvelEncodingEngine(stream).init(config).encode(instance);
     }
 
     public <T> String encode(T instance) {
-        // TODO(dhanji): inject with a concurrent encoder cache that detects subtypes properly.
-        MvelEncodingEngine mve = new MvelEncodingEngine();
-        mve.init(config);
-        mve.encode(instance);
-        return mve.getEncoded();
+        return new MvelEncodingEngine().init(config).encode(instance).getEncoded();
     }
 
     @SuppressWarnings("unchecked")

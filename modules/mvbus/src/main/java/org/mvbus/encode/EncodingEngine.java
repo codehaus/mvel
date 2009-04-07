@@ -13,14 +13,16 @@ import org.mvbus.util.OutputAppender;
  * @author Dhanji R. Prasanna (dhanji@gmail com)
  */
 public interface EncodingEngine {
-    void init(Configuration config);
+    EncodingEngine init(Configuration config);
 
-    void encode(Object o);
+    EncodingEngine encode(Object o);
     
-    void stringify(Object o);
+    EncodingEngine stringify(Object o);
 
     // Create overloads for primitive types.
     OutputAppender append(String aString);
+
+    String getEncoded();
 
     /**
      * Flush any active streams.

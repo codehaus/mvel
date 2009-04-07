@@ -55,13 +55,14 @@ public class MvelEncodingEngine implements EncodingEngine {
 
     private static final Class[] EMPTYCLS = new Class[0];
 
-    public void init(Configuration config) {
+    public EncodingEngine init(Configuration config) {
         this.config = config;
         pretty = config.getStyle() == PrintStyle.PRETTY;
+        return this;
     }
 
 
-    public void encode(Object toEncode) {
+    public EncodingEngine encode(Object toEncode) {
         Class encodeClass = toEncode.getClass();
 
         if (config.canEncode(encodeClass)) {
@@ -107,12 +108,13 @@ public class MvelEncodingEngine implements EncodingEngine {
             prettyOutdent();
             output.append("}");
         }
+        return this;
     }
 
-    public void stringify(Object value) {
+    public EncodingEngine stringify(Object value) {
         if (value == null) {
             output.append("null");
-            return;
+            return this;
         }
         Class type = value.getClass();
 
@@ -140,6 +142,7 @@ public class MvelEncodingEngine implements EncodingEngine {
         else {
             encode(value);
         }
+        return this;
     }
 
     public boolean isPretty() {
