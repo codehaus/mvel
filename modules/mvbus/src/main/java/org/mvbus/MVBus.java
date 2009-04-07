@@ -5,6 +5,7 @@ import org.mvbus.encode.engines.MvelEncodingEngine;
 import org.mvel2.MVEL;
 
 import java.util.Map;
+import java.io.OutputStream;
 
 /**
  * The front-facing API of MvelBus. All bus transcoding should be done via instances
@@ -40,6 +41,10 @@ public abstract class MVBus {
 
         // Now build our bus accordingly.
         return new MVBus(config) {};
+    }
+
+    public <T> void encodeToString(T instance, OutputStream stream) {
+
     }
 
     public <T> String encode(T instance) {

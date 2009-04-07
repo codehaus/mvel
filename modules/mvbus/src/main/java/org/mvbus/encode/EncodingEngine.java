@@ -1,6 +1,7 @@
 package org.mvbus.encode;
 
 import org.mvbus.Configuration;
+import org.mvbus.util.OutputAppender;
 
 
 /**
@@ -19,5 +20,10 @@ public interface EncodingEngine {
     void stringify(Object o);
 
     // Create overloads for primitive types.
-    void append(String aString);
+    OutputAppender append(String aString);
+
+    /**
+     * Flush any active streams.
+     */
+    void flush();
 }

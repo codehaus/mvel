@@ -1,15 +1,17 @@
 package org.mvbus.encode.engines;
 
-import org.mvbus.encode.types.Encoders;
 import org.mvbus.encode.EncodingEngine;
 import org.mvbus.Configuration;
 import org.mvbus.PrintStyle;
+import org.mvbus.util.OutputAppender;
 import org.mvel2.util.ParseTools;
 import org.mvel2.util.StringAppender;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.io.OutputStream;
+import java.io.PrintWriter;
 
 /**
  * This is the default workhorse, the Java to MVEL encoding engine.
@@ -17,13 +19,38 @@ import java.lang.reflect.Modifier;
 public class MvelEncodingEngine implements EncodingEngine {
     private Configuration config;
 
+    private OutputAppender output;
+
     private StringAppender appender;
+    private OutputStream outstream;
+    private PrintWriter writer;
 
     private boolean pretty = false;
     private int tabDepth = 0;
 
     public MvelEncodingEngine() {
         appender = new StringAppender();
+        output = new OutputAppender() {
+
+            StringAppender a = appender;
+            public OutputAppender append(String str) {
+                a.append(str);
+                return this;
+            }
+        };
+    }
+
+    public MvelEncodingEngine(OutputStream stream) {
+        writer = new PrintWriter(outstream = stream);
+        output = new OutputAppender() {
+
+            PrintWriter w = writer;
+            public OutputAppender append(String append) {
+                w.append(append);
+                return this;
+            }
+        };
+
     }
 
     private static final Class[] EMPTYCLS = new Class[0];
@@ -43,10 +70,10 @@ public class MvelEncodingEngine implements EncodingEngine {
         else {
             try {
                 encodeClass.getDeclaredConstructor(EMPTYCLS);
-                appender.append("new " + encodeClass.getName() + "().{");
+                output.append("new " + encodeClass.getName() + "().{");
             }
             catch (Exception e) {
-                appender.append("org.mvbus.decode.MVBUSDecoder.instantiate(" + encodeClass.getName() + ").{");
+                output.append("org.mvbus.decode.MVBUSDecoder.instantiate(").append(encodeClass.getName()).append(").{");
             }
 
             prettyIndent();
@@ -66,11 +93,11 @@ public class MvelEncodingEngine implements EncodingEngine {
                     }
 
                     if (i != 0 && i < fields.length) {
-                        appender.append(",");
+                        output.append(",");
                         prettyCR();
                     }
 
-                    appender.append(fields[i].getName() + (pretty ? " = " : "="));
+                    output.append(fields[i].getName()).append(pretty ? " = " : "=");
                     stringify(fieldValue);
                 }
             }
@@ -78,34 +105,34 @@ public class MvelEncodingEngine implements EncodingEngine {
                 throw new RuntimeException("unable to encode", e);
             }
             prettyOutdent();
-            appender.append("}");
+            output.append("}");
         }
     }
 
     public void stringify(Object value) {
         if (value == null) {
-            appender.append("null");
+            output.append("null");
             return;
         }
         Class type = value.getClass();
 
         if (String.class.isAssignableFrom(type)) {
-            appender.append("\"").append(String.valueOf(value)).append("\"");
+            output.append("\"").append(String.valueOf(value)).append("\"");
         }
         else if (type.isPrimitive() || Number.class.isAssignableFrom(type) || type == Boolean.class || type == Character.class
                 || type == Byte.class) {
-            appender.append(String.valueOf(value));
+            output.append(String.valueOf(value));
         }
         else if (type.isArray()) {
-            appender.append("new " + type.getComponentType().getName() + "[] {");
+            output.append("new ").append(type.getComponentType().getName()).append("[] {");
             prettyIndent();
             int length = Array.getLength(value);
             for (int i = 0; i < length; i++) {
                 stringify(Array.get(value, i));
-                if (i + 1 < length) appender.append(",");
+                if (i + 1 < length) output.append(",");
             }
             prettyOutdent();
-            appender.append("}");
+            output.append("}");
         }
         else if (config.canEncode(type)) {
             config.getEncoder(type).encode(this, value);
@@ -123,33 +150,44 @@ public class MvelEncodingEngine implements EncodingEngine {
         this.pretty = pretty;
     }
 
+    /**
+     * Will return the encoded stream for encoding sessions not using an OutputStream.
+     * @return String of encoded object.
+     */
     public String getEncoded() {
-        return appender.toString();
+        if (appender != null) return appender.toString();
+        return null;
     }
 
-    public StringAppender getAppender() {
-        return appender;
+    public OutputStream getOutstream() {
+        return outstream;
     }
     
-    public void append(String str) {
-        appender.append(str);
+    public OutputAppender append(String str) {
+        return output.append(str);
+    }
+
+    public void flush() {
+        writer.flush();
     }
 
     private void prettyCR() {
         if (pretty) {
-            appender.append("\n").append(ParseTools.repeatChar(' ', tabDepth * 8));
+            output.append("\n").append(ParseTools.repeatChar(' ', tabDepth * 8));
         }
     }
 
     private void prettyIndent() {
         if (pretty) {
-            appender.append("\n").append(ParseTools.repeatChar(' ', ++tabDepth * 8));
+            output.append("\n").append(ParseTools.repeatChar(' ', ++tabDepth * 8));
         }
     }
 
     private void prettyOutdent() {
         if (pretty) {
-            appender.append("\n").append(ParseTools.repeatChar(' ', --tabDepth * 8));
+            output.append("\n").append(ParseTools.repeatChar(' ', --tabDepth * 8));
         }
     }
+
+
 }
