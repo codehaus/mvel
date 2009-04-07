@@ -24,7 +24,7 @@ public class PerformanceTests extends TestCase {
 
         for (int x = 0; x < 3; x++) {
             time = System.currentTimeMillis();
-            for (int i = 0; i < 10000; i++) {
+            for (int i = 0; i < 100000; i++) {
                 out = bus.encode(p);
             }
             time = System.currentTimeMillis() - time;
@@ -32,7 +32,7 @@ public class PerformanceTests extends TestCase {
             System.out.println("MVBus Encode Time:" + time);
 
             time = System.currentTimeMillis();
-            for (int i = 0; i < 10000; i++) {
+            for (int i = 0; i < 100000; i++) {
                 bus.decode(out);
             }
             time = System.currentTimeMillis() - time;
@@ -42,21 +42,21 @@ public class PerformanceTests extends TestCase {
 
             XStream xstream = new XStream();
 
-            time = System.currentTimeMillis();
-            for (int i = 0; i < 10000; i++) {
-                out = xstream.toXML(p);
-            }
-            time = System.currentTimeMillis() - time;
-
-            System.out.println("XStream Encode Time:" + time);
-
-            time = System.currentTimeMillis();
-            for (int i = 0; i < 10000; i++) {
-                xstream.fromXML(out);
-            }
-            time = System.currentTimeMillis() - time;
-
-            System.out.println("XStream Decode Time:" + time);
+//            time = System.currentTimeMillis();
+//            for (int i = 0; i < 10000; i++) {
+//                out = xstream.toXML(p);
+//            }
+//            time = System.currentTimeMillis() - time;
+//
+//            System.out.println("XStream Encode Time:" + time);
+//
+//            time = System.currentTimeMillis();
+//            for (int i = 0; i < 10000; i++) {
+//                xstream.fromXML(out);
+//            }
+//            time = System.currentTimeMillis() - time;
+//
+//            System.out.println("XStream Decode Time:" + time);
         }
     }
 }

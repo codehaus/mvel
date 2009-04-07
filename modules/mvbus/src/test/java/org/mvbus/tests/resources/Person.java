@@ -8,8 +8,8 @@ public class Person {
     private Person father;
     private boolean active;
 
-    public Person() {
-    }
+//    public Person() {
+//    }
 
     public Person(String name, int age, String[] nicknames) {
         this.name = name;
