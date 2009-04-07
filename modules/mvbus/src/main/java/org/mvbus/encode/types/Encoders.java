@@ -16,36 +16,11 @@ public class Encoders {
 
     private final static Map<Class<?>, Encoder<?>> TYPE_ENCODERS
             = new HashMap<Class<?>, Encoder<?>>();
-//    private final static Map<Class<?>, Class<?>> TTABLE = new HashMap<Class<?>, Class<?>>();
-
     static {
         // init default type encoders here
         TYPE_ENCODERS.put(Map.class, new MapEncoder());
         TYPE_ENCODERS.put(List.class, new ListEncoder());
     }
-
-//    public static boolean canEncode(Class<?> clazz) {
-//        if (clazz == null) return false;
-//        if (!TYPE_ENCODERS.containsKey(clazz)) {
-//            do {
-//                for (Class c : clazz.getInterfaces()) {
-//                    if (TYPE_ENCODERS.containsKey(c)) {
-//                        TYPE_ENCODERS.put(clazz, TYPE_ENCODERS.get(c));
-//                        return true;
-//                    }
-//                }
-//            }
-//            while ((clazz = clazz.getSuperclass()) != null && clazz != Object.class);
-//            return false;
-//        }
-//        else {
-//            return true;
-//        }
-//    }
-//
-//    public static Encoder getEncoder(Class<?> type) {
-//        return TYPE_ENCODERS.get(type);
-//    }
 
     /**
      * @return A map of built-in encoders for common types such as {@link List}.
