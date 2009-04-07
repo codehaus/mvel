@@ -4,7 +4,6 @@ import org.mvbus.encode.engines.MvelOutstreamEncodingEngine;
 import org.mvbus.encode.engines.MvelSimpleEncodingEngine;
 import org.mvbus.util.FunctionAliasResolverFactory;
 import org.mvel2.MVEL;
-import org.mvel2.integration.VariableResolverFactory;
 import org.mvel2.util.ParseTools;
 
 import java.io.IOException;
