@@ -16,9 +16,6 @@ public class IOTests extends TestCase {
         File tmpFile = new File(System.getProperty("java.io.tmpdir") + "/mvbus_test.enc");
         tmpFile.createNewFile();
 
-        // Have the JVM delete this file when the tests are done.
-
-
         FileOutputStream outStream = new FileOutputStream(tmpFile);
 
         MVBus.createBus().encodeToStream(dhanjiPerson, outStream);

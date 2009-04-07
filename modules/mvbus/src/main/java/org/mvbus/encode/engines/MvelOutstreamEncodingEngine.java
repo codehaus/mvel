@@ -6,7 +6,6 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 
 public class MvelOutstreamEncodingEngine extends MvelEncodingEngine {
-
     private OutputAppender<PrintWriter> output;
 
     public MvelOutstreamEncodingEngine(final OutputStream outStream) {
