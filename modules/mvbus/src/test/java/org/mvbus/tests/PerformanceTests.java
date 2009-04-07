@@ -19,9 +19,9 @@ public class PerformanceTests extends TestCase {
         final MVBus bus = MVBus.createBus();
 
         long time;
-        for (int x = 0; x < 2; x++) {
+        for (int x = 0; x < 3; x++) {
             time = System.currentTimeMillis();
-            for (int i = 0; i < 25000; i++) {
+            for (int i = 0; i < 100000; i++) {
                 bus.encode(p);
             }
             time = System.currentTimeMillis() - time;
@@ -31,7 +31,7 @@ public class PerformanceTests extends TestCase {
             XStream xstream = new XStream();  
 
             time = System.currentTimeMillis();
-            for (int i = 0; i < 25000; i++) {
+            for (int i = 0; i < 100000; i++) {
                 xstream.toXML(p);
             }
             time = System.currentTimeMillis() - time;
