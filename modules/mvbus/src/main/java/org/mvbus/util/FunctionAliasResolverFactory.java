@@ -1,50 +1,54 @@
 package org.mvbus.util;
 
-import org.mvbus.decode.DecodeTools;
+import org.mvel2.MVEL;
+import org.mvel2.PropertyAccessException;
 import org.mvel2.integration.VariableResolver;
 import org.mvel2.integration.VariableResolverFactory;
-import org.mvel2.PropertyAccessException;
 
 import java.lang.reflect.Method;
 import java.util.Set;
 
 public class FunctionAliasResolverFactory implements VariableResolverFactory {
-    private static final Method instantiateMethod;
+    private enum BuiltinFunctions {
+        /**
+         * Declare aliases for built-in functions here.
+         */
 
-    static {
-        try {
-            instantiateMethod = DecodeTools.class.getMethod("instantiate", Class.class);
-        }
-        catch (Exception e) {
-            throw new RuntimeException("This shouldn't happen", e);
+        instantiate_obj("instantiate_obj", "org.mvbus.decode.DecodeTools.instantiate");
+
+        public final String name;
+        public final Method method;
+        public final VariableResolver resolver;
+
+        BuiltinFunctions(String functionName, String methodName) {
+            this.name = functionName;
+            this.method = MVEL.eval(methodName, Method.class);
+            this.resolver = new VariableResolver() {
+                public String getName() {
+                    return name;
+                }
+
+                public Class getType() {
+                    return Method.class;
+                }
+
+                public void setStaticType(Class type) {
+                }
+
+                public int getFlags() {
+                    return 0;
+                }
+
+                public Object getValue() {
+                    return method;
+                }
+
+                public void setValue(Object value) {
+                }
+            };
         }
     }
 
-    private static final VariableResolver instantiationFunction = new VariableResolver() {
-        public String getName() {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        public Class getType() {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        public void setStaticType(Class type) {
-            //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        public int getFlags() {
-            return 0;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        public Object getValue() {
-              return instantiateMethod;
-        }
-
-        public void setValue(Object value) {
-            //To change body of implemented methods use File | Settings | File Templates.
-        }
-    };
 
     public VariableResolver createVariable(String name, Object value) {
         throw new RuntimeException("Can't declare variables");
@@ -67,7 +71,7 @@ public class FunctionAliasResolverFactory implements VariableResolverFactory {
     }
 
     public VariableResolverFactory getNextFactory() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     public VariableResolverFactory setNextFactory(VariableResolverFactory resolverFactory) {
@@ -75,28 +79,31 @@ public class FunctionAliasResolverFactory implements VariableResolverFactory {
     }
 
     public VariableResolver getVariableResolver(String name) {
-        if (name.equals("instantiate_obj")) {
-            return instantiationFunction;
+        for (BuiltinFunctions bf : BuiltinFunctions.values()) {
+            if (bf.name.equals(name)) {
+                return bf.resolver;
+            }
         }
-        else {
-         throw new PropertyAccessException("no such function: " + name);
-        }
+        throw new PropertyAccessException("no such property or function: " + name);
     }
 
     public VariableResolver getIndexedVariableResolver(int index) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     public boolean isTarget(String name) {
-        return "instantiate_obj".equals(name);
+        for (BuiltinFunctions bf : BuiltinFunctions.values()) {
+            if (bf.name.equals(name)) return true;
+        }
+        return false;
     }
 
     public boolean isResolveable(String name) {
-        return "instantiate_obj".equals(name);
+        return isTarget(name);
     }
 
     public Set<String> getKnownVariables() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     public int variableIndexOf(String name) {

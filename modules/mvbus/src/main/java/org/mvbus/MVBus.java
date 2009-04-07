@@ -67,4 +67,8 @@ public abstract class MVBus {
     public <T> T decode(Class<T> type, String script) {
         return MVEL.eval(script, factory, type);
     }
+
+    public Object decode(String script) {
+        return MVEL.eval(script, factory);
+    }
 }

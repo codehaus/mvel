@@ -20,26 +20,43 @@ public class PerformanceTests extends TestCase {
         final MVBus bus = MVBus.createBus();
 
         long time;
-        String out;
+        String out = null;
 
         for (int x = 0; x < 3; x++) {
             time = System.currentTimeMillis();
             for (int i = 0; i < 10000; i++) {
-                bus.decode(Person.class, bus.encode(p));
+                out = bus.encode(p);
             }
             time = System.currentTimeMillis() - time;
 
-            System.out.println("MVBus Time:" + time);
-
-            XStream xstream = new XStream();  
+            System.out.println("MVBus Encode Time:" + time);
 
             time = System.currentTimeMillis();
             for (int i = 0; i < 10000; i++) {
-                xstream.fromXML(xstream.toXML(p));
+                bus.decode(out);
             }
             time = System.currentTimeMillis() - time;
 
-            System.out.println("XStream Time:" + time);
+            System.out.println("MVBus Decode Time:" + time);
+
+
+            XStream xstream = new XStream();
+
+//            time = System.currentTimeMillis();
+//            for (int i = 0; i < 10000; i++) {
+//                out = xstream.toXML(p);
+//            }
+//            time = System.currentTimeMillis() - time;
+//
+//            System.out.println("XStream Encode Time:" + time);
+//
+//            time = System.currentTimeMillis();
+//            for (int i = 0; i < 10000; i++) {
+//                xstream.fromXML(out);
+//            }
+//            time = System.currentTimeMillis() - time;
+//
+//            System.out.println("XStream Decode Time:" + time);
         }
     }
 }
