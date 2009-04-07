@@ -4,6 +4,7 @@ import com.thoughtworks.xstream.XStream;
 import junit.framework.TestCase;
 import org.mvbus.MVBus;
 import org.mvbus.tests.resources.Person;
+import org.mvel2.MVEL;
 
 public class PerformanceTests extends TestCase {
     public void testCompareToXStream() {
@@ -19,10 +20,12 @@ public class PerformanceTests extends TestCase {
         final MVBus bus = MVBus.createBus();
 
         long time;
+        String out;
+
         for (int x = 0; x < 3; x++) {
             time = System.currentTimeMillis();
-            for (int i = 0; i < 100000; i++) {
-                bus.encode(p);
+            for (int i = 0; i < 10000; i++) {
+                bus.decode(Person.class, bus.encode(p));
             }
             time = System.currentTimeMillis() - time;
 
@@ -31,8 +34,8 @@ public class PerformanceTests extends TestCase {
             XStream xstream = new XStream();  
 
             time = System.currentTimeMillis();
-            for (int i = 0; i < 100000; i++) {
-                xstream.toXML(p);
+            for (int i = 0; i < 10000; i++) {
+                xstream.fromXML(xstream.toXML(p));
             }
             time = System.currentTimeMillis() - time;
 

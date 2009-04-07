@@ -38,7 +38,7 @@ public abstract class MvelEncodingEngine implements EncodingEngine {
                 append("new " + encodeClass.getName() + "().{");
             }
             catch (Exception e) {
-                append("org.mvbus.decode.MVBUSDecoder.instantiate(").append(encodeClass.getName()).append(").{");
+                append("instantiate_obj(").append(encodeClass.getName()).append(").{");
             }
 
             prettyIndent();

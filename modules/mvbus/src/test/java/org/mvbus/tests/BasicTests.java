@@ -4,6 +4,7 @@ import junit.framework.TestCase;
 import org.mvbus.tests.resources.Person;
 import org.mvbus.MVBus;
 import org.mvbus.PrintStyle;
+import org.mvbus.Configuration;
 
 import java.util.HashMap;
 
@@ -48,5 +49,6 @@ public class BasicTests extends TestCase {
         assertEquals("proctor", m.get("mark"));
         assertEquals("brock", m.get("mike"));
     }
+
 }
 
