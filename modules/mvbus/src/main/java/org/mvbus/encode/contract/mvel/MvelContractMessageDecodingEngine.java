@@ -19,10 +19,10 @@ public class MvelContractMessageDecodingEngine {
         int read = 0;
         byte[] buf = new byte[5];
 
-        for (int i = 0; i < encoding.length; i++) {
+        for (int i = 0; i < encoding.length; i += read) {
             read = WireMessageData.readBlock(encoding, i,  buf);
 
-            switch (WireMessageData.decodeInteger(buf, i)) {
+            switch (WireMessageData.decodeInteger(encoding, i)) {
                 case WireMessageData.MSG_START:
                     System.out.println("msg_start");
                     break;
