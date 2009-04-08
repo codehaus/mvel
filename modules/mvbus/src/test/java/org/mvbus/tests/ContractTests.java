@@ -20,15 +20,13 @@ public class ContractTests extends TestCase {
 
         Contract contract = MVBus.createBus().createContract(p);
 
-        System.out.println(contract.contractString);
-
-        System.out.println("---");
-
         byte[] b = contract.createMessage(p);
 
         MvelContractMessageDecodingEngine decoder = new MvelContractMessageDecodingEngine();
         decoder.addContract(Person.class.getName(), contract.contractString);
 
         Object o = decoder.decode(b);
+
+        assertTrue(p.equals(o));
     }
 }

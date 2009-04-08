@@ -13,6 +13,7 @@ import java.util.ArrayList;
 public class MvelContractEncodingEngine extends MvelEncodingEngine {
 
     private ArrayList<String> parameters = new ArrayList<String>();
+    private int index = 0;
 
     private OutputAppender<StringAppender> output = new OutputAppender<StringAppender>() {
         private StringAppender appender = new StringAppender();
@@ -40,7 +41,7 @@ public class MvelContractEncodingEngine extends MvelEncodingEngine {
                 append("new " + encodeClass.getName() + "().{");
             }
             catch (Exception e) {
-                append("instantiate_obj(").append(encodeClass.getName()).append(").{");
+                append("org.mvbus.decode.DecodeTools.instantiate(").append(encodeClass.getName()).append(").{");
             }
 
             prettyIndent();
@@ -68,7 +69,7 @@ public class MvelContractEncodingEngine extends MvelEncodingEngine {
 
                     parameters.add(fields[i].getName());
 
-                    stringify(null);
+                    stringify(fieldValue);
                 }
             }
             catch (Exception e) {
@@ -81,37 +82,28 @@ public class MvelContractEncodingEngine extends MvelEncodingEngine {
     }
 
     public EncodingEngine stringify(Object value) {
-        append("$_" + (parameters.size()-1));
-//        if (value == null) {
-//            append("null");
-//            return this;
-//        }
-//        Class type = value.getClass();
-//
-//        if (String.class.isAssignableFrom(type)) {
-//            append("\"").append(String.valueOf(value)).append("\"");
-//        }
-//        else if (type.isPrimitive() || Number.class.isAssignableFrom(type) || type == Boolean.class || type == Character.class
-//                || type == Byte.class) {
-//            append(String.valueOf(value));
-//        }
-//        else if (type.isArray()) {
-//            append("new ").append(type.getComponentType().getName()).append("[] {");
-//            prettyIndent();
-//            int length = Array.getLength(value);
-//            for (int i = 0; i < length; i++) {
-//                stringify(Array.get(value, i));
-//                if (i + 1 < length) append(",");
-//            }
-//            prettyOutdent();
-//            append("}");
-//        }
-//        else if (config.canEncode(type)) {
-//            config.getEncoder(type).encode(this, value);
-//        }
-//        else {
-//            encode(value);
-//        }
+        if (value == null) {
+            append("$_" + index++);
+            return this;
+        }
+        Class type = value.getClass();
+
+        if (String.class.isAssignableFrom(type)) {
+            append("$_" + index++);
+        }
+        else if (type.isPrimitive() || Number.class.isAssignableFrom(type) || type == Boolean.class || type == Character.class
+                || type == Byte.class) {
+            append("$_" + index++);
+        }
+        else if (type.isArray()) {
+            append("$_" + index++);
+        }
+        else if (config.canEncode(type)) {
+            config.getEncoder(type).encode(this, value);
+        }
+        else {
+            encode(value);
+        }
         return this;
     }
 

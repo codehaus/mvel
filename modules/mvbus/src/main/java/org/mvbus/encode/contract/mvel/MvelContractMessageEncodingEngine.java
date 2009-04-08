@@ -70,7 +70,7 @@ public class MvelContractMessageEncodingEngine implements ContractMessagingEngin
         else {
             byteArrayOutputStream.write(encodeControlMsg(WireMessageData.MSG_START));
             byteArrayOutputStream.write(encodeString(encodeClass.getName()));
-            byteArrayOutputStream.write(encodeControlMsg(WireMessageData.SEPERATOR));
+     
 
             try {
                 Field[] fields = encodeClass.getDeclaredFields();
@@ -100,34 +100,31 @@ public class MvelContractMessageEncodingEngine implements ContractMessagingEngin
     public ContractMessagingEngine stringify(Object value) throws IOException {
         if (value == null) {
             byteArrayOutputStream.write(WireMessageData.encodeNull());
-            byteArrayOutputStream.write(encodeControlMsg(WireMessageData.SEPERATOR));
             return this;
         }
         Class type = value.getClass();
 
         if (String.class.isAssignableFrom(type)) {
             byteArrayOutputStream.write(encodeString(String.valueOf(value)));
-            byteArrayOutputStream.write(encodeControlMsg(WireMessageData.SEPERATOR));
         }
         else if (type.isPrimitive() || Number.class.isAssignableFrom(type) || type == Boolean.class || type == Character.class
                 || type == Byte.class) {
 
             byteArrayOutputStream.write(WireMessageData.encodeObject(value));
-            byteArrayOutputStream.write(encodeControlMsg(WireMessageData.SEPERATOR));
         }
         else if (type.isArray()) {
+            int length = Array.getLength(value);
+
             byteArrayOutputStream.write(encodeControlMsg(WireMessageData.TYPE_LIST));
             byteArrayOutputStream.write(encodeString(type.getName()));
+            byteArrayOutputStream.write(encodeInteger(length));
 
-            byteArrayOutputStream.write(encodeControlMsg(WireMessageData.SEPERATOR));
-            int length = Array.getLength(value);
             for (int i = 0; i < length; i++) {
                  stringify(Array.get(value, i));
             }
 
             byteArrayOutputStream.write(encodeControlMsg(WireMessageData.TYPE_ENDMARK));
-            byteArrayOutputStream.write(encodeControlMsg(WireMessageData.SEPERATOR));
- 
+
         }
         else if (config.canEncode(type)) {
             getWireEncoder(type).encode(this, value);
