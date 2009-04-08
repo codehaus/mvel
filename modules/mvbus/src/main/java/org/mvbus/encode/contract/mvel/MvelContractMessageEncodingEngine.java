@@ -85,10 +85,10 @@ public class MvelContractMessageEncodingEngine implements ContractMessagingEngin
                         continue;
                     }
                     stringify(fieldValue);
-                    
-                    if (i != 0 && i < fields.length) {
-                        byteArrayOutputStream.write(encodeInteger(WireMessageData.SEPERATOR));
-                    }
+//
+//                    if (i != 0 && i < fields.length) {
+//                        byteArrayOutputStream.write(encodeInteger(WireMessageData.SEPERATOR));
+//                    }
                 }
             }
             catch (Exception e) {
@@ -101,31 +101,37 @@ public class MvelContractMessageEncodingEngine implements ContractMessagingEngin
     public ContractMessagingEngine stringify(Object value) throws IOException {
         if (value == null) {
             byteArrayOutputStream.write(WireMessageData.encodeNull());
+            byteArrayOutputStream.write(encodeInteger(WireMessageData.SEPERATOR));
+
             return this;
         }
         Class type = value.getClass();
 
         if (String.class.isAssignableFrom(type)) {
             byteArrayOutputStream.write(encodeString(String.valueOf(value)));
+            byteArrayOutputStream.write(encodeInteger(WireMessageData.SEPERATOR));
+
         }
         else if (type.isPrimitive() || Number.class.isAssignableFrom(type) || type == Boolean.class || type == Character.class
                 || type == Byte.class) {
 
-            byteArrayOutputStream.write(encodeString(String.valueOf(value)));
+            byteArrayOutputStream.write(WireMessageData.encodeObject(value));
+            byteArrayOutputStream.write(encodeInteger(WireMessageData.SEPERATOR));
+            
 
         }
         else if (type.isArray()) {
-            byteArrayOutputStream.write(encodeInteger(WireMessageData.ARRAY));
-
-            int length = Array.getLength(value);
-            byteArrayOutputStream.write(encodeInteger(length));
-
-            byteArrayOutputStream.write(encodeInteger(WireMessageData.ARRAYLEN));
-
-            for (int i = 0; i < length; i++) {
-                stringify(Array.get(value, i));
-                if (i + 1 < length) byteArrayOutputStream.write(encodeInteger(WireMessageData.SEPERATOR));
-            }
+//            byteArrayOutputStream.write(encodeInteger(WireMessageData.ARRAY));
+//
+//            int length = Array.getLength(value);
+//            byteArrayOutputStream.write(encodeInteger(length));
+//
+//            byteArrayOutputStream.write(encodeInteger(WireMessageData.ARRAYLEN));
+//
+//            for (int i = 0; i < length; i++) {
+//                stringify(Array.get(value, i));
+//                if (i + 1 < length) byteArrayOutputStream.write(encodeInteger(WireMessageData.SEPERATOR));
+//            }
         }
         else if (config.canEncode(type)) {
             getWireEncoder(type).encode(this, value);
