@@ -1,4 +1,4 @@
-package org.mvbus.encode.engines;
+package org.mvbus.encode.engines.mvel;
 
 import org.mvbus.Configuration;
 import org.mvbus.PrintStyle;
@@ -14,11 +14,11 @@ import java.lang.reflect.Modifier;
  * This is the default workhorse, the Java to MVEL encoding engine.
  */
 public abstract class MvelEncodingEngine implements EncodingEngine {
-    private Configuration config;
-    private boolean pretty = false;
-    private int tabDepth = 0;
+    protected Configuration config;
+    protected boolean pretty = false;
+    protected int tabDepth = 0;
 
-    private static final Class[] EMPTYCLS = new Class[0];
+    protected static final Class[] EMPTYCLS = new Class[0];
 
     public EncodingEngine init(Configuration config) {
         this.config = config;
@@ -123,19 +123,19 @@ public abstract class MvelEncodingEngine implements EncodingEngine {
 
     public abstract void flush();
 
-    private void prettyCR() {
+    protected void prettyCR() {
         if (pretty) {
             append("\n").append(ParseTools.repeatChar(' ', tabDepth * 8));
         }
     }
 
-    private void prettyIndent() {
+    protected void prettyIndent() {
         if (pretty) {
             append("\n").append(ParseTools.repeatChar(' ', ++tabDepth * 8));
         }
     }
 
-    private void prettyOutdent() {
+    protected void prettyOutdent() {
         if (pretty) {
             append("\n").append(ParseTools.repeatChar(' ', --tabDepth * 8));
         }

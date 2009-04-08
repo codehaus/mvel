@@ -1,7 +1,8 @@
-package org.mvbus.encode.engines;
+package org.mvbus.encode.engines.mvel;
 
 import org.mvel2.util.StringAppender;
 import org.mvbus.util.OutputAppender;
+import org.mvbus.encode.engines.mvel.MvelEncodingEngine;
 
 public class MvelSimpleEncodingEngine extends MvelEncodingEngine {
     private OutputAppender<StringAppender> output = new OutputAppender<StringAppender>() {

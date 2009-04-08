@@ -1,9 +1,12 @@
 package org.mvbus;
 
-import org.mvbus.encode.engines.MvelOutstreamEncodingEngine;
-import org.mvbus.encode.engines.MvelSimpleEncodingEngine;
+import org.mvbus.encode.engines.mvel.MvelOutstreamEncodingEngine;
+import org.mvbus.encode.engines.mvel.MvelSimpleEncodingEngine;
+import org.mvbus.encode.contract.mvel.MvelContractEncodingEngine;
+import org.mvbus.encode.contract.mvel.MvelContractMessageEncodingEngine;
 import org.mvbus.util.FunctionAliasResolverFactory;
 import org.mvel2.MVEL;
+import org.mvel2.MVELInterpretedRuntime;
 import org.mvel2.util.ParseTools;
 
 import java.io.IOException;
@@ -47,6 +50,13 @@ public abstract class MVBus {
         };
     }
 
+    public <T> Contract createContract(T instance) {
+         MvelContractEncodingEngine m = (MvelContractEncodingEngine)
+                 new MvelContractEncodingEngine().init(config).encode(instance);
+
+         return new Contract(m.getParameters(), m.getEncoded(), new MvelContractMessageEncodingEngine().init(config));
+    }
+
     public <T> void encodeToStream(T instance, OutputStream stream) {
         new MvelOutstreamEncodingEngine(stream).init(config).encode(instance).flush();
     }
@@ -64,11 +74,12 @@ public abstract class MVBus {
     }
 
     @SuppressWarnings("unchecked")
+
     public <T> T decode(Class<T> type, String script) {
-        return MVEL.eval(script, factory, type);
+        return (T) new MVELInterpretedRuntime(script, null, factory).parse();
     }
 
     public Object decode(String script) {
-        return MVEL.eval(script, factory);
+        return new MVELInterpretedRuntime(script, null, factory).parse();
     }
 }

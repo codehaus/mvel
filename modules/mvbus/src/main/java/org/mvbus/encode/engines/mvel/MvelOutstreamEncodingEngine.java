@@ -1,6 +1,7 @@
-package org.mvbus.encode.engines;
+package org.mvbus.encode.engines.mvel;
 
 import org.mvbus.util.OutputAppender;
+import org.mvbus.encode.engines.mvel.MvelEncodingEngine;
 
 import java.io.OutputStream;
 import java.io.PrintWriter;
