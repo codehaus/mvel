@@ -18,7 +18,7 @@ public class WireMessageData {
 
     public static final byte[] CONTROL_SEQUENCE = new byte[]{-1, 0};
 
-    public Object getObject(byte[] input, int start, int length) {
+    public static Object getObject(byte[] input, int start, int length) {
         switch (input[start]) {
             case TYPE_INT:
                return decodeInteger(input, start);
@@ -29,14 +29,13 @@ public class WireMessageData {
     }
 
     public static byte[] encodeInteger(int value) {
-        byte[] b = new byte[10];
+        byte[] b = new byte[5];
         b[0] = TYPE_INT;
         b[1] = (byte) ((value >> 24) & 0xFF);
         b[2] = (byte) ((value >> 16) & 0xFF);
         b[3] = (byte) ((value >> 8) & 0xFF);
         b[4] = (byte) ((value) & 0xFF);
-        b[5] = TYPE_ENDMARK;
-
+        
         return b;
     }
 
@@ -57,19 +56,20 @@ public class WireMessageData {
         char[] ca = s.toCharArray();
         byte[] encArray = new byte[(ca.length*5)+5];
 
-        for (int i = 0; i < ca.length; i++) {
+        int i = 0;
+        for (; i < ca.length; i++) {
              writeBlock(encArray, i*5, encodeInteger(ca[i]));
         }
 
         encArray[0] = TYPE_STR;
-        encArray[encArray.length-6] = TYPE_ENDMARK;
+        encArray[i * 5] = TYPE_ENDMARK;
 
         return encArray;
     }
 
     public static String decodeString(byte[] input, int start, int length) {
         StringAppender appender = new StringAppender();
-        int end = start + length;
+        int end = start + (length-5);
 
         for (int i = start; i < end; i += 5) {
             appender.append((char) decodeInteger(input, i));
@@ -86,12 +86,27 @@ public class WireMessageData {
         return i;
     }
 
-    public static int readBlock(byte[] input, int offset, byte[] buf) {
+    public static int readBlock(byte[] input, int offset) {
         int i = 0;
-        while (i < 5 && offset < input.length) {
-            buf[i++] = input[offset++];
+
+        int blockType = input[offset];
+
+        switch (blockType) {
+            case TYPE_INT:
+                return 5;
+
+            case TYPE_STR:
+                while ((offset+i) < input.length) {
+                    if (input[offset + i] == TYPE_ENDMARK) {
+                        return i + 5;
+                    }
+                    i += 5;
+                }
+                return i;
         }
-        return i + 1;
+
+        return -1;
+
     }
 
 }

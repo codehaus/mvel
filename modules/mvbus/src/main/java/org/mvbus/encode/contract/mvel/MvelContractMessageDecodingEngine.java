@@ -16,19 +16,34 @@ public class MvelContractMessageDecodingEngine {
         Serializable compiledContract;
         Map<String, Object> parms = new HashMap<String, Object>();
         int p = 0;
+
         int read = 0;
-        byte[] buf = new byte[5];
 
-        for (int i = 0; i < encoding.length; i += read) {
-            read = WireMessageData.readBlock(encoding, i,  buf);
-
+        for (int i = 0; i < encoding.length;) {
             switch (WireMessageData.decodeInteger(encoding, i)) {
                 case WireMessageData.MSG_START:
-                    System.out.println("msg_start");
+                    i += 5;
+                    read = WireMessageData.readBlock(encoding, i);
+
+                    System.out.println("HEADER:" + WireMessageData.decodeString(encoding, i, read));
+
+                    i += read;
+
                     break;
                 case WireMessageData.SEPERATOR:
-                    System.out.println("seperator");
+                    i += 5;
+
+                    System.out.println("SEPERATOR");
+                    read = WireMessageData.readBlock(encoding, i);
+
+                    System.out.println("OBJECT:" + WireMessageData.getObject(encoding, i, read));
+
+                    i += read;
+
                     break;
+
+                default:
+                    i += 5;
 
             }
 
