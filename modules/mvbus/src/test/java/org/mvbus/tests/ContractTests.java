@@ -4,6 +4,7 @@ import junit.framework.TestCase;
 import org.mvbus.tests.resources.Person;
 import org.mvbus.MVBus;
 import org.mvbus.Contract;
+import org.mvbus.encode.contract.mvel.MvelContractMessageDecodingEngine;
 
 import java.io.IOException;
 
@@ -23,8 +24,11 @@ public class ContractTests extends TestCase {
 
         System.out.println("---");
 
-        System.out.println(contract.createMessage(p));
+        byte[] b = contract.createMessage(p);
 
+        MvelContractMessageDecodingEngine decoder = new MvelContractMessageDecodingEngine();
+        decoder.addContract(Person.class.getName(), contract.contractString);
 
+        Object o = decoder.decode(b);
     }
 }

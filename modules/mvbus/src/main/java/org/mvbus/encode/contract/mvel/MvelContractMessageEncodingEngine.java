@@ -36,10 +36,6 @@ public class MvelContractMessageEncodingEngine implements ContractMessagingEngin
     public String getEncoded() {
         return output.getTarget().toString();
     }
-//
-//    public OutputAppender append(String str) {
-//        return output.append(str);
-//    }
 
     public void flush() {
     }
@@ -57,14 +53,21 @@ public class MvelContractMessageEncodingEngine implements ContractMessagingEngin
     }
 
     public ContractMessagingEngine encode(Object toEncode) throws IOException {
+        _encode(toEncode);
+        byteArrayOutputStream.write(WireMessageData.MSG_END);
+        return this;
+    }
+
+    private ContractMessagingEngine _encode(Object toEncode) throws IOException {
         Class encodeClass = toEncode.getClass();
 
         if (config.canEncode(encodeClass)) {
             getWireEncoder(encodeClass).encode(this, toEncode);
         }
         else {
-            byteArrayOutputStream.write(new StringAppender("$").append(encodeClass.getName()).toString().getBytes());
-            byteArrayOutputStream.write(0);
+            byteArrayOutputStream.write(WireMessageData.MSG_START);
+            byteArrayOutputStream.write(encodeClass.getName().getBytes());
+            byteArrayOutputStream.write(WireMessageData.SEPERATOR);
 
             try {
                 Field[] fields = encodeClass.getDeclaredFields();
@@ -81,7 +84,7 @@ public class MvelContractMessageEncodingEngine implements ContractMessagingEngin
                     }
 
                     if (i != 0 && i < fields.length) {
-                        byteArrayOutputStream.write(WireMessageData.SEPERATOR.message);
+                        byteArrayOutputStream.write(WireMessageData.SEPERATOR);
                     }
 
                     byteArrayOutputStream.write(1);
@@ -91,7 +94,6 @@ public class MvelContractMessageEncodingEngine implements ContractMessagingEngin
             catch (Exception e) {
                 throw new RuntimeException("unable to encode", e);
             }
-            byteArrayOutputStream.write(WireMessageData.MSG_END.message);
         }
         return this;
     }
@@ -113,25 +115,24 @@ public class MvelContractMessageEncodingEngine implements ContractMessagingEngin
 
         }
         else if (type.isArray()) {
-    //        append("new ").append(type.getComponentType().getName()).append("[] {");
-            byteArrayOutputStream.write(WireMessageData.ARRAY.message);
+            byteArrayOutputStream.write(WireMessageData.ARRAY);
 
             int length = Array.getLength(value);
             byteArrayOutputStream.write(length);
 
-            byteArrayOutputStream.write(WireMessageData.ARRAYLEN.message);
+            byteArrayOutputStream.write(WireMessageData.ARRAYLEN);
 
             for (int i = 0; i < length; i++) {
                 stringify(Array.get(value, i));
                 if (i + 1 < length) byteArrayOutputStream.write(1);
             }
-            byteArrayOutputStream.write(WireMessageData.SEPERATOR.message);
+            byteArrayOutputStream.write(WireMessageData.SEPERATOR);
         }
         else if (config.canEncode(type)) {
             getWireEncoder(type).encode(this, value);
         }
         else {
-            encode(value);
+            _encode(value);
         }
         return this;
     }
