@@ -81,7 +81,7 @@ public class WireMessageData {
     public static int writeBlock(byte[] output, int offset, byte[] buf) {
         int i = 0;
         while (i < buf.length) {
-            output[i+offset] = buf[i];
+            output[i+offset] = buf[i++];
         }
         return i;
     }
