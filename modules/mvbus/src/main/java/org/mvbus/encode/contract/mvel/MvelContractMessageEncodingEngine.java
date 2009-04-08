@@ -6,6 +6,8 @@ import org.mvbus.encode.ContractMessagingEngine;
 import org.mvbus.encode.Encoder;
 import org.mvbus.encode.WireEncoder;
 import org.mvbus.encode.WireMessageData;
+import static org.mvbus.encode.WireMessageData.encodeInteger;
+import static org.mvbus.encode.WireMessageData.encodeString;
 import org.mvbus.util.OutputAppender;
 import org.mvel2.util.StringAppender;
 
@@ -54,7 +56,7 @@ public class MvelContractMessageEncodingEngine implements ContractMessagingEngin
 
     public ContractMessagingEngine encode(Object toEncode) throws IOException {
         _encode(toEncode);
-        byteArrayOutputStream.write(WireMessageData.MSG_END);
+        byteArrayOutputStream.write(encodeInteger(WireMessageData.MSG_END));
         return this;
     }
 
@@ -65,9 +67,9 @@ public class MvelContractMessageEncodingEngine implements ContractMessagingEngin
             getWireEncoder(encodeClass).encode(this, toEncode);
         }
         else {
-            byteArrayOutputStream.write(WireMessageData.MSG_START);
-            byteArrayOutputStream.write(encodeClass.getName().getBytes());
-            byteArrayOutputStream.write(WireMessageData.SEPERATOR);
+            byteArrayOutputStream.write(encodeInteger(WireMessageData.MSG_START));
+            byteArrayOutputStream.write(encodeString(encodeClass.getName()));
+            byteArrayOutputStream.write(encodeInteger(WireMessageData.SEPERATOR));
 
             try {
                 Field[] fields = encodeClass.getDeclaredFields();
@@ -82,13 +84,11 @@ public class MvelContractMessageEncodingEngine implements ContractMessagingEngin
                     if (fieldValue == null || (fields[i].getModifiers() & (Modifier.STATIC | Modifier.FINAL)) != 0) {
                         continue;
                     }
-
-                    if (i != 0 && i < fields.length) {
-                        byteArrayOutputStream.write(WireMessageData.SEPERATOR);
-                    }
-
-                    byteArrayOutputStream.write(1);
                     stringify(fieldValue);
+                    
+                    if (i != 0 && i < fields.length) {
+                        byteArrayOutputStream.write(encodeInteger(WireMessageData.SEPERATOR));
+                    }
                 }
             }
             catch (Exception e) {
@@ -100,33 +100,32 @@ public class MvelContractMessageEncodingEngine implements ContractMessagingEngin
 
     public ContractMessagingEngine stringify(Object value) throws IOException {
         if (value == null) {
-            byteArrayOutputStream.write(0);
+            byteArrayOutputStream.write(WireMessageData.encodeNull());
             return this;
         }
         Class type = value.getClass();
 
         if (String.class.isAssignableFrom(type)) {
-            byteArrayOutputStream.write(String.valueOf(value).getBytes());
+            byteArrayOutputStream.write(encodeString(String.valueOf(value)));
         }
         else if (type.isPrimitive() || Number.class.isAssignableFrom(type) || type == Boolean.class || type == Character.class
                 || type == Byte.class) {
 
-            byteArrayOutputStream.write(String.valueOf(value).getBytes());
+            byteArrayOutputStream.write(encodeString(String.valueOf(value)));
 
         }
         else if (type.isArray()) {
-            byteArrayOutputStream.write(WireMessageData.ARRAY);
+            byteArrayOutputStream.write(encodeInteger(WireMessageData.ARRAY));
 
             int length = Array.getLength(value);
-            byteArrayOutputStream.write(length);
+            byteArrayOutputStream.write(encodeInteger(length));
 
-            byteArrayOutputStream.write(WireMessageData.ARRAYLEN);
+            byteArrayOutputStream.write(encodeInteger(WireMessageData.ARRAYLEN));
 
             for (int i = 0; i < length; i++) {
                 stringify(Array.get(value, i));
-                if (i + 1 < length) byteArrayOutputStream.write(1);
+                if (i + 1 < length) byteArrayOutputStream.write(encodeInteger(WireMessageData.SEPERATOR));
             }
-            byteArrayOutputStream.write(WireMessageData.SEPERATOR);
         }
         else if (config.canEncode(type)) {
             getWireEncoder(type).encode(this, value);
