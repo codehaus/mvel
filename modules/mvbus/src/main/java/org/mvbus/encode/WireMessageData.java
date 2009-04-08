@@ -3,18 +3,24 @@ package org.mvbus.encode;
 import org.mvel2.util.StringAppender;
 
 public class WireMessageData {
-    public static final int TYPE_ENDMARK = 1;
-    public static final int TYPE_STR = 2;
-    public static final int TYPE_INT = 3;
-    public static final int TYPE_BOOL = 4;
-    public static final int TYPE_NULL = -1;
+    public static final int TYPE_CONTROL = 1;
+    public static final int TYPE_CHECKSUM = 2;
 
-    public static final int MSG_START = 0xFF00;
-    public static final int SEPERATOR = 0xFF01;
-    public static final int ARRAY = 0xFF02;
-    public static final int ARRAYLEN = 0xFF02;
-    public static final int CHECKSUM = 0xFF03;
-    public static final int MSG_END = 0xFF04;
+    public static final int TYPE_ENDMARK = 5;
+    public static final int TYPE_STR = 6;
+    public static final int TYPE_INT = 7;
+    public static final int TYPE_BOOL = 8;
+    public static final int TYPE_NULL = 9;
+
+    public static final int TYPE_LIST = 10;
+    
+
+    public static final int MSG_START = 20;
+    public static final int SEPERATOR = 21;
+    public static final int ARRAY = 22;
+    public static final int ARRAYLEN = 23;
+    public static final int CHECKSUM = 24;
+    public static final int MSG_END = 25;
 
 
     /**
@@ -37,6 +43,12 @@ public class WireMessageData {
                 return null;
         }
         return null;
+    }
+
+    public static byte[] encodeControlMsg(int messageType) {
+        byte[] b = encodeInteger(messageType);
+        b[0] = TYPE_CONTROL;
+        return b;
     }
 
     /**
