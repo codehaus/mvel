@@ -51,7 +51,7 @@ public class PerformanceTests extends TestCase {
             MvelContractMessageDecodingEngine decoder = new MvelContractMessageDecodingEngine();
             decoder.addContract(Person.class.getName(), c.contractString);
 
-            OptimizerFactory.setDefaultOptimizer("ASM");
+       //     OptimizerFactory.setDefaultOptimizer("ASM");
 
             try {
                 time = System.currentTimeMillis();
