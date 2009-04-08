@@ -9,7 +9,6 @@ public class WireMessageData {
     public static final int TYPE_BOOL = 4;
     public static final int TYPE_NULL = -1;
 
-
     public static final int MSG_START = 0xFF00;
     public static final int SEPERATOR = 0xFF01;
     public static final int ARRAY = 0xFF02;
@@ -20,6 +19,7 @@ public class WireMessageData {
 
     /**
      * Decode an object by automatically detecting the encoded type at the specified offset.
+     *
      * @param input
      * @param start
      * @param length
@@ -28,23 +28,26 @@ public class WireMessageData {
     public static Object getObject(byte[] input, int start, int length) {
         switch (input[start]) {
             case TYPE_INT:
-               return decodeInteger(input, start);
+                return decodeInteger(input, start);
             case TYPE_STR:
-               return decodeString(input, start, length);
+                return decodeString(input, start, length);
             case TYPE_BOOL:
-               return decodeBoolean(input, start);
+                return decodeBoolean(input, start);
+            case TYPE_NULL:
+                return null;
         }
         return null;
     }
 
     /**
      * Encode an object by automatically detecting type and choosing the appropriate encoding.
+     *
      * @param object
      * @return
      */
     public static byte[] encodeObject(Object object) {
         if (object == null) return encodeNull();
-        else if (object instanceof Integer)return encodeInteger((Integer) object);
+        else if (object instanceof Integer) return encodeInteger((Integer) object);
         else if (object instanceof String) return encodeString((String) object);
         else if (object instanceof Boolean) return encodeBoolean((Boolean) object);
         else {
@@ -54,7 +57,8 @@ public class WireMessageData {
     }
 
     /**
-     * Encodea a boolean.
+     * Encode a boolean.
+     *
      * @param bool
      * @return
      */
@@ -66,6 +70,7 @@ public class WireMessageData {
 
     /**
      * Encode an integer.
+     *
      * @param value
      * @return
      */
@@ -82,6 +87,7 @@ public class WireMessageData {
 
     /**
      * Encode a null value.
+     *
      * @return
      */
     public static byte[] encodeNull() {
@@ -92,29 +98,31 @@ public class WireMessageData {
 
     /**
      * Decode an integer from the encoded data at the specified offset.
+     *
      * @param b
      * @param start
      * @return
      */
     public static int decodeInteger(byte[] b, int start) {
-        return (((((int) b[start+4]) & 0xFF) << 32) +
-                ((((int) b[start+3]) & 0xFF) << 40) +
-                ((((int) b[start+2]) & 0xFF) << 48) +
-                ((((int) b[start+1]) & 0xFF) << 56));
+        return (((((int) b[start + 4]) & 0xFF) << 32) +
+                ((((int) b[start + 3]) & 0xFF) << 40) +
+                ((((int) b[start + 2]) & 0xFF) << 48) +
+                ((((int) b[start + 1]) & 0xFF) << 56));
     }
 
     /**
      * Encode a string.
+     *
      * @param s
      * @return
      */
     public static byte[] encodeString(String s) {
         char[] ca = s.toCharArray();
-        byte[] encArray = new byte[(ca.length*5)+5];
+        byte[] encArray = new byte[(ca.length * 5) + 5];
 
         int i = 0;
         for (; i < ca.length; i++) {
-             writeBlock(encArray, i*5, encodeInteger(ca[i]));
+            writeBlock(encArray, i * 5, encodeInteger(ca[i]));
         }
 
         encArray[0] = TYPE_STR;
@@ -125,6 +133,7 @@ public class WireMessageData {
 
     /**
      * Decode a String from the encoded data at the specified offset.
+     *
      * @param input
      * @param start
      * @param length
@@ -132,7 +141,7 @@ public class WireMessageData {
      */
     public static String decodeString(byte[] input, int start, int length) {
         StringAppender appender = new StringAppender();
-        int end = start + (length-5);
+        int end = start + (length - 5);
 
         for (int i = start; i < end; i += 5) {
             appender.append((char) decodeInteger(input, i));
@@ -143,6 +152,7 @@ public class WireMessageData {
 
     /**
      * Decode a boolean from the encoded data at the specified offet.
+     *
      * @param input
      * @param start
      * @return
@@ -153,6 +163,7 @@ public class WireMessageData {
 
     /**
      * Write the specified buffer to the output.
+     *
      * @param output
      * @param offset
      * @param buf
@@ -161,13 +172,14 @@ public class WireMessageData {
     public static int writeBlock(byte[] output, int offset, byte[] buf) {
         int i = 0;
         while (i < buf.length) {
-            output[i+offset] = buf[i++];
+            output[i + offset] = buf[i++];
         }
         return i;
     }
 
     /**
      * Determine how long the next block is.
+     *
      * @param input
      * @param offset
      * @return - offset length of the next block
@@ -176,7 +188,7 @@ public class WireMessageData {
         int i = 0;
         switch (input[offset]) {
             case TYPE_STR:
-                while ((offset+i) < input.length) {
+                while ((offset + i) < input.length) {
                     if (input[offset + i] == TYPE_ENDMARK) {
                         return i + 5;
                     }
