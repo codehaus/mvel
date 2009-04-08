@@ -54,7 +54,7 @@ public abstract class MVBus {
          MvelContractEncodingEngine m = (MvelContractEncodingEngine)
                  new MvelContractEncodingEngine().init(config).encode(instance);
 
-         return new Contract(m.getParameters(), m.getEncoded(), new MvelContractMessageEncodingEngine().init(config));
+         return new Contract(m.getParameters(), m.getEncoded(), config);
     }
 
     public <T> void encodeToStream(T instance, OutputStream stream) {

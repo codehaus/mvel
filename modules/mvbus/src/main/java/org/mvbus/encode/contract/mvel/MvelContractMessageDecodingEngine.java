@@ -91,7 +91,6 @@ public class MvelContractMessageDecodingEngine {
                     default:
                         i += 5;
                         break;
-
                 }
             }
             else {
@@ -99,12 +98,7 @@ public class MvelContractMessageDecodingEngine {
                 parms.put("$_" + (p++), WireMessageData.getObject(encoding, i, read));
                 i += read;
             }
-
         }
-//
-//        for (Map.Entry<String, Object> entry : parms.entrySet()) {
-//            System.out.println(entry.getKey() + " -> " + entry.getValue());
-//        }
 
         return MVEL.executeExpression(compiledContract, parms);
     }

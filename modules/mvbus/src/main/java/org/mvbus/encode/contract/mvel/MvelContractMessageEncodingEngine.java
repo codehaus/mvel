@@ -23,23 +23,6 @@ public class MvelContractMessageEncodingEngine implements ContractMessagingEngin
 
     ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(MAX_MESSAGE_SIZE);
 
-    private OutputAppender<StringAppender> output = new OutputAppender<StringAppender>() {
-        private StringAppender appender = new StringAppender();
-
-        public OutputAppender append(String str) {
-            appender.append(str);
-            return this;
-        }
-
-        public StringAppender getTarget() {
-            return appender;
-        }
-    };
-
-    public String getEncoded() {
-        return output.getTarget().toString();
-    }
-
     public void flush() {
     }
 
