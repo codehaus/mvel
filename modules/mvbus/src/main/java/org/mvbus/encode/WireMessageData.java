@@ -110,6 +110,12 @@ public class WireMessageData {
         return i;
     }
 
+    /**
+     * Determine how long the next block is.
+     * @param input
+     * @param offset
+     * @return - offset length of the next block
+     */
     public static int readBlock(byte[] input, int offset) {
         int i = 0;
         switch (input[offset]) {
