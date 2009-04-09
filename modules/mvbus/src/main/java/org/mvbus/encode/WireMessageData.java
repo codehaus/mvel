@@ -140,6 +140,7 @@ public class WireMessageData {
     }
 
     private static ByteBuffer buffer = ByteBuffer.allocate(9);
+    private static byte[] buf = new byte[9];
 
     public static byte[] encodeLongBuf(long value) {
         buffer.rewind();
@@ -147,6 +148,20 @@ public class WireMessageData {
         buffer.putLong(value);
         return buffer.array();
     }
+
+    public static byte[] encodeLongBufArray(long value) {
+        buf[0] = TYPE_LONG;
+        buf[1] = (byte) ((value >> 56) & 0xFF);
+        buf[2] = (byte) ((value >> 48) & 0xFF);
+        buf[3] = (byte) ((value >> 40) & 0xFF);
+        buf[4] = (byte) ((value >> 32) & 0xFF);
+        buf[5] = (byte) ((value >> 24) & 0xFF);
+        buf[6] = (byte) ((value >> 16) & 0xFF);
+        buf[7] = (byte) ((value >> 8) & 0xFF);
+        buf[8] = (byte) ((value) & 0xFF);
+        return buf;
+    }
+
 
     public static byte[] encodeLong(long value) {
         byte[] b = new byte[9];
