@@ -4,6 +4,7 @@ import org.mvel2.util.StringAppender;
 
 import static java.lang.Double.doubleToLongBits;
 import static java.lang.Float.floatToIntBits;
+import java.nio.ByteBuffer;
 
 public class WireMessageData {
     public static final int CONTROL = 1;
@@ -118,6 +119,33 @@ public class WireMessageData {
         byte[] b = encodeInteger(value);
         b[0] = TYPE_SHORT;
         return b;
+    }
+
+    public static void main(String[] args) {
+        long tm;
+
+        for (int x = 0; x < 100; x++) {
+            tm = System.currentTimeMillis();
+            for (int i = 0; i < 1000000; i++) {
+                encodeLong(tm);
+            }
+            System.out.println("time:" + (System.currentTimeMillis() - tm));
+
+            tm = System.currentTimeMillis();
+            for (int i = 0; i < 1000000; i++) {
+                encodeLongBuf(tm);
+            }
+            System.out.println("timeBuf:" + (System.currentTimeMillis() - tm));
+        }
+    }
+
+    private static ByteBuffer buffer = ByteBuffer.allocate(9);
+
+    public static byte[] encodeLongBuf(long value) {
+        buffer.rewind();
+        buffer.put((byte) TYPE_LONG);
+        buffer.putLong(value);
+        return buffer.array();
     }
 
     public static byte[] encodeLong(long value) {
