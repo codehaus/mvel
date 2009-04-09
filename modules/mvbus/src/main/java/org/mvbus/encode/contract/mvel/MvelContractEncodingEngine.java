@@ -104,13 +104,6 @@ public class MvelContractEncodingEngine extends MvelEncodingEngine {
         return this;
     }
 
-//
-//    @Override
-//    public EncodingEngine stringify(Object value) {
-//        append("$_" + offsetIdx++);
-//        return this;
-//    }
-
     public String getEncoded() {
         return output.getTarget().toString();
     }

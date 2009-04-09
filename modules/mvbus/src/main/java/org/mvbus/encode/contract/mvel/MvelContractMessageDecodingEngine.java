@@ -10,6 +10,7 @@ import java.io.Serializable;
 import java.io.InputStream;
 import java.io.IOException;
 import java.lang.reflect.Array;
+import static java.lang.System.arraycopy;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.LinkedHashMap;
@@ -48,7 +49,7 @@ public class MvelContractMessageDecodingEngine {
             else {
                 copySize = block.length;
             }
-            System.arraycopy(block, 0, newByte, offset, copySize);
+            arraycopy(block, 0, newByte, offset, copySize);
             offset += block.length;
         }
 
@@ -85,6 +86,8 @@ public class MvelContractMessageDecodingEngine {
                         break;
 
                     case WireMessageData.LISTSTART:
+                       //todo: This section should support all list-like data structures (arrays, lists, sets)
+
                         i += 5;
                         read = WireMessageData.readBlock(encoding, i);
                         if (parity) crc32.update(encoding, i, read);
