@@ -64,9 +64,7 @@ public class WireMessageData {
     }
 
     public static byte[] encodeControlMsg(int messageType) {
-        byte[] b = encodeInteger(messageType);
-        b[0] = CONTROL;
-        return b;
+        return encodeIntegerAs(messageType, CONTROL);
     }
 
     /**
@@ -120,10 +118,20 @@ public class WireMessageData {
         return b;
     }
 
-    public static byte[] encodeShort(short value) {
-        byte[] b = encodeInteger(value);
-        b[0] = TYPE_SHORT;
+    public static byte[] encodeIntegerAs(int value, int type) {
+        byte[] b = new byte[5];
+        b[0] = (byte) type;
+        b[1] = (byte) ((value >> 24) & 0xFF); c
+        b[2] = (byte) ((value >> 16) & 0xFF);
+        b[3] = (byte) ((value >> 8) & 0xFF);
+        b[4] = (byte) ((value) & 0xFF);
+
         return b;
+    }
+
+
+    public static byte[] encodeShort(short value) {
+        return encodeIntegerAs(value, TYPE_SHORT);
     }
 
 
