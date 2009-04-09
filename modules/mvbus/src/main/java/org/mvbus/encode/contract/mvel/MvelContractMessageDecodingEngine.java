@@ -2,6 +2,7 @@ package org.mvbus.encode.contract.mvel;
 
 import org.mvbus.encode.WireMessageData;
 import static org.mvbus.encode.WireMessageData.decodeInteger;
+import org.mvbus.BadMessageException;
 import org.mvel2.MVEL;
 import org.mvel2.util.ParseTools;
 
@@ -151,7 +152,7 @@ public class MvelContractMessageDecodingEngine {
 
                             long checksumData = WireMessageData.decodeLong(encoding, i);
                             if (crc32.getValue() != checksumData) {
-                                throw new RuntimeException("bad message: crc32 checksum failure: " +
+                                throw new BadMessageException("bad message: crc32 checksum failure: " +
                                         "(recv:" + crc32.getValue() + "):(block:" + checksumData + ")");
                             }
                         }

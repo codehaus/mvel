@@ -6,8 +6,6 @@ import org.mvbus.encode.ContractMessagingEngine;
 import org.mvbus.encode.Encoder;
 import org.mvbus.encode.WireEncoder;
 import org.mvbus.encode.WireMessageData;
-import static org.mvbus.encode.WireMessageData.encodeInteger;
-import static org.mvbus.encode.WireMessageData.encodeString;
 import static org.mvbus.encode.WireMessageData.encodeControlMsg;
 import org.mvbus.util.WireOutput;
 
@@ -17,8 +15,6 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.zip.CRC32;
-
-import sun.security.krb5.internal.crypto.crc32;
 
 public class MvelContractMessageEncodingEngine implements ContractMessagingEngine {
 
@@ -45,6 +41,7 @@ public class MvelContractMessageEncodingEngine implements ContractMessagingEngin
                 CRC32 crc = new CRC32();
 
                 public void append(byte[] b) throws IOException {
+                    crc.update(b);
                     s.write(b);
                 }
 
@@ -53,9 +50,7 @@ public class MvelContractMessageEncodingEngine implements ContractMessagingEngin
                 }
 
                 public void encodeObject(Object object) throws IOException {
-                    byte[] b = WireMessageData.encodeObject(object);
-                    crc.update(b);
-                    stream.write(b);
+                    append(WireMessageData.encodeObject(object));
                 }
 
                 public long getChecksum() {
