@@ -121,7 +121,7 @@ public class WireMessageData {
     public static byte[] encodeIntegerAs(int value, int type) {
         byte[] b = new byte[5];
         b[0] = (byte) type;
-        b[1] = (byte) ((value >> 24) & 0xFF); c
+        b[1] = (byte) ((value >> 24) & 0xFF);
         b[2] = (byte) ((value >> 16) & 0xFF);
         b[3] = (byte) ((value >> 8) & 0xFF);
         b[4] = (byte) ((value) & 0xFF);
@@ -157,15 +157,15 @@ public class WireMessageData {
         return encodeInteger(floatToIntBits(value));
     }
 
+
+    private static final byte[] NULL = new byte[] {(byte)TYPE_NULL,0,0,0,0};
     /**
      * Encode a null value.
      *
      * @return
      */
     public static byte[] encodeNull() {
-        byte[] b = new byte[5];
-        b[0] = TYPE_NULL;
-        return b;
+        return NULL;
     }
 
     /**
