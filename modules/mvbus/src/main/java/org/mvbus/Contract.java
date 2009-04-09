@@ -6,19 +6,23 @@ import org.mvbus.encode.contract.mvel.MvelContractMessageEncodingEngine;
 
 import java.util.List;
 import java.io.IOException;
+import java.io.OutputStream;
 
 public class Contract<T> {
     public List<String> parameters;
     public String contractString;
-    private Configuration config;
+   // private Configuration config;
+    private ContractMessagingEngine engine;
 
-    public Contract(List<String> parameters, String contractString, Configuration engine) {
+    public Contract(List<String> parameters, String contractString, Configuration config) {
         this.parameters = parameters;
         this.contractString = contractString;
-        this.config = engine;
+     //   this.config = engine;
+        //todo: support pluggable engines
+        this.engine = new MvelContractMessageEncodingEngine().init(config);
     }
 
-    public byte[] createMessage(T instance) throws IOException {
-        return new MvelContractMessageEncodingEngine().init(config).encode(instance).getMessage();
+    public void createMessage(OutputStream stream, T instance) throws IOException {
+        engine.encode(stream, instance);
     }
 }

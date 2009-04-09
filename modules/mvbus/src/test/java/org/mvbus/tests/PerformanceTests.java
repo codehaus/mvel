@@ -10,6 +10,7 @@ import org.mvel2.MVEL;
 import org.mvel2.optimizers.OptimizerFactory;
 
 import java.io.IOException;
+import java.io.ByteArrayOutputStream;
 
 public class PerformanceTests extends TestCase {
     public void testCompareToXStream() {
@@ -53,10 +54,15 @@ public class PerformanceTests extends TestCase {
 
        //     OptimizerFactory.setDefaultOptimizer("ASM");
 
+            ByteArrayOutputStream outStream = new ByteArrayOutputStream(2048);
+
+
             try {
                 time = System.currentTimeMillis();
                 for (int i = 0; i < 25000; i++) {
-                    decoder.decode(c.createMessage(p));
+                    c.createMessage(outStream, p);
+                    decoder.decode(outStream.toByteArray());
+                    outStream.reset();
                 }
                 time = System.currentTimeMillis() - time;
 

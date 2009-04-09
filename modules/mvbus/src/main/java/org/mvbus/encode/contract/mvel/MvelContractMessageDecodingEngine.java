@@ -6,14 +6,52 @@ import org.mvel2.MVEL;
 import org.mvel2.util.ParseTools;
 
 import java.io.Serializable;
+import java.io.InputStream;
+import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 
 //todo: redo everything :) -- super prototype
 public class MvelContractMessageDecodingEngine {
+    private static final int BLOCK_SIZE = 512;
     private Map<String, Serializable> contracts = new HashMap<String, Serializable>();
+
+    public Object decode(InputStream inStream) throws IOException {
+        LinkedList<byte[]> blocks = new LinkedList<byte[]>();
+        byte[] curr = new byte[BLOCK_SIZE];
+        blocks.add(curr);
+
+        int totalRead = 0;
+        int read;
+
+        for (int i = 0; i < curr.length; i++) {
+            read = inStream.read(curr);
+            totalRead += read;
+            if (read < curr.length) break;
+            else {
+                blocks.add(curr = new byte[BLOCK_SIZE]);
+            }
+        }
+
+        byte[] newByte = new byte[totalRead];
+        int offset = 0;
+        int copySize;
+        for (byte[] block : blocks) {
+            if ((totalRead - (block.length + offset)) < 0) {
+                copySize = totalRead % block.length;
+            }
+            else {
+                copySize = block.length;
+            }
+            System.arraycopy(block, 0, newByte, offset, copySize);
+            offset += block.length;
+        }
+
+        return decode(newByte);
+    }
 
     public Object decode(byte[] encoding) {
         Serializable compiledContract = null;
@@ -24,7 +62,7 @@ public class MvelContractMessageDecodingEngine {
 
         for (int i = 0; i < encoding.length;) {
 
-            if (encoding[i] == WireMessageData.TYPE_CONTROL) {
+            if (encoding[i] == WireMessageData.CONTROL) {
                 switch (decodeInteger(encoding, i)) {
                     case WireMessageData.MSG_START:
                         i += 5;
@@ -40,7 +78,7 @@ public class MvelContractMessageDecodingEngine {
 
                         break;
 
-                    case WireMessageData.TYPE_LIST:
+                    case WireMessageData.LISTSTART:
                         i += 5;
                         read = WireMessageData.readBlock(encoding, i);
                         String type = (String) WireMessageData.getObject(encoding, i, read);
@@ -61,8 +99,8 @@ public class MvelContractMessageDecodingEngine {
                             }
 
                             int cursor = 0;
-                            while (!(encoding[i] == WireMessageData.TYPE_CONTROL
-                                    && (decodeInteger(encoding, i) == WireMessageData.TYPE_ENDMARK))) {
+                            while (!(encoding[i] == WireMessageData.CONTROL
+                                    && (decodeInteger(encoding, i) == WireMessageData.ENDBLOCK))) {
 
                                 read = WireMessageData.readBlock(encoding, i);
 
@@ -80,7 +118,7 @@ public class MvelContractMessageDecodingEngine {
 
                         break;
 
-                    case WireMessageData.TYPE_ENDMARK:
+                    case WireMessageData.ENDBLOCK:
                         i += 5;
                         break;
 
