@@ -16,10 +16,11 @@ import java.io.OutputStream;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.zip.CRC32;
+
+import sun.security.krb5.internal.crypto.crc32;
 
 public class MvelContractMessageEncodingEngine implements ContractMessagingEngine {
-    private static final int MAX_MESSAGE_SIZE = 1024 * 10;
-
 
     public void flush() {
     }
@@ -36,26 +37,64 @@ public class MvelContractMessageEncodingEngine implements ContractMessagingEngin
         return this;
     }
 
-    public <T extends OutputStream> ContractMessagingEngine encode(final T stream, Object toEncode) throws IOException {
-        WireOutput out = new WireOutput<T>() {
-            T s = stream;
+    public <T extends OutputStream> ContractMessagingEngine encode(final T stream, Object toEncode, boolean parity) throws IOException {
+        WireOutput out;
+        if (parity) {
+            out = new WireOutput<T>() {
+                T s = stream;
+                CRC32 crc = new CRC32();
 
-            public void append(byte[] b) throws IOException {
-                s.write(b);
-            }
+                public void append(byte[] b) throws IOException {
+                    s.write(b);
+                }
 
-            public void controlMessage(int type) throws IOException {
-                stream.write(encodeControlMsg(type));
-            }
+                public void controlMessage(int type) throws IOException {
+                    stream.write(encodeControlMsg(type));
+                }
 
-            public void encodeObject(Object object) throws IOException {
-                stream.write(WireMessageData.encodeObject(object));
-            }
-        };
+                public void encodeObject(Object object) throws IOException {
+                    byte[] b = WireMessageData.encodeObject(object);
+                    crc.update(b);
+                    stream.write(b);
+                }
+
+                public long getChecksum() {
+                    return crc.getValue();
+                }
+            };
+
+            out.controlMessage(WireMessageData.PARITY_CHECK);
+        }
+        else {
+            out = new WireOutput<T>() {
+                T s = stream;
+
+                public void append(byte[] b) throws IOException {
+                    s.write(b);
+                }
+
+                public void controlMessage(int type) throws IOException {
+                    stream.write(encodeControlMsg(type));
+                }
+
+                public void encodeObject(Object object) throws IOException {
+                    byte[] b = WireMessageData.encodeObject(object);
+                    stream.write(b);
+                }
+
+                public long getChecksum() {
+                    return 0;
+                }
+            };
+        }
 
         _encode(out, toEncode);
 
         out.controlMessage(WireMessageData.MSG_END);
+        if (parity) {
+            out.controlMessage(WireMessageData.CHECKSUM);
+            out.encodeObject(out.getChecksum());
+        }
 
         return this;
     }
@@ -76,11 +115,7 @@ public class MvelContractMessageEncodingEngine implements ContractMessagingEngin
                 for (Field field : fields) {
                     field.setAccessible(true);
                     fieldValue = field.get(toEncode);
-
-                    /**
-                     * Don't bother initializing null fields.
-                     */
-                    if (fieldValue == null || (field.getModifiers() & (Modifier.STATIC | Modifier.FINAL)) != 0) {
+                    if ((field.getModifiers() & (Modifier.STATIC | Modifier.FINAL)) != 0) {
                         continue;
                     }
                     stringify(out, fieldValue);

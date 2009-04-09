@@ -27,6 +27,7 @@ public class WireMessageData {
     public static final int CHECKSUM = 24;
     public static final int MSG_END = 25;
     public static final int MSG_SIZE = 26;
+    public static final int PARITY_CHECK = 27;
 
 
     /**
@@ -129,7 +130,7 @@ public class WireMessageData {
         b[5] = (byte) ((value >> 24) & 0xFF);
         b[6] = (byte) ((value >> 16) & 0xFF);
         b[7] = (byte) ((value >> 8) & 0xFF);
-        b[9] = (byte) ((value) & 0xFF);
+        b[8] = (byte) ((value) & 0xFF);
         return b;
     }
 

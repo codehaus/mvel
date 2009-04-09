@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
+import java.util.zip.CRC32;
 
 //todo: redo everything :) -- super prototype
 public class MvelContractMessageDecodingEngine {
@@ -58,17 +59,21 @@ public class MvelContractMessageDecodingEngine {
         Map<String, Object> parms = new LinkedHashMap<String, Object>();
         int p = 0;
 
+        boolean parity = false;
+        CRC32 crc32 = null;
+
         int read;
 
         for (int i = 0; i < encoding.length;) {
-
             if (encoding[i] == WireMessageData.CONTROL) {
                 switch (decodeInteger(encoding, i)) {
                     case WireMessageData.MSG_START:
                         i += 5;
                         read = WireMessageData.readBlock(encoding, i);
-                        String contractName = WireMessageData.decodeString(encoding, i, read);
+                        if (parity) crc32.update(encoding, i, read);
 
+                        String contractName = WireMessageData.decodeString(encoding, i, read);
+                        
                         if (!contracts.containsKey(contractName)) {
                             throw new RuntimeException("no such contract: " + contractName);
                         }
@@ -81,11 +86,17 @@ public class MvelContractMessageDecodingEngine {
                     case WireMessageData.LISTSTART:
                         i += 5;
                         read = WireMessageData.readBlock(encoding, i);
+                        if (parity) crc32.update(encoding, i, read);
+
                         String type = (String) WireMessageData.getObject(encoding, i, read);
+
                         i += read;
 
                         read = WireMessageData.readBlock(encoding, i);
+                        if (parity) crc32.update(encoding, i, read);
+
                         int length = (Integer) WireMessageData.getObject(encoding, i, read);
+
                         i += read;
 
                         try {
@@ -103,6 +114,8 @@ public class MvelContractMessageDecodingEngine {
                                     && (decodeInteger(encoding, i) == WireMessageData.ENDBLOCK))) {
 
                                 read = WireMessageData.readBlock(encoding, i);
+                                if (parity) crc32.update(encoding, i, read);
+
 
                                 Array.set(newList, cursor++, WireMessageData.getObject(encoding, i, read));
                                 i += read;
@@ -126,6 +139,24 @@ public class MvelContractMessageDecodingEngine {
                         i += 5;
                         break;
 
+                    case WireMessageData.PARITY_CHECK:
+                        i += 5;
+                        parity = true;
+                        crc32 = new CRC32();
+                        break;
+
+                    case WireMessageData.CHECKSUM:
+                        i += 5;
+                        if (parity) {
+
+                            long checksumData = WireMessageData.decodeLong(encoding, i);
+                            if (crc32.getValue() != checksumData) {
+                                throw new RuntimeException("bad message: crc32 checksum failure: " +
+                                        "(recv:" + crc32.getValue() + "):(block:" + checksumData + ")");
+                            }
+                        }
+                        break;
+
                     default:
                         i += 5;
                         break;
@@ -133,6 +164,11 @@ public class MvelContractMessageDecodingEngine {
             }
             else {
                 read = WireMessageData.readBlock(encoding, i);
+
+                if (parity) {
+                    crc32.update(encoding, i, read);
+                }
+
                 parms.put("$_" + (p++), WireMessageData.getObject(encoding, i, read));
                 i += read;
             }
@@ -140,6 +176,7 @@ public class MvelContractMessageDecodingEngine {
 
         return MVEL.executeExpression(compiledContract, parms);
     }
+
 
     public void addContract(String name, String contract) {
         contracts.put(name, MVEL.compileExpression(contract));

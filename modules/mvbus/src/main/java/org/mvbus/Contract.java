@@ -23,6 +23,10 @@ public class Contract<T> {
     }
 
     public void createMessage(OutputStream stream, T instance) throws IOException {
-        engine.encode(stream, instance);
+        engine.encode(stream, instance, false);
+    }
+
+    public void createMessage(OutputStream stream, T instance, boolean parity) throws IOException {
+        engine.encode(stream, instance, parity);
     }
 }

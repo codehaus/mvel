@@ -19,6 +19,8 @@ public class ContractTests extends TestCase {
 
         Contract contract = MVBus.createBus().createContract(p);
 
+        System.out.println("contract:" + contract.contractString);
+
         ByteArrayOutputStream outStream = new ByteArrayOutputStream(2048);
 
         contract.createMessage(outStream, p);
@@ -46,7 +48,7 @@ public class ContractTests extends TestCase {
 
         FileOutputStream outStream = new FileOutputStream(tmpFile);
 
-        contract.createMessage(outStream, p);
+        contract.createMessage(outStream, p, true);
 
         MvelContractMessageDecodingEngine decoder = new MvelContractMessageDecodingEngine();
         decoder.addContract(Person.class.getName(), contract.contractString);

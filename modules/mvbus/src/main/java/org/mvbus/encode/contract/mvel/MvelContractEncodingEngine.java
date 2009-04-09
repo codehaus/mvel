@@ -53,10 +53,7 @@ public class MvelContractEncodingEngine extends MvelEncodingEngine {
                     fields[i].setAccessible(true);
                     fieldValue = fields[i].get(toEncode);
 
-                    /**
-                     * Don't bother initializing null fields.
-                     */
-                    if (fieldValue == null || (fields[i].getModifiers() & (Modifier.STATIC | Modifier.FINAL)) != 0) {
+                    if ((fields[i].getModifiers() & (Modifier.STATIC | Modifier.FINAL)) != 0) {
                         continue;
                     }
 
