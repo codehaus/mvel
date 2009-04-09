@@ -3,7 +3,9 @@ package org.mvbus.encode;
 import org.mvel2.util.StringAppender;
 
 import static java.lang.Double.doubleToLongBits;
+import static java.lang.Double.longBitsToDouble;
 import static java.lang.Float.floatToIntBits;
+import static java.lang.Float.intBitsToFloat;
 import java.nio.ByteBuffer;
 
 public class WireMessageData {
@@ -49,6 +51,8 @@ public class WireMessageData {
                 return decodeDouble(input, start);
             case TYPE_FLOAT:
                 return decodeFloat(input, start);
+            case TYPE_SHORT:
+                return decodeShort(input, start);
             case TYPE_STR:
                 return decodeString(input, start, length);
             case TYPE_BOOL:
@@ -73,11 +77,12 @@ public class WireMessageData {
      */
     public static byte[] encodeObject(Object object) {
         if (object == null) return encodeNull();
+        else if (object instanceof String) return encodeString((String) object);
         else if (object instanceof Integer) return encodeInteger((Integer) object);
         else if (object instanceof Double) return encodeDouble((Double) object);
         else if (object instanceof Long) return encodeLong((Long) object);
         else if (object instanceof Float) return encodeFloat((Float) object);
-        else if (object instanceof String) return encodeString((String) object);
+        else if (object instanceof Short) return encodeShort((Short) object);
         else if (object instanceof Boolean) return encodeBoolean((Boolean) object);
         else {
             // temporaliy encode everything else as a string.
@@ -119,47 +124,6 @@ public class WireMessageData {
         byte[] b = encodeInteger(value);
         b[0] = TYPE_SHORT;
         return b;
-    }
-
-    public static void main(String[] args) {
-        long tm;
-
-        for (int x = 0; x < 100; x++) {
-            tm = System.currentTimeMillis();
-            for (int i = 0; i < 1000000; i++) {
-                encodeLong(tm);
-            }
-            System.out.println("time:" + (System.currentTimeMillis() - tm));
-
-            tm = System.currentTimeMillis();
-            for (int i = 0; i < 1000000; i++) {
-                encodeLongBuf(tm);
-            }
-            System.out.println("timeBuf:" + (System.currentTimeMillis() - tm));
-        }
-    }
-
-    private static ByteBuffer buffer = ByteBuffer.allocate(9);
-    private static byte[] buf = new byte[9];
-
-    public static byte[] encodeLongBuf(long value) {
-        buffer.rewind();
-        buffer.put((byte) TYPE_LONG);
-        buffer.putLong(value);
-        return buffer.array();
-    }
-
-    public static byte[] encodeLongBufArray(long value) {
-        buf[0] = TYPE_LONG;
-        buf[1] = (byte) ((value >> 56) & 0xFF);
-        buf[2] = (byte) ((value >> 48) & 0xFF);
-        buf[3] = (byte) ((value >> 40) & 0xFF);
-        buf[4] = (byte) ((value >> 32) & 0xFF);
-        buf[5] = (byte) ((value >> 24) & 0xFF);
-        buf[6] = (byte) ((value >> 16) & 0xFF);
-        buf[7] = (byte) ((value >> 8) & 0xFF);
-        buf[8] = (byte) ((value) & 0xFF);
-        return buf;
     }
 
 
@@ -227,11 +191,11 @@ public class WireMessageData {
     }
 
     public static float decodeFloat(byte[] b, int start) {
-        return Float.intBitsToFloat(decodeInteger(b, start));
+        return intBitsToFloat(decodeInteger(b, start));
     }
 
     public static double decodeDouble(byte[] b, int start) {
-        return Double.longBitsToDouble(decodeLong(b, start));
+        return longBitsToDouble(decodeLong(b, start));
     }
 
     /**

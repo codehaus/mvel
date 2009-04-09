@@ -1,20 +1,19 @@
 package org.mvbus.encode.contract.mvel;
 
-import org.mvbus.encode.WireMessageData;
-import static org.mvbus.encode.WireMessageData.decodeInteger;
 import org.mvbus.BadMessageException;
+import static org.mvbus.encode.WireMessageData.*;
 import org.mvel2.MVEL;
-import org.mvel2.util.ParseTools;
+import static org.mvel2.util.ParseTools.getSubComponentType;
 
-import java.io.Serializable;
-import java.io.InputStream;
 import java.io.IOException;
-import java.lang.reflect.Array;
+import java.io.InputStream;
+import java.io.Serializable;
 import static java.lang.System.arraycopy;
+import java.lang.reflect.Array;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.zip.CRC32;
 
 //todo: redo everything :) -- super prototype
@@ -31,12 +30,9 @@ public class MvelContractMessageDecodingEngine {
         int read;
 
         for (int i = 0; i < curr.length; i++) {
-            read = inStream.read(curr);
-            totalRead += read;
+            totalRead += (read = inStream.read(curr));
             if (read < curr.length) break;
-            else {
-                blocks.add(curr = new byte[BLOCK_SIZE]);
-            }
+            blocks.add(curr = new byte[BLOCK_SIZE]);
         }
 
         byte[] newByte = new byte[totalRead];
@@ -67,15 +63,14 @@ public class MvelContractMessageDecodingEngine {
         int read;
 
         for (int i = 0; i < encoding.length;) {
-            if (encoding[i] == WireMessageData.CONTROL) {
+            if (encoding[i] == CONTROL) {
                 switch (decodeInteger(encoding, i)) {
-                    case WireMessageData.MSG_START:
-                        i += 5;
-                        read = WireMessageData.readBlock(encoding, i);
+                    case MSG_START:
+                        read = readBlock(encoding, i += 5);
                         if (parity) crc32.update(encoding, i, read);
 
-                        String contractName = WireMessageData.decodeString(encoding, i, read);
-                        
+                        String contractName = decodeString(encoding, i, read);
+
                         if (!contracts.containsKey(contractName)) {
                             throw new RuntimeException("no such contract: " + contractName);
                         }
@@ -85,21 +80,17 @@ public class MvelContractMessageDecodingEngine {
 
                         break;
 
-                    case WireMessageData.LISTSTART:
-                       //todo: This section should support all list-like data structures (arrays, lists, sets)
-
-                        i += 5;
-                        read = WireMessageData.readBlock(encoding, i);
+                    case LISTSTART:
+                        //todo: This section should support all list-like data structures (arrays, lists, sets)
+                        read = readBlock(encoding, i += 5);
                         if (parity) crc32.update(encoding, i, read);
 
-                        String type = (String) WireMessageData.getObject(encoding, i, read);
+                        String type = (String) getObject(encoding, i, read);
 
-                        i += read;
-
-                        read = WireMessageData.readBlock(encoding, i);
+                        read = readBlock(encoding, i += read);
                         if (parity) crc32.update(encoding, i, read);
 
-                        int length = (Integer) WireMessageData.getObject(encoding, i, read);
+                        int length = (Integer) getObject(encoding, i, read);
 
                         i += read;
 
@@ -107,21 +98,20 @@ public class MvelContractMessageDecodingEngine {
                             Class cls = Class.forName(type, false, Thread.currentThread().getContextClassLoader());
                             Object newList;
                             if (cls.isArray()) {
-                                newList = Array.newInstance(ParseTools.getSubComponentType(cls), length);
+                                newList = Array.newInstance(getSubComponentType(cls), length);
                             }
                             else {
                                 throw new RuntimeException("not yet supported");
                             }
 
                             int cursor = 0;
-                            while (!(encoding[i] == WireMessageData.CONTROL
-                                    && (decodeInteger(encoding, i) == WireMessageData.ENDBLOCK))) {
+                            while (!(encoding[i] == CONTROL
+                                    && (decodeInteger(encoding, i) == ENDBLOCK))) {
 
-                                read = WireMessageData.readBlock(encoding, i);
+                                read = readBlock(encoding, i);
                                 if (parity) crc32.update(encoding, i, read);
 
-
-                                Array.set(newList, cursor++, WireMessageData.getObject(encoding, i, read));
+                                Array.set(newList, cursor++, getObject(encoding, i, read));
                                 i += read;
                             }
 
@@ -129,34 +119,34 @@ public class MvelContractMessageDecodingEngine {
 
                         }
                         catch (Exception e) {
-                            // handle all this at some point.
+                            //todo: handle all this at some point.
                             throw new RuntimeException(e);
                         }
 
                         break;
 
-                    case WireMessageData.ENDBLOCK:
+                    case ENDBLOCK:
                         i += 5;
                         break;
 
-                    case WireMessageData.MSG_END:
+                    case MSG_END:
                         i += 5;
                         break;
 
-                    case WireMessageData.PARITY_CHECK:
+                    case PARITY_CHECK:
                         i += 5;
                         parity = true;
+                        /**
+                         * Lazily initialize the CRC32 class.
+                         */
                         crc32 = new CRC32();
                         break;
 
-                    case WireMessageData.CHECKSUM:
+                    case CHECKSUM:
                         i += 5;
                         if (parity) {
-
-                            long checksumData = WireMessageData.decodeLong(encoding, i);
-                            if (crc32.getValue() != checksumData) {
-                                throw new BadMessageException("bad message: crc32 checksum failure: " +
-                                        "(recv:" + crc32.getValue() + "):(block:" + checksumData + ")");
+                            if (crc32.getValue() != decodeLong(encoding, i)) {
+                                throw new BadMessageException("bad message: crc32 checksum failure.");
                             }
                         }
                         break;
@@ -167,13 +157,13 @@ public class MvelContractMessageDecodingEngine {
                 }
             }
             else {
-                read = WireMessageData.readBlock(encoding, i);
+                read = readBlock(encoding, i);
 
                 if (parity) {
                     crc32.update(encoding, i, read);
                 }
 
-                parms.put("$_" + (p++), WireMessageData.getObject(encoding, i, read));
+                parms.put("$_" + (p++), getObject(encoding, i, read));
                 i += read;
             }
         }
