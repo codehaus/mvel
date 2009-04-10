@@ -19,10 +19,11 @@ import java.util.HashMap;
  */
 public class JsonDecodingEngine implements DecodingEngine {
 
+    @SuppressWarnings("unchecked")
     public <T> T decode(Class<T> type, char[] json) {
 
         StringAppender mvel = new JsonTransliterator<T>(type)
-                .parse(type, json);
+                .parse(json);
 
         System.out.println(mvel.toString());
 

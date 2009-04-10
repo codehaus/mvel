@@ -82,7 +82,7 @@ public class JsonDecoderTest extends TestCase {
     }
 
 
-    public final void TODO_MAKETHISWORK_testDecodeJsonMaps() {
+    public final void testDecodeJsonMaps() {
         String json =
                 "{ name: 'mike', age : 200000, friends : { " +
                         "'dhanji' : 'insane', " +

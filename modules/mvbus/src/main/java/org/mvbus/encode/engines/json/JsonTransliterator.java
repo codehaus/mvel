@@ -4,16 +4,19 @@ import org.mvel2.util.ParseTools;
 import org.mvel2.util.StringAppender;
 import org.mvel2.util.ReflectionUtil;
 
+import java.util.Map;
+import java.util.Stack;
+
 /**
  * @author Dhanji R. Prasanna (dhanji@gmail com)
  */
 class JsonTransliterator<T> {
     private final StringAppender mvel;
-    private final Class<T> type;
+    private final Stack<Class<?>> lexicalScopes = new Stack<Class<?>>();
 
     // state variables for parsing
     private boolean lhs = true;
-    private boolean inList = false;
+    private boolean inMap = false;
 
     private int start = 0;
 
@@ -21,19 +24,31 @@ class JsonTransliterator<T> {
 
     JsonTransliterator(Class<T> type) {
         this.mvel = new StringAppender();
-        this.type = type;
+        this.lexicalScopes.push(type);
     }
 
-    StringAppender parse(Class<?> type, char[] json) {
+    StringAppender parse(char[] json) {
         // Nothing fancy, just transliterate to MVEL and then eval this.
         for (int i = 0; i < json.length; i++) {
             char c = json[i];
 
             if ('{' == c) {
-                // First new up the class we're interested in.
-                mvel.append(" org.mvbus.decode.DecodeTools.instantiate( ");
-                mvel.append(resolvePropertyType(type));
-                mvel.append(" ).{ ");
+                // push the newly resolve type on to the stack
+                Class<?> newScope = resolvePropertyType(lexicalScopes.peek());
+                lexicalScopes.push(newScope);
+
+                // If we're dealing with a map, then treat it slightly special
+                if (Map.class.isAssignableFrom(newScope)) {
+
+                    mvel.append("[");
+                    inMap = true; //we output slightly different symbols for maps.
+                } else {
+
+                    // First new up the class we're interested in.
+                    mvel.append(" org.mvbus.decode.DecodeTools.instantiate( ");
+                    mvel.append(newScope.getName());
+                    mvel.append(" ).{ ");
+                }
 
                 // move cursor forward.
                 start = i + 1;
@@ -47,7 +62,7 @@ class JsonTransliterator<T> {
                     lhs = false;
                 }
                 mvel.append(capture(json, start, i));
-                mvel.append('=');
+                mvel.append(inMap ? ':' : '=');
 
                 start = i + 1;
             } else if (',' == c) {
@@ -73,13 +88,17 @@ class JsonTransliterator<T> {
 
                 start = i;
             } else if ('[' == c) {
-                inList = true;
             } else if (']' == c) {
-                inList = false;
             } else if ('}' == c) {
 
                 mvel.append(capture(json, start, i));
-                mvel.append(" } ");
+                mvel.append(inMap ? "]" : " } ");
+
+                if (inMap)
+                    inMap = false;
+
+                // lexical descend.
+                lexicalScopes.pop();
 
                 start = i + 1;
             }
@@ -89,18 +108,17 @@ class JsonTransliterator<T> {
     }
 
     // Determines the type of the property being written from the given Java type target.
-    private String resolvePropertyType(Class<?> type) {
+    private Class<?> resolvePropertyType(Class<?> type) {
 
         // We're still at the root object.
         if (null == lastIdent)
-            return type.getName();
+            return type;
 
         return ParseTools.getBestCandidate(new Class[]{ Object.class }, 
                 ReflectionUtil.getSetter(lastIdent), type,
                 type.getMethods(), false)
 
-                .getParameterTypes()[0]
-                .getName();
+                .getParameterTypes()[0];
     }
 
 
