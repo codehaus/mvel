@@ -85,12 +85,12 @@ public class MvelContractMessageDecodingEngine {
                         read = readBlock(encoding, i += 5);
                         if (parity) crc32.update(encoding, i, read);
 
-                        String type = (String) getObject(encoding, i, read);
+                        String type = (String) readObject(encoding, i, read);
 
                         read = readBlock(encoding, i += read);
                         if (parity) crc32.update(encoding, i, read);
 
-                        int length = (Integer) getObject(encoding, i, read);
+                        int length = (Integer) readObject(encoding, i, read);
 
                         i += read;
 
@@ -111,7 +111,7 @@ public class MvelContractMessageDecodingEngine {
                                 read = readBlock(encoding, i);
                                 if (parity) crc32.update(encoding, i, read);
 
-                                Array.set(newList, cursor++, getObject(encoding, i, read));
+                                Array.set(newList, cursor++, readObject(encoding, i, read));
                                 i += read;
                             }
 
@@ -163,7 +163,7 @@ public class MvelContractMessageDecodingEngine {
                     crc32.update(encoding, i, read);
                 }
 
-                parms.put("$_" + (p++), getObject(encoding, i, read));
+                parms.put("$_" + (p++), readObject(encoding, i, read));
                 i += read;
             }
         }

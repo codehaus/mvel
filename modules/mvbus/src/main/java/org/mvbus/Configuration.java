@@ -62,6 +62,9 @@ public abstract class Configuration {
         void using(Encoder encoder);
     }
 
+    // TODO(dhanji): this algorithm can be made more correct by not returning at the first
+    // encountered match. What we want is the *narrowest* matching type. Currently, this won't
+    // work for subinterfaces properly either (like SortedSet, for example).
     public boolean canEncode(Class<?> clazz) {
         if (clazz == null) return false;
         if (!encoders.containsKey(clazz) && !encoderCache.containsKey(clazz)) {

@@ -10,6 +10,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 
 public class IOTests extends TestCase {
+
     public void testSerializeToFile() throws IOException {
         Person dhanjiPerson = new Person("Dhanji Prasanna", 1000, new String[]{"DP"});
 
@@ -18,20 +19,21 @@ public class IOTests extends TestCase {
 
         FileOutputStream outStream = new FileOutputStream(tmpFile);
 
-        MVBus.createBus().encodeToStream(dhanjiPerson, outStream);
+        try {
+            MVBus.createBus().encodeToStream(dhanjiPerson, outStream);
 
-        outStream.flush();
-        outStream.close();
+            outStream.flush();
+            outStream.close();
 
-        FileInputStream inStream = new FileInputStream(tmpFile);
+            FileInputStream inStream = new FileInputStream(tmpFile);
 
-        Person p = MVBus.createBus().decodeFromStream(Person.class, inStream);
+            Person p = MVBus.createBus().decodeFromStream(Person.class, inStream);
+            assertTrue(dhanjiPerson.equals(p));
 
-        tmpFile.deleteOnExit();
-
-        assertTrue(dhanjiPerson.equals(p));
+        } finally {
+            tmpFile.deleteOnExit();
+        }
     }
-
 
 
 }

@@ -41,7 +41,7 @@ public class WireMessageData {
      * @param length
      * @return
      */
-    public static Object getObject(byte[] input, int start, int length) {
+    public static Object readObject(byte[] input, int start, int length) {
         switch (input[start]) {
             case TYPE_INT:
                 return decodeInteger(input, start);
