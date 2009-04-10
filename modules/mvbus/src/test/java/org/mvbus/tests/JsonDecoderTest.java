@@ -7,6 +7,8 @@ import org.mvbus.encode.engines.json.JsonDecodingEngine;
 
 import java.util.List;
 import java.util.Arrays;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * @author Dhanji R. Prasanna (dhanji@gmail com)
@@ -59,6 +61,54 @@ public class JsonDecoderTest extends TestCase {
 
     }
 
+    public final void testDecodeJsonNestedObjectGraph() {
+        String json =
+                "{ name: 'mike', age : 200000, ride: { madeBy: \"Chevy\", vintage_year : 5555 } }";
+
+        final Dude dude = MVBus.createBus(new Configuration() {
+            protected void configure() {
+                decodeUsing(new JsonDecodingEngine());
+            }
+        }).decode(Dude.class, json);
+
+        assertNotNull(dude);
+        assertEquals("mike", dude.getName());
+        assertEquals(200000, dude.getAge());
+
+        assertNotNull(dude.getRide());
+        assertEquals("Chevy", dude.ride.getMadeBy());
+        assertEquals(5555.0, dude.ride.getVintageYear());
+
+    }
+
+
+    public final void TODO_MAKETHISWORK_testDecodeJsonMaps() {
+        String json =
+                "{ name: 'mike', age : 200000, friends : { " +
+                        "'dhanji' : 'insane', " +
+                        "'mic' : 'cool', " +
+                        "'terrence' : 'funny' " +
+                "} }";
+
+        final Dude dude = MVBus.createBus(new Configuration() {
+            protected void configure() {
+                decodeUsing(new JsonDecodingEngine());
+            }
+        }).decode(Dude.class, json);
+
+        assertNotNull(dude);
+        assertEquals("mike", dude.getName());
+        assertEquals(200000, dude.getAge());
+
+        final Map<String, String> friends = dude.getFriends();
+        assertNotNull(friends);
+
+        assertEquals("insane", friends.get("dhanji"));
+        assertEquals("cool", friends.get("mic"));
+        assertEquals("funny", friends.get("terrence"));
+
+    }
+
     public static class Car {
         private String madeBy;
         private double vintageYear;
@@ -84,6 +134,17 @@ public class JsonDecoderTest extends TestCase {
         private String name;
         private int age;
         private List<String> names;
+        private Car ride;
+
+        public Map<String, String> getFriends() {
+            return friends;
+        }
+
+        public void setFriends(Map<String, String> friends) {
+            this.friends = friends;
+        }
+
+        private Map<String, String> friends = new HashMap<String, String>();
 
         public String getName() {
             return name;
@@ -107,6 +168,14 @@ public class JsonDecoderTest extends TestCase {
 
         public void setNames(List<String> names) {
             this.names = names;
+        }
+
+        public Car getRide() {
+            return ride;
+        }
+
+        public void setRide(Car ride) {
+            this.ride = ride;
         }
     }
 }
