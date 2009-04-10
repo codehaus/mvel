@@ -20,14 +20,14 @@ public class IOTests extends TestCase {
         FileOutputStream outStream = new FileOutputStream(tmpFile);
 
         try {
-            MVBus.createBus().encodeToStream(dhanjiPerson, outStream);
+            MVBus.createBus().encode(dhanjiPerson, outStream);
 
             outStream.flush();
             outStream.close();
 
             FileInputStream inStream = new FileInputStream(tmpFile);
 
-            Person p = MVBus.createBus().decodeFromStream(Person.class, inStream);
+            Person p = MVBus.createBus().decode(Person.class, inStream);
             assertTrue(dhanjiPerson.equals(p));
 
         } finally {

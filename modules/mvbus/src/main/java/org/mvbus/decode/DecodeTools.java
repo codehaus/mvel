@@ -15,7 +15,6 @@ import java.util.Map;
  *
  * TODO: Must support all common JVMs.
  *
- * TODO(dhanji): Can we call this class "Decoding" or "DecodeTools" 
  */
 public class DecodeTools {
     private static final ReflectionFactory reflectionFactory = ReflectionFactory.getReflectionFactory();

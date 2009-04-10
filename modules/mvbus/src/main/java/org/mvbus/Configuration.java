@@ -1,7 +1,10 @@
 package org.mvbus;
 
 import org.mvbus.encode.Encoder;
+import org.mvbus.encode.DecodingEngine;
+import org.mvbus.encode.engines.mvel.MvelDecodingEngine;
 import org.mvbus.encode.types.Encoders;
+import org.mvbus.decode.DecodeTools;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -15,6 +18,8 @@ public abstract class Configuration {
 
     Map<Class<?>, Encoder<?>> encoders = Encoders.all();
     Map<Class<?>, Encoder<?>> encoderCache = new HashMap<Class<?>, Encoder<?>>();
+
+    private DecodingEngine decodingEngine = new MvelDecodingEngine();
 
     static final Configuration DEFAULT = new Configuration() {
         @Override
@@ -58,8 +63,18 @@ public abstract class Configuration {
         };
     }
 
+    protected final void decodeUsing(DecodingEngine decodingEngine) {
+       this.decodingEngine = decodingEngine;
+    }
+
     public interface EncoderBindingBuilder {
+
         void using(Encoder encoder);
+
+    }
+
+    DecodingEngine getDecodingEngine() {
+        return decodingEngine;
     }
 
     // TODO(dhanji): this algorithm can be made more correct by not returning at the first

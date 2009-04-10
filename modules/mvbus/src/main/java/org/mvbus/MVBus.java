@@ -4,6 +4,7 @@ import org.mvbus.encode.engines.mvel.MvelOutstreamEncodingEngine;
 import org.mvbus.encode.engines.mvel.MvelSimpleEncodingEngine;
 import org.mvbus.encode.contract.mvel.MvelContractEncodingEngine;
 import org.mvbus.encode.contract.mvel.MvelContractMessageEncodingEngine;
+import org.mvbus.encode.DecodingEngine;
 import org.mvbus.util.FunctionAliasResolverFactory;
 import org.mvel2.MVEL;
 import org.mvel2.MVELInterpretedRuntime;
@@ -21,11 +22,13 @@ import java.io.OutputStream;
  */
 public abstract class MVBus {
     private final Configuration config;
-    private static final FunctionAliasResolverFactory factory = new FunctionAliasResolverFactory();
+    private final DecodingEngine decodingEngine;
 
 
     public MVBus(Configuration config) {
         this.config = config;
+
+        this.decodingEngine = config.getDecodingEngine();
     }
 
     public static MVBus createBus() {
@@ -50,6 +53,7 @@ public abstract class MVBus {
         };
     }
 
+    // TODO(dhanji): Make the encoding engine pluggable too.
     public <T> Contract createContract(T instance) {
          MvelContractEncodingEngine m = (MvelContractEncodingEngine)
                  new MvelContractEncodingEngine().init(config).encode(instance);
@@ -57,7 +61,7 @@ public abstract class MVBus {
          return new Contract(m.getParameters(), m.getEncoded(), config);
     }
 
-    public <T> void encodeToStream(T instance, OutputStream stream) {
+    public <T> void encode(T instance, OutputStream stream) {
         new MvelOutstreamEncodingEngine(stream).init(config).encode(instance).flush();
     }
 
@@ -65,21 +69,20 @@ public abstract class MVBus {
         return new MvelSimpleEncodingEngine().init(config).encode(instance).getEncoded();
     }
 
-    public <T> T decodeFromStream(Class<T> type, InputStream instream) throws IOException {
-        return MVEL.eval(ParseTools.readIn(instream, null), factory, type);
+    public <T> T decode(Class<T> type, InputStream instream) throws IOException {
+        return decodingEngine.decode(type, ParseTools.readIn(instream, null));
     }
 
-    public <T> T decodeFromStream(Class<T> type, InputStream instream, String encoding) throws IOException {
-        return MVEL.eval(ParseTools.readIn(instream, encoding), factory, type);
+    public <T> T decode(Class<T> type, InputStream instream, String encoding) throws IOException {
+        return decodingEngine.decode(type, ParseTools.readIn(instream, encoding));
     }
 
     @SuppressWarnings("unchecked")
-
     public <T> T decode(Class<T> type, String script) {
-        return (T) new MVELInterpretedRuntime(script, null, factory).parse();
+        return decodingEngine.decode(type, script);
     }
 
     public Object decode(String script) {
-        return new MVELInterpretedRuntime(script, null, factory).parse();
+        return decodingEngine.decode(Object.class, script);
     }
 }
