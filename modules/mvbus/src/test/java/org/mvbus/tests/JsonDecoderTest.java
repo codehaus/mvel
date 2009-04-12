@@ -58,7 +58,7 @@ public class JsonDecoderTest extends TestCase {
         assertEquals("dhanji", dude.getName());
         assertEquals(28, dude.getAge());
         assertEquals(2, dude.getNames().size());
-        assertEquals(Arrays.asList("dj", "brockm"), dude.getNames());
+        assertEquals(Arrays.asList("dj", ""), dude.getNames());
     }
 
     public final void testDecodeJsonNormalizeVarsToCamelCase() {
