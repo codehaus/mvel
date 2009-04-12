@@ -15,6 +15,16 @@ import java.util.Map;
  * @author Dhanji R. Prasanna (dhanji@gmail com)
  */
 public class JsonDecodingEngine implements DecodingEngine {
+    private final boolean normalizeToCamelCase;
+
+    public JsonDecodingEngine() {
+        normalizeToCamelCase = true;
+    }
+
+    public JsonDecodingEngine(boolean normalizaToCamelCase) {
+        this.normalizeToCamelCase = normalizaToCamelCase;
+    }
+
 
     @SuppressWarnings("unchecked")
     public <T> T decode(Class<T> type, char[] json) {
@@ -25,7 +35,7 @@ public class JsonDecodingEngine implements DecodingEngine {
                 ? new MapAndListBridge<T>(type)
                 : new MvelBridge<T>(type);
 
-        bridge = new JsonTransliterator<T>(type, bridge)
+        bridge = new JsonTransliterator<T>(type, bridge, normalizeToCamelCase)
                 .parse(json);
 
 

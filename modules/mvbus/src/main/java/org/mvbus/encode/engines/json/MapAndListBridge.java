@@ -16,14 +16,13 @@ import java.util.ArrayList;
 class MapAndListBridge<T> implements RewriteBridge<T> {
     private final Class<T> type;
 
-    private Map<String, Object> root = new HashMap<String, Object>();
+    private Map<String, Object> root;
 
     // State variables.
     private String lhs;
 
     // Value is either a Map or a List
     private Map<String, Object> currentMap;
-    private static final String ROOT = "root";
 
     public MapAndListBridge(Class<T> type) {
         this.type = type;
@@ -31,9 +30,9 @@ class MapAndListBridge<T> implements RewriteBridge<T> {
 
     public void beginMap() {
         if (null == currentMap) {
-            root.put(ROOT, currentMap = new HashMap<String, Object>());
+            root = currentMap = new HashMap<String, Object>();
         } else {
-            final HashMap<String, Object> newMap = new HashMap<String, Object>();
+            final Map<String, Object> newMap = new HashMap<String, Object>();
             currentMap.put(lhs, newMap);
             currentMap = newMap;
         }
@@ -41,7 +40,7 @@ class MapAndListBridge<T> implements RewriteBridge<T> {
 
     public void beginType(Class<?> type) {
         if (null == currentMap) {
-            root.put(ROOT, currentMap = new HashMap<String, Object>());
+            root = currentMap = new HashMap<String, Object>();
         }
     }
 
@@ -87,9 +86,9 @@ class MapAndListBridge<T> implements RewriteBridge<T> {
 
     @SuppressWarnings("unchecked")
     public <T> T getDecoded(Class<T> type) {
-        System.out.println(root.get(ROOT));
+//        System.out.println(root.get(ROOT));
 
-        return (T) root.get(ROOT);
+        return (T) root;
     }
 
     public void beginList() {

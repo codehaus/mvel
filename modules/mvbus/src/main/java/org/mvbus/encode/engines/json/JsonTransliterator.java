@@ -14,6 +14,8 @@ class JsonTransliterator<T> {
     private final Stack<Class<?>> lexicalScopes = new Stack<Class<?>>();
     private final RewriteBridge bridge;
 
+    private final boolean normalizeToCamelCase;
+
     // state variables for parsing
     private boolean lhs = true;
 
@@ -24,8 +26,9 @@ class JsonTransliterator<T> {
     private String lastIdent;
     private static final String NO_CAPTURE = "";
 
-    JsonTransliterator(Class<T> type, RewriteBridge bridge) {
+    JsonTransliterator(Class<T> type, RewriteBridge bridge, boolean normalizeToCamelCase) {
         this.bridge = bridge;
+        this.normalizeToCamelCase = normalizeToCamelCase;
 
         this.lexicalScopes.push(type);
     }
@@ -161,6 +164,10 @@ class JsonTransliterator<T> {
 
             if (!identStart) {
                 return new String(json, start, end - start).trim();
+            }
+
+            if (!normalizeToCamelCase) {
+                return lastIdent = new String(json, start, end - start).trim();
             }
 
             // otherwise convert to camel case!
