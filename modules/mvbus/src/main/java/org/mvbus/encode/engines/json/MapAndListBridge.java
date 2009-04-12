@@ -32,9 +32,11 @@ class MapAndListBridge<T> implements RewriteBridge<T> {
     public void beginMap() {
         if (null == currentMap) {
             root.put(ROOT, currentMap = new HashMap<String, Object>());
+        } else {
+            final HashMap<String, Object> newMap = new HashMap<String, Object>();
+            currentMap.put(lhs, newMap);
+            currentMap = newMap;
         }
-
-        // May want to do an rhs put if a current map already exists...
     }
 
     public void beginType(Class<?> type) {
@@ -44,7 +46,11 @@ class MapAndListBridge<T> implements RewriteBridge<T> {
     }
 
     public void valueLhs(String lhs, boolean inMap) {
-        this.lhs = lhs;
+        // We need to determine if this token is a literal.
+        if ('\'' == lhs.charAt(0) || '"' == lhs.charAt(0)) {
+            this.lhs = (String) MVEL.eval(lhs);
+        } else
+            this.lhs = lhs;
     }
 
     public void valueRhs(String rhs, boolean inSeries, boolean inJsonList) {
@@ -66,7 +72,8 @@ class MapAndListBridge<T> implements RewriteBridge<T> {
             } else {
                 // This is an empty list, so will be taken care of elsewhere.
                 if (!"".equals(rhs))
-                    // This is a put. Coerce the right hand side value using MVEL (assumes it is a literal).
+                    // This is a put. Coerce the right hand side value using MVEL
+                    // (assumes it is a literal).
                     currentMap.put(lhs, MVEL.eval(rhs));
                 lhs = null;
             }
