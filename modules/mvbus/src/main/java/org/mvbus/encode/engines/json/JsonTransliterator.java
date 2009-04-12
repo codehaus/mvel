@@ -11,23 +11,26 @@ import java.util.Stack;
  * @author Dhanji R. Prasanna (dhanji@gmail com)
  */
 class JsonTransliterator<T> {
-    private final StringAppender mvel;
     private final Stack<Class<?>> lexicalScopes = new Stack<Class<?>>();
+    private final RewriteBridge bridge;
 
     // state variables for parsing
     private boolean lhs = true;
+
     private boolean inMap = false;
+    private boolean inList = false;
 
     private int start = 0;
-
     private String lastIdent;
+    private static final String NO_CAPTURE = "";
 
-    JsonTransliterator(Class<T> type) {
-        this.mvel = new StringAppender();
+    JsonTransliterator(Class<T> type, RewriteBridge bridge) {
+        this.bridge = bridge;
+
         this.lexicalScopes.push(type);
     }
 
-    StringAppender parse(char[] json) {
+    RewriteBridge parse(char[] json) {
         // Nothing fancy, just transliterate to MVEL and then eval this.
         for (int i = 0; i < json.length; i++) {
             char c = json[i];
@@ -40,14 +43,12 @@ class JsonTransliterator<T> {
                 // If we're dealing with a map, then treat it slightly special
                 if (Map.class.isAssignableFrom(newScope)) {
 
-                    mvel.append("[");
+                    bridge.beginMap();
                     inMap = true; //we output slightly different symbols for maps.
                 } else {
 
                     // First new up the class we're interested in.
-                    mvel.append(" org.mvbus.decode.DecodeTools.instantiate( ");
-                    mvel.append(newScope.getName());
-                    mvel.append(" ).{ ");
+                    bridge.beginType(newScope);
                 }
 
                 // move cursor forward.
@@ -61,16 +62,21 @@ class JsonTransliterator<T> {
                 if (lhs) {
                     lhs = false;
                 }
-                mvel.append(capture(json, start, i));
-                mvel.append(inMap ? ':' : '=');
+                final String capture = capture(json, start, i);
+
+                // NOTE: Fast comparison for base case return code. This is not an error.
+                if (!NO_CAPTURE.equals(capture)) {
+                    bridge.valueLhs(capture, inMap);
+                }
 
                 start = i + 1;
             } else if (',' == c) {
 
-                mvel.append(capture(json, start, i));
+                bridge.valueRhs(capture(json, start, i), true, inList);
 
-                // We don't want to loggle the LHS state if inside a list.
-                mvel.append(',');
+                // We don't want to toggle the LHS state if inside a list.
+                if (!inList)
+                    lhs = true;
 
                 start = i + 1;
             } else if (ParseTools.isWhitespace(c)) {
@@ -78,21 +84,30 @@ class JsonTransliterator<T> {
                 // Is there anything really to capture?
                 final String capture = capture(json, start, i);
 
-                if (capture.length() > 0) {
+                // Fast base case comparison, Not an error!
+                if (!NO_CAPTURE.equals(capture)) {
                     if (lhs) {
                         lhs = false;
-                    }
+                        bridge.valueLhs(capture, inMap);
+                    } else
+                        bridge.valueRhs(capture, false, inList);
 
-                    mvel.append(capture);
                 }
 
                 start = i;
             } else if ('[' == c) {
+                inList = true;
+                bridge.beginList();
+                start = i + 1;
+
             } else if (']' == c) {
+                bridge.endList();
+                inList = false;
+                start = i + 1;
+
             } else if ('}' == c) {
 
-                mvel.append(capture(json, start, i));
-                mvel.append(inMap ? "]" : " } ");
+                bridge.endType(capture(json, start, i), inMap);
 
                 if (inMap)
                     inMap = false;
@@ -104,17 +119,17 @@ class JsonTransliterator<T> {
             }
         }
 
-        return mvel;
+        return bridge;
     }
 
     // Determines the type of the property being written from the given Java type target.
     private Class<?> resolvePropertyType(Class<?> type) {
 
         // We're still at the root object.
-        if (null == lastIdent)
+        if (null == lastIdent || Map.class.isAssignableFrom(type))
             return type;
 
-        return ParseTools.getBestCandidate(new Class[]{ Object.class }, 
+        return ParseTools.getBestCandidate(new Class[]{ Object.class },
                 ReflectionUtil.getSetter(lastIdent), type,
                 type.getMethods(), false)
 
@@ -162,6 +177,6 @@ class JsonTransliterator<T> {
             return lastIdent = buffer.toString().trim();
         }
 
-        return "";
+        return NO_CAPTURE;
     }
 }

@@ -1,12 +1,9 @@
 package org.mvbus.encode.engines.json;
 
-import org.mvbus.Configuration;
 import org.mvbus.encode.DecodingEngine;
-import org.mvel2.MVEL;
-import org.mvel2.util.ParseTools;
-import org.mvel2.util.StringAppender;
 
-import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * The Json flavor of our bus's pluggable decoding system. Expects data to be in Json character
@@ -22,12 +19,17 @@ public class JsonDecodingEngine implements DecodingEngine {
     @SuppressWarnings("unchecked")
     public <T> T decode(Class<T> type, char[] json) {
 
-        StringAppender mvel = new JsonTransliterator<T>(type)
+        RewriteBridge<T> bridge = (List.class.isAssignableFrom(type)
+                || Map.class.isAssignableFrom(type) )
+
+                ? new MapAndListBridge<T>(type)
+                : new MvelBridge<T>(type);
+
+        bridge = new JsonTransliterator<T>(type, bridge)
                 .parse(json);
 
-        System.out.println(mvel.toString());
 
-        return (T) MVEL.eval(mvel.toString(), new HashMap<String, Object>());
+        return bridge.getDecoded(type);
 
     }
 

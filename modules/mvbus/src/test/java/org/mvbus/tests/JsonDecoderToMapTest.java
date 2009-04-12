@@ -16,81 +16,58 @@ import java.lang.reflect.Method;
 /**
  * @author Dhanji R. Prasanna (dhanji@gmail com)
  */
-public class JsonDecoderTest extends TestCase {
-
-    public void testArrays() {
-        final Method[] methods = Arrays.class.getMethods();
-        for (Method method : methods) {
-            if (method.getName().equals("asList"))
-                System.out.println(method);
-        }
-        System.out.println(MVEL.getStaticMethod(Arrays.class, "asList", new Class[] { Object[].class }));
-    }
+public class JsonDecoderToMapTest extends TestCase {
 
     public final void testDecodeAJsonString() {
         String json = "{ name:'dhanji', age : 28, names : [] }";
 
-        final Dude dude = MVBus.createBus(new Configuration() {
+        final Map dude = MVBus.createBus(new Configuration() {
             protected void configure() {
                 decodeUsing(new JsonDecodingEngine());
             }
-        }).decode(Dude.class, json);
+        }).decode(Map.class, json);
 
         assertNotNull(dude);
-        assertEquals("dhanji", dude.getName());
-        assertEquals(28, dude.getAge());
-        assertTrue(dude.getNames().isEmpty());
+        assertEquals("dhanji", dude.get("name"));
+        assertEquals(28, dude.get("age"));
+        assertTrue(dude.get("names") instanceof List);
+        assertTrue(((List)dude.get("names")).isEmpty());
     }
 
     public final void testDecodeAJsonStringWithListValues() {
         String json = "{ name:'dhanji', age : 28, names : [ 'dj', '' ] }";
-//        String json = "{ name:'dhanji', age : 28, names = [ 'dj', 'brockm' ] }";
 
-        final Dude dude = MVBus.createBus(new Configuration() {
+        final Map dude = MVBus.createBus(new Configuration() {
             protected void configure() {
                 decodeUsing(new JsonDecodingEngine());
             }
-        }).decode(Dude.class, json);
+        }).decode(Map.class, json);
 
         assertNotNull(dude);
-        assertEquals("dhanji", dude.getName());
-        assertEquals(28, dude.getAge());
-        assertEquals(2, dude.getNames().size());
-        assertEquals(Arrays.asList("dj", "brockm"), dude.getNames());
-    }
-
-    public final void testDecodeJsonNormalizeVarsToCamelCase() {
-        String json = "{ made_by: 'bmw', vintage_year : 1968.0 }";
-
-        final Car car = MVBus.createBus(new Configuration() {
-            protected void configure() {
-                decodeUsing(new JsonDecodingEngine());
-            }
-        }).decode(Car.class, json);
-
-        assertNotNull(car);
-        assertEquals("bmw", car.getMadeBy());
-        assertEquals(1968.0, car.getVintageYear());
-
+        assertEquals("dhanji", dude.get("name"));
+        assertEquals(28, dude.get("age"));
+        assertTrue(dude.get("names") instanceof List);
+        assertEquals(Arrays.asList("dj", ""), dude.get("names"));
     }
 
     public final void testDecodeJsonNestedObjectGraph() {
         String json =
                 "{ name: 'mike', age : 200000, ride: { madeBy: \"Chevy\", vintage_year : 5555 } }";
 
-        final Dude dude = MVBus.createBus(new Configuration() {
+        final Map dude = MVBus.createBus(new Configuration() {
             protected void configure() {
                 decodeUsing(new JsonDecodingEngine());
             }
-        }).decode(Dude.class, json);
+        }).decode(Map.class, json);
 
         assertNotNull(dude);
-        assertEquals("mike", dude.getName());
-        assertEquals(200000, dude.getAge());
+        assertEquals("mike", dude.get("name"));
+        assertEquals(200000, dude.get("age"));
 
-        assertNotNull(dude.getRide());
-        assertEquals("Chevy", dude.ride.getMadeBy());
-        assertEquals(5555.0, dude.ride.getVintageYear());
+        assertNotNull(dude.get("ride"));
+        Map ride = (Map) dude.get("ride");
+        assertEquals("Chevy", ride.get("madeBy"));
+        assertEquals(5555.0, ride.get("vintageYear"));
 
     }
 

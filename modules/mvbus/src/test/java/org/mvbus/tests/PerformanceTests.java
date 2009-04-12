@@ -1,11 +1,15 @@
 package org.mvbus.tests;
 
 import com.thoughtworks.xstream.XStream;
+import com.thoughtworks.xstream.io.json.JettisonMappedXmlDriver;
 import junit.framework.TestCase;
 import org.mvbus.MVBus;
 import org.mvbus.Contract;
+import org.mvbus.Configuration;
 import org.mvbus.encode.contract.mvel.MvelContractMessageDecodingEngine;
+import org.mvbus.encode.engines.json.JsonDecodingEngine;
 import org.mvbus.tests.resources.Person;
+import org.mvbus.tests.resources.DensePerson;
 import org.mvel2.MVEL;
 import org.mvel2.optimizers.OptimizerFactory;
 
@@ -13,6 +17,59 @@ import java.io.IOException;
 import java.io.ByteArrayOutputStream;
 
 public class PerformanceTests extends TestCase {
+
+    public void testJsonDecodeVsXstream() {
+        String mikeJson = "{ person: { name: 'Mike', age: 45, " +
+                "name2: 'Mike', age2: 45, name3: 'Mike', age3: 45, name4: 'Mike', age4: 45, name5: 'Mike', age5: 45," +
+                "name6: 'Mike', age6: 45, name7: 'Mike', age7: 45, name8: 'Mike', age8: 45, name9: 'Mike', age9: 45" +
+                " } }";
+        String mikeJsonPlain = "{ name: 'Mike', age: 45, " +
+                "name2: 'Mike', age2: 45, name3: 'Mike', age3: 45, name4: 'Mike', age4: 45, name5: 'Mike', age5: 45," +
+                "name6: 'Mike', age6: 45, name7: 'Mike', age7: 45, name8: 'Mike', age8: 45, name9: 'Mike', age9: 45" +
+                " }";
+
+        final XStream xStream = new XStream(new JettisonMappedXmlDriver());
+
+        xStream.alias("person", DensePerson.class);
+        final DensePerson p = (DensePerson) xStream.fromXML(mikeJson);
+
+        final MVBus bus = MVBus.createBus(new Configuration() {
+            protected void configure() {
+                decodeUsing(new JsonDecodingEngine());
+            }
+        });
+
+        // Validate...
+        assertEquals(p, bus.decode(DensePerson.class, mikeJsonPlain));
+
+
+        // Now clock them
+        long start = System.currentTimeMillis();
+        final int iterations = 500000;
+        for (int i = 0; i < iterations; i++) {
+            xStream.fromXML(mikeJson);
+        }
+
+        start = System.currentTimeMillis();
+        for (int i = 0; i < iterations; i++) {
+            bus.decode(DensePerson.class, mikeJsonPlain);
+        }
+        
+        // Now clock them
+        start = System.currentTimeMillis();
+        for (int i = 0; i < iterations; i++) {
+            xStream.fromXML(mikeJson);
+        }
+        System.out.println("Xstream Json: " + (System.currentTimeMillis() - start));
+
+        start = System.currentTimeMillis();
+        for (int i = 0; i < iterations; i++) {
+            bus.decode(DensePerson.class, mikeJsonPlain);
+        }
+        System.out.println("MVbus Json: " + (System.currentTimeMillis() - start));
+        
+    }
+
     public void testCompareToXStream() {
         if (Boolean.getBoolean("mvbus.noperftest")) return;
 
