@@ -47,7 +47,7 @@ class MvelBridge<T> implements RewriteBridge<T> {
 
     @SuppressWarnings("unchecked")
     public <T> T getDecoded(Class<T> type) {
-//        System.out.println(mvel.toString());
+       System.out.println(mvel.toString());
         
         return (T) MVEL.eval(mvel.toString(), new HashMap<String, Object>());
     }

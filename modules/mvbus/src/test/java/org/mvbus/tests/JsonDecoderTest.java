@@ -5,6 +5,8 @@ import org.mvbus.Configuration;
 import org.mvbus.MVBus;
 import org.mvbus.encode.engines.json.JsonDecodingEngine;
 import org.mvel2.MVEL;
+import org.mvel2.integration.impl.MapVariableResolverFactory;
+import org.mvel2.util.ParseTools;
 
 import java.util.List;
 import java.util.Arrays;

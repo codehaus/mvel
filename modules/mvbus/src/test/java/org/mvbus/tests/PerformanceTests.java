@@ -20,6 +20,9 @@ import java.util.Map;
 public class PerformanceTests extends TestCase {
 
     public void testJsonDecodeVsXstream() {
+        if (Boolean.getBoolean("mvbus.noperftest")) return;
+        
+
         String mikeJson = "{ person: { name: 'Mike', age: 45, " +
                 "name2: 'Mike', age2: 45, name3: 'Mike', age3: 45, name4: 'Mike', age4: 45, name5: 'Mike', age5: 45," +
                 "name6: 'Mike', age6: 45, name7: 'Mike', age7: 45, name8: 'Mike', age8: 45, name9: 'Mike', age9: 45" +

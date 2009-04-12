@@ -167,10 +167,8 @@ public class MvelContractMessageDecodingEngine {
                 i += read;
             }
         }
-
         return MVEL.executeExpression(compiledContract, parms);
     }
-
 
     public void addContract(String name, String contract) {
         contracts.put(name, MVEL.compileExpression(contract));
