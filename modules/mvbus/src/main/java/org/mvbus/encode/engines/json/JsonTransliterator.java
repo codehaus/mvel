@@ -50,6 +50,8 @@ class JsonTransliterator<T> {
                     // First new up the class we're interested in.
                     bridge.beginType(newScope);
                 }
+                
+                lhs = true;
 
                 // move cursor forward.
                 start = i + 1;
