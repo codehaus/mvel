@@ -7,6 +7,7 @@ import org.mvbus.Contract;
 import org.mvbus.encode.contract.mvel.MvelContractMessageDecodingEngine;
 
 import java.io.*;
+import static java.lang.System.getProperty;
 
 public class ContractTests extends TestCase {
     public void testSimpleContract() throws IOException {
@@ -43,7 +44,7 @@ public class ContractTests extends TestCase {
 
         Contract contract = MVBus.createBus().createContract(p);
 
-        File tmpFile = new File(System.getProperty("java.io.tmpdir") + "/mvbus_contract_test.enc");
+        File tmpFile = new File(getProperty("java.io.tmpdir") + "/mvbus_contract_test.enc");
         tmpFile.createNewFile();
 
         FileOutputStream outStream = new FileOutputStream(tmpFile);

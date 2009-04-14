@@ -25,7 +25,7 @@ public class DecodeTools {
     public static Object instantiate(Class cls) throws Exception {
         Constructor c = CONSTRUCTOR_CACHE.get(cls);
         if (c == null) {
-            (c = reflectionFactory.newConstructorForSerialization(cls, Object.class.getDeclaredConstructor(new Class[0])))
+            (c = reflectionFactory.newConstructorForSerialization(cls, Object.class.getDeclaredConstructor()))
                     .setAccessible(true);
             CONSTRUCTOR_CACHE.put(cls,c);
         }

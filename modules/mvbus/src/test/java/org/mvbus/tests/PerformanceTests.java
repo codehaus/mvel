@@ -87,24 +87,24 @@ public class PerformanceTests extends TestCase {
         for (int x = 0; x < 3; x++) {
 
             MVBus bus = MVBus.createBus();
-//
-//            time = System.currentTimeMillis();
-//            for (int i = 0; i < 2; i++) {
-//                out = bus.encode(p);
-//            }
-//            time = System.currentTimeMillis() - time;
-//
-//            System.out.println("MVBus Encode Time:" + time);
-//
-//            bus = MVBus.createBus();
-//
-//            time = System.currentTimeMillis();
-//            for (int i = 0; i < 10000; i++) {
-//                bus.decode(out);
-//            }
-//            time = System.currentTimeMillis() - time;
-//
-//            System.out.println("MVBus Decode Time:" + time);
+
+            time = System.currentTimeMillis();
+            for (int i = 0; i < 25000; i++) {
+                out = bus.encode(p);
+            }
+            time = System.currentTimeMillis() - time;
+
+            System.out.println("MVBus Encode Time:" + time);
+
+            bus = MVBus.createBus();
+
+            time = System.currentTimeMillis();
+            for (int i = 0; i < 25000; i++) {
+                bus.decode(out);
+            }
+            time = System.currentTimeMillis() - time;
+
+            System.out.println("MVBus Decode Time:" + time);
 
             Contract c = bus.createContract(p);
             MvelContractMessageDecodingEngine decoder = new MvelContractMessageDecodingEngine();
@@ -124,7 +124,7 @@ public class PerformanceTests extends TestCase {
                 }
                 time = System.currentTimeMillis() - time;
 
-                System.out.println("MVBus Contract Decode Time:" + time);
+                System.out.println("MVBus Contract Roundtrip Time:" + time);
             }
             catch (IOException e) {
                 throw new RuntimeException(e);
@@ -132,13 +132,13 @@ public class PerformanceTests extends TestCase {
 
             XStream xstream = new XStream();
             out = new XStream().toXML(p);
-//
-//            time = System.currentTimeMillis();
-//            for (int i = 0; i < 2; i++) {
-//                out = new XStream().toXML(p);
-//            }
-//            time = System.currentTimeMillis() - time;
-//            System.out.println("XStream Encode Time:" + time);
+
+            time = System.currentTimeMillis();
+            for (int i = 0; i < 25000; i++) {
+                out = new XStream().toXML(p);
+            }
+            time = System.currentTimeMillis() - time;
+            System.out.println("XStream Encode Time:" + time);
 
             xstream = new XStream();
 

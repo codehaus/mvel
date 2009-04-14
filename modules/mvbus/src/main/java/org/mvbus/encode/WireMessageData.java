@@ -176,7 +176,7 @@ public class WireMessageData {
      * @return
      */
     public static int decodeInteger(byte[] b, int start) {
-        return (((((int) b[start + 4]) & 0xFF) << 32) +
+        return  (((((int) b[start + 4]) & 0xFF) << 32) +
                 ((((int) b[start + 3]) & 0xFF) << 40) +
                 ((((int) b[start + 2]) & 0xFF) << 48) +
                 ((((int) b[start + 1]) & 0xFF) << 56));
@@ -187,7 +187,7 @@ public class WireMessageData {
     }
 
     public static long decodeLong(byte[] b, int start) {
-        return ((((long) b[start + 8]) & 0xFF) +
+        return  ((((long) b[start + 8]) & 0xFF) +
                 ((((long) b[start + 7]) & 0xFF) << 8) +
                 ((((long) b[start + 6]) & 0xFF) << 16) +
                 ((((long) b[start + 5]) & 0xFF) << 24) +
