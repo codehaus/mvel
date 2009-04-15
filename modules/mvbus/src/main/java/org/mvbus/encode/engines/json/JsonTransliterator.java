@@ -6,6 +6,7 @@ import org.mvel2.util.ReflectionUtil;
 
 import java.util.Map;
 import java.util.Stack;
+import java.util.List;
 
 /**
  * @author Dhanji R. Prasanna (dhanji@gmail com)
@@ -20,7 +21,7 @@ class JsonTransliterator<T> {
     private boolean lhs = true;
 
     private boolean inMap = false;
-    private boolean inList = false;
+//    private boolean inList = false;
 
     private int start = 0;
     private String lastIdent;
@@ -30,7 +31,8 @@ class JsonTransliterator<T> {
         this.bridge = bridge;
         this.normalizeToCamelCase = normalizeToCamelCase;
 
-        this.lexicalScopes.push(type);
+        if (!List.class.isAssignableFrom(type))
+            this.lexicalScopes.push(type);
     }
 
     RewriteBridge parse(char[] json) {
@@ -77,10 +79,10 @@ class JsonTransliterator<T> {
                 start = i + 1;
             } else if (',' == c) {
 
-                bridge.valueRhs(capture(json, start, i), true, inList);
+                bridge.valueRhs(capture(json, start, i), true, inList());
 
                 // We don't want to toggle the LHS state if inside a list.
-                if (!inList)
+                if (!inList())
                     lhs = true;
 
                 start = i + 1;
@@ -95,19 +97,21 @@ class JsonTransliterator<T> {
                         lhs = false;
                         bridge.valueLhs(capture, inMap);
                     } else
-                        bridge.valueRhs(capture, false, inList);
+                        bridge.valueRhs(capture, false, inList());
 
                 }
 
                 start = i;
             } else if ('[' == c) {
-                inList = true;
+//                inList = true;
+                lexicalScopes.push(List.class);
                 bridge.beginList();
                 start = i + 1;
 
             } else if (']' == c) {
                 bridge.endList();
-                inList = false;
+                lexicalScopes.pop();
+//                inList = false;
                 start = i + 1;
 
             } else if ('}' == c) {
@@ -127,10 +131,17 @@ class JsonTransliterator<T> {
         return bridge;
     }
 
+    private boolean inList() {
+        return List.class.isAssignableFrom(lexicalScopes.peek());
+    }
+
     // Determines the type of the property being written from the given Java type target.
     private Class<?> resolvePropertyType(Class<?> type) {
 
-        // We're still at the root object.
+        if (List.class.isAssignableFrom(type))
+            return Map.class;
+
+        // We're still at the root object. Or we just assume anything in a list is a map.
         if (null == lastIdent || Map.class.isAssignableFrom(type))
             return type;
 

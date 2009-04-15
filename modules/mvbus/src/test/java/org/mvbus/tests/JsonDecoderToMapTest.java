@@ -34,6 +34,32 @@ public class JsonDecoderToMapTest extends TestCase {
         assertTrue(((List)dude.get("names")).isEmpty());
     }
 
+    public final void testDecodeAJsonListOfMaps() {
+        String json = "[{ name:'dhanji', age : 28, names : [] }," +
+                " { name:'mike', age : 28, names : [] }]";
+
+        final List dudes = MVBus.createBus(new Configuration() {
+            protected void configure() {
+                decodeUsing(new JsonDecodingEngine());
+            }
+        }).decode(List.class, json);
+
+        assertNotNull(dudes);
+        assertEquals(2, dudes.size());
+
+        Map dude = (Map) dudes.get(0);
+        assertEquals("dhanji", dude.get("name"));
+        assertEquals(28, dude.get("age"));
+        assertTrue(dude.get("names") instanceof List);
+        assertTrue(((List)dude.get("names")).isEmpty());
+
+        dude = (Map) dudes.get(1);
+        assertEquals("mike", dude.get("name"));
+        assertEquals(28, dude.get("age"));
+        assertTrue(dude.get("names") instanceof List);
+        assertTrue(((List)dude.get("names")).isEmpty());
+    }
+
     public final void testDecodeAJsonStringWithListValues() {
         String json = "{ name:'dhanji', age : 28, names : [ 'dj', '' ] }";
 

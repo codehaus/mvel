@@ -16,7 +16,8 @@ import java.util.ArrayList;
 class MapAndListBridge<T> implements RewriteBridge<T> {
     private final Class<T> type;
 
-    private Map<String, Object> root;
+    private Map<String, Object> rootMap;
+    private List<Object> rootList;
 
     // State variables.
     private String lhs;
@@ -29,18 +30,34 @@ class MapAndListBridge<T> implements RewriteBridge<T> {
     }
 
     public void beginMap() {
+        // Start of the whole deal?
         if (null == currentMap) {
-            root = currentMap = new HashMap<String, Object>();
+            currentMap = new HashMap<String, Object>();
+
+            if (null == rootList)
+                rootMap = currentMap;
+            else
+                rootList.add(currentMap);
         } else {
             final Map<String, Object> newMap = new HashMap<String, Object>();
-            currentMap.put(lhs, newMap);
+
+            // May need to generalize this for nested lists at any depth.
+            if (null != lhs)
+                currentMap.put(lhs, newMap);
+            else
+                rootList.add(newMap);
             currentMap = newMap;
         }
     }
 
     public void beginType(Class<?> type) {
         if (null == currentMap) {
-            root = currentMap = new HashMap<String, Object>();
+            currentMap = new HashMap<String, Object>();
+
+            if (null == rootList)
+                rootMap = currentMap;
+            else
+                rootList.add(currentMap);
         }
     }
 
@@ -86,14 +103,17 @@ class MapAndListBridge<T> implements RewriteBridge<T> {
 
     @SuppressWarnings("unchecked")
     public <T> T getDecoded(Class<T> type) {
-//        System.out.println(root.get(ROOT));
+        System.out.println(((rootList == null) ? rootMap : rootList));
 
-        return (T) root;
+        return (T) ((rootList == null) ? rootMap : rootList);
     }
 
     public void beginList() {
         if (null != lhs) {
             currentMap.put(lhs, new ArrayList<Object>());
+        } else if (null == rootMap && null == rootList) {
+            // This is the start of a root-list!
+            rootList = new ArrayList<Object>();
         }
     }
 
