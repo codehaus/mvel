@@ -31,7 +31,7 @@ public class JsonDecodingEngine implements DecodingEngine {
 
         RewriteBridge<T> bridge = (List.class.isAssignableFrom(type)
                 || Map.class.isAssignableFrom(type) )
- `
+ 
                 ? new MapAndListBridge<T>(type)
                 : new MvelBridge<T>(type);
 
