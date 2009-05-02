@@ -21,8 +21,6 @@ package org.mvel2.util;
 import static java.lang.System.arraycopy;
 
 import java.io.UnsupportedEncodingException;
-import java.io.PrintWriter;
-import java.io.Writer;
 
 public class StringAppender implements CharSequence {
     private static final int DEFAULT_SIZE = 15;
@@ -30,7 +28,7 @@ public class StringAppender implements CharSequence {
     private char[] str;
     private int capacity;
     private int size = 0;
-    private byte[] btr;
+	private byte[] btr;
     private String encoding;
 
     public StringAppender() {
@@ -40,7 +38,7 @@ public class StringAppender implements CharSequence {
     public StringAppender(int capacity) {
         str = new char[this.capacity = capacity];
     }
-
+    
     public StringAppender(int capacity, String encoding) {
         str = new char[this.capacity = capacity];
         this.encoding = encoding;
@@ -72,28 +70,11 @@ public class StringAppender implements CharSequence {
         return this;
     }
 
-    public StringAppender append(byte[] chars) {
-        if (chars.length > (capacity - size)) grow(chars.length);
-        for (int i = 0; i < chars.length; size++) {
-            str[size] = (char) chars[i++];
-        }
-        return this;
-    }
-
     public StringAppender append(char[] chars, int start, int length) {
         if (length > (capacity - size)) grow(length);
         int x = start + length;
         for (int i = start; i < x; i++) {
             str[size++] = chars[i];
-        }
-        return this;
-    }
-
-    public StringAppender append(byte[] chars, int start, int length) {
-        if (length > (capacity - size)) grow(length);
-        int x = start + length;
-        for (int i = start; i < x; i++) {
-            str[size++] = (char) chars[i];
         }
         return this;
     }
@@ -130,15 +111,14 @@ public class StringAppender implements CharSequence {
         return this;
     }
 
-    public StringAppender append(byte b) {
-        if (btr == null)
-            btr = new byte[capacity = DEFAULT_SIZE];
-        if (size >= capacity)
-            growByte(1);
-        btr[size++] = b;
-        return this;
-    }
-
+	public StringAppender append(byte b) {
+		if (btr == null)
+			btr = new byte[capacity = DEFAULT_SIZE];
+		if (size >= capacity)
+			growByte(1);
+		btr[size++] = b;
+		return this;
+	}
 
     public int length() {
         return size;
@@ -150,12 +130,12 @@ public class StringAppender implements CharSequence {
         arraycopy(str, 0, newArray, 0, size);
         str = newArray;
     }
-
-    private void growByte(int s) {
-        final byte[] newByteArray = new byte[capacity += s];
-        arraycopy(btr, 0, newByteArray, 0, size);
-        btr = newByteArray;
-    }
+    
+	private void growByte(int s) {
+		final byte[] newByteArray = new byte[capacity += s];
+		arraycopy(btr, 0, newByteArray, 0, size);
+		btr = newByteArray;
+	}
 
     public char[] getChars(int start, int count) {
         char[] chars = new char[count];
@@ -164,36 +144,34 @@ public class StringAppender implements CharSequence {
     }
 
     public char[] toChars() {
-        if (btr != null) {
-            if (encoding == null)
-                encoding = System.getProperty("file.encoding");
-            String s;
-            try {
-                s = new String(btr, encoding);
-            }
-            catch (UnsupportedEncodingException e) {
-                s = new String(btr);
-            }
-            return s.toCharArray();
-        }
+		if (btr != null) {
+			if (encoding == null)
+				encoding = System.getProperty("file.encoding");
+			String s;
+			try {
+				s = new String(btr, encoding);
+			} catch (UnsupportedEncodingException e) {
+				s = new String(btr);
+			}
+			return s.toCharArray();
+		}
         char[] chars = new char[size];
         arraycopy(str, 0, chars, 0, size);
         return chars;
     }
 
     public String toString() {
-        if (btr != null) {
-            if (encoding == null)
-                encoding = System.getProperty("file.encoding");
-            String s;
-            try {
-                s = new String(btr, encoding);
-            }
-            catch (UnsupportedEncodingException e) {
-                s = new String(btr);
-            }
-            return s;
-        }
+		if (btr != null) {
+			if (encoding == null)
+				encoding = System.getProperty("file.encoding");
+			String s;
+			try {
+				s = new String(btr, encoding);
+			} catch (UnsupportedEncodingException e) {
+				s = new String(btr);
+			}
+			return s;
+		}
         if (size == capacity) return new String(str);
         else return new String(str, 0, size);
     }
@@ -216,7 +194,5 @@ public class StringAppender implements CharSequence {
     public CharSequence subSequence(int start, int end) {
         return new String(str, start, (end - start));
     }
-
-
 }
 

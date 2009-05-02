@@ -52,10 +52,6 @@ public class Union extends ASTNode {
                 main.getReducedValue(ctx, thisValue, factory), factory, thisValue);
     }
 
-    public Class getLeftEgressType() {
-        return main.getEgressType();
-    }
-
     public String toString() {
         return (main != null ? main.toString() : "") + "-[union]->" + (accessor != null ? accessor.toString() : "");
     }

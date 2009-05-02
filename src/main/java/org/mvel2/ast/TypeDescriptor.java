@@ -22,11 +22,9 @@ import org.mvel2.CompileException;
 import org.mvel2.ParserContext;
 import static org.mvel2.ast.ASTNode.COMPILE_IMMEDIATE;
 import org.mvel2.compiler.ExecutableStatement;
-import org.mvel2.compiler.AbstractParser;
 import org.mvel2.integration.VariableResolverFactory;
 import static org.mvel2.util.ArrayTools.findFirst;
 import static org.mvel2.util.ParseTools.*;
-import org.mvel2.util.ParseTools;
 
 import java.io.Serializable;
 import static java.lang.Character.isDigit;
@@ -47,7 +45,7 @@ public class TypeDescriptor implements Serializable {
     }
 
     public void updateClassName(char[] name, int fields) {
-        if (name.length == 0 || !ParseTools.isIdentifierPart(name[0]) || isDigit(name[0])) return;
+        if (name.length == 0 || isDigit(name[0])) return;
 
         if ((endRange = findFirst('(', name)) == -1) {
             if ((endRange = findFirst('[', name)) != -1) {
@@ -115,10 +113,6 @@ public class TypeDescriptor implements Serializable {
         this.className = className;
     }
 
-    public boolean isClass() {
-        return className != null && className.length() != 0;
-    }
-
     public int getEndRange() {
         return endRange;
     }
@@ -133,32 +127,18 @@ public class TypeDescriptor implements Serializable {
         return findClass(factory, repeatChar('[', tDescr.arraySize.length) + "L" + baseType.getName() + ";", ctx);
     }
 
-    public static Class getClassReference(ParserContext ctx, Class cls, TypeDescriptor tDescr) throws ClassNotFoundException {
-        if (tDescr.isArray()) {
-            cls = findClass(null, repeatChar('[', tDescr.arraySize.length) + "L" + cls.getName() + ";", ctx);
-        }
-        return cls;
-    }
-
-
     public static Class getClassReference(ParserContext ctx, TypeDescriptor tDescr) throws ClassNotFoundException {
         Class cls;
-        if (ctx != null && ctx.hasImport(tDescr.className)) {
+        if (ctx.hasImport(tDescr.className)) {
             cls = ctx.getImport(tDescr.className);
             if (tDescr.isArray()) {
                 cls = findClass(null, repeatChar('[', tDescr.arraySize.length) + "L" + cls.getName() + ";", ctx);
             }
         }
-        else if (ctx == null && hasContextFreeImport(tDescr.className)) {
-            cls = getContextFreeImport(tDescr.className);
-            if (tDescr.isArray()) {
-                cls = findClass(null, repeatChar('[', tDescr.arraySize.length) + "L" + cls.getName() + ";", ctx);
-            }
-        }
         else {
-            cls = createClass(tDescr.getClassName(), ctx);
+            cls = createClass(tDescr.getClassName());
             if (tDescr.isArray()) {
-                cls = findClass(null, repeatChar('[', tDescr.arraySize.length) + "L" + cls.getName() + ";", ctx);
+                cls = findClass(null, repeatChar('[', tDescr.getArrayLength()) + "L" + cls.getName() + ";", ctx);
             }
         }
 
@@ -173,13 +153,5 @@ public class TypeDescriptor implements Serializable {
         }
 
         return false;
-    }
-
-    public static boolean hasContextFreeImport(String name) {
-        return AbstractParser.LITERALS.containsKey(name);
-    }
-
-    public static Class getContextFreeImport(String name) {
-        return (Class) AbstractParser.LITERALS.get(name);
     }
 }

@@ -23,23 +23,15 @@ import static org.mvel2.MVEL.eval;
 import org.mvel2.compiler.ExecutableStatement;
 import org.mvel2.integration.VariableResolverFactory;
 import static org.mvel2.util.ParseTools.subCompileExpression;
-import org.mvel2.util.CompilerTools;
-import org.mvel2.ParserContext;
-import org.mvel2.DataConversion;
-import org.mvel2.CompileException;
 
 public class TypeCast extends ASTNode {
     private ExecutableStatement statement;
 
-    public TypeCast(char[] expr, Class cast, int fields, ParserContext pCtx) {
+    public TypeCast(char[] expr, Class cast, int fields) {
         this.egressType = cast;
         this.name = expr;
         if ((fields & COMPILE_IMMEDIATE) != 0) {
-            if (!cast.isAssignableFrom((statement = (ExecutableStatement) subCompileExpression(name, pCtx)).getKnownEgressType()) &&
-                   statement.getKnownEgressType() != Object.class && !DataConversion.canConvert(cast, statement.getKnownEgressType())) {
-                throw new CompileException("unable to cast type: " + statement.getKnownEgressType() + "; to: " + cast);
-            }
-
+            statement = (ExecutableStatement) subCompileExpression(name);
         }
     }
 

@@ -28,7 +28,6 @@ import org.mvel2.compiler.ExecutableLiteral;
 import org.mvel2.integration.VariableResolver;
 import org.mvel2.integration.VariableResolverFactory;
 import org.mvel2.util.ASTIterator;
-import org.mvel2.util.ASTLinkedList;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -58,7 +57,7 @@ public class DebugTools {
     }
 
     private static String decompile(CompiledExpression cExp, boolean nest, DecompileContext context) {
-        ASTIterator iter = new ASTLinkedList(cExp.getFirstNode());
+        ASTIterator iter = cExp.getInstructions();
         ASTNode tk;
 
         StringBuffer sbuf = new StringBuffer();
@@ -349,7 +348,7 @@ public class DebugTools {
     }
 
     public static Class determineType(String name, CompiledExpression compiledExpression) {
-        ASTIterator iter =  new ASTLinkedList(compiledExpression.getFirstNode());
+        ASTIterator iter = compiledExpression.getTokenIterator();
         ASTNode node;
         while (iter.hasMoreNodes()) {
             if (name.equals((node = iter.nextNode()).getName()) && node.isAssignment()) {

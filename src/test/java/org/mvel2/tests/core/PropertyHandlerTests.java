@@ -1,23 +1,24 @@
 package org.mvel2.tests.core;
 
-import junit.framework.TestCase;
-import org.mvel2.MVEL;
-import org.mvel2.PropertyAccessor;
-import org.mvel2.asm.MethodVisitor;
-import static org.mvel2.asm.Opcodes.*;
-import org.mvel2.integration.*;
-import org.mvel2.optimizers.OptimizerFactory;
-import org.mvel2.optimizers.impl.asm.ProducesBytecode;
-import org.mvel2.tests.core.res.Bar;
 import org.mvel2.tests.core.res.Base;
 import org.mvel2.tests.core.res.Foo;
+import org.mvel2.tests.core.res.Bar;
+import org.mvel2.integration.*;
+import org.mvel2.PropertyAccessor;
+import org.mvel2.MVEL;
+import org.mvel2.asm.MethodVisitor;
+import org.mvel2.optimizers.OptimizerFactory;
+import org.mvel2.optimizers.impl.asm.ProducesBytecode;
+import junit.framework.TestCase;
 
-import java.io.Serializable;
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
+import java.util.ArrayList;
+import java.lang.reflect.Array;
+import java.io.Serializable;
+
+import static org.mvel2.asm.Opcodes.*;
 
 
 public class PropertyHandlerTests extends TestCase {
@@ -193,6 +194,7 @@ public class PropertyHandlerTests extends TestCase {
     public void testMapPropertyHandler() {
         MVEL.COMPILER_OPT_ALLOW_OVERRIDE_ALL_PROPHANDLING = true;
 
+
         PropertyHandlerFactory.registerPropertyHandler(Map.class, new
                 PropertyHandler() {
                     public Object getProperty(String name, Object contextObj,
@@ -219,6 +221,7 @@ public class PropertyHandlerTests extends TestCase {
         assertEquals("set", base.funMap.get("key"));
 
         MVEL.COMPILER_OPT_ALLOW_OVERRIDE_ALL_PROPHANDLING = false;
+
     }
 
     public void testArrayPropertyHandler() {
@@ -280,6 +283,7 @@ public class PropertyHandlerTests extends TestCase {
         assertEquals(2, listener.counter);
     }
 
+
     public void testListener() {
         MVEL.COMPILER_OPT_ALLOW_OVERRIDE_ALL_PROPHANDLING = true;
         class MyListener implements Listener {
@@ -339,52 +343,4 @@ public class PropertyHandlerTests extends TestCase {
         MVEL.COMPILER_OPT_ALLOW_OVERRIDE_ALL_PROPHANDLING = false;
     }
 
-    public class WorkObject {
-        Map<String, Object> map = new HashMap<String, Object>();
-
-        public boolean hasFieldName(String name) {
-            return map.containsKey(name);
-        }
-
-        public Object getFieldValue(String name) {
-            return map.get(name);
-        }
-
-        public void setFieldValue(String name, Object value, boolean bool) {
-            map.put(name, value);
-        }
-    }
-
-    public class WebPropertyHandler implements PropertyHandler {
-
-        public Object getProperty(String arg0, Object arg1,
-                                  VariableResolverFactory arg2) {
-            WorkObject wob = (WorkObject) arg1;
-            if (wob.hasFieldName(arg0)) {
-                return wob.getFieldValue(arg0);
-            }
-            else
-                return null;
-        }
-
-        public Object setProperty(String arg0, Object arg1,
-                                  VariableResolverFactory arg2, Object arg3) {
-            WorkObject wob = (WorkObject) arg1;
-            wob.setFieldValue(arg0, arg3, true);
-            return arg3;
-        }
-    }
-
-    public void testPropertyHandlerSetting() {
-        MVEL.COMPILER_OPT_ALLOW_OVERRIDE_ALL_PROPHANDLING = true;
-        PropertyHandlerFactory.registerPropertyHandler(WorkObject.class, new WebPropertyHandler());
-
-        Map vars = new HashMap();
-        WorkObject wo = new WorkObject();
-        vars.put("wobj", wo);
-
-        MVEL.setProperty(vars, "wobj.foo", "foobie");
-
-        assertEquals("foobie", wo.getFieldValue("foo"));
-    }
 }

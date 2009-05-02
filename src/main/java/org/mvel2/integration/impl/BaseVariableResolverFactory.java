@@ -91,40 +91,27 @@ public abstract class BaseVariableResolverFactory implements VariableResolverFac
             return new HashSet<String>(0);
         }
         else {
-            if (variableResolvers != null)  {
-                HashSet<String> vars = new HashSet<String>(variableResolvers.keySet());
-                vars.addAll(nextFactory.getKnownVariables());
-                return vars;
-            }
+            if (variableResolvers != null) return new HashSet<String>(variableResolvers.keySet());
             return new HashSet<String>(0);
         }
     }
 
     public VariableResolver createIndexedVariable(int index, String name, Object value) {
-        if (nextFactory != null) {
-            return nextFactory.createIndexedVariable(index, name, value);
-        }
-        else {
+        if (nextFactory != null) return nextFactory.createIndexedVariable(index, name, value);
+        else
             throw new RuntimeException("cannot create indexed variable: " + name + "(" + index + "). operation not supported by resolver: " + this.getClass().getName());
-        }
     }
 
     public VariableResolver getIndexedVariableResolver(int index) {
-        if (nextFactory != null) {
-            return nextFactory.getIndexedVariableResolver(index);
-        }
-        else {
+        if (nextFactory != null) return nextFactory.getIndexedVariableResolver(index);
+        else
             throw new RuntimeException("cannot access indexed variable: " + index + ".  operation not supported by resolver: " + this.getClass().getName());
-        }
     }
 
     public VariableResolver createIndexedVariable(int index, String name, Object value, Class<?> type) {
-        if (nextFactory != null) {
-            return nextFactory.createIndexedVariable(index, name, value, type);
-        }
-        else {
+        if (nextFactory != null) return nextFactory.createIndexedVariable(index, name, value, type);
+        else
             throw new RuntimeException("cannot access indexed variable: " + name + "(" + index + ").  operation not supported by resolver.: " + this.getClass().getName());
-        }
     }
 
     public Map<String, VariableResolver> getVariableResolvers() {

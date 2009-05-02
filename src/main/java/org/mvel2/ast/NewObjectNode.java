@@ -22,7 +22,6 @@ import static org.mvel2.DataConversion.convert;
 import static org.mvel2.MVEL.eval;
 import org.mvel2.ParserContext;
 import org.mvel2.PropertyAccessor;
-import org.mvel2.ErrorDetail;
 import static org.mvel2.compiler.AbstractParser.getCurrentThreadParserContext;
 import org.mvel2.compiler.Accessor;
 import org.mvel2.compiler.ExecutableStatement;
@@ -30,8 +29,6 @@ import org.mvel2.integration.VariableResolverFactory;
 import org.mvel2.optimizers.AccessorOptimizer;
 import static org.mvel2.optimizers.OptimizerFactory.getThreadAccessorOptimizer;
 import org.mvel2.util.ArrayTools;
-import org.mvel2.util.CompilerTools;
-import static org.mvel2.util.CompilerTools.getInjectedImports;
 import static org.mvel2.util.ArrayTools.findFirst;
 import static org.mvel2.util.ParseTools.*;
 
@@ -58,12 +55,9 @@ public class NewObjectNode extends ASTNode {
             }
             else {
                 try {
-                    egressType = Class.forName(typeDescr.getClassName(), true, currentThread().getContextClassLoader());
+                    egressType = currentThread().getContextClassLoader().loadClass(typeDescr.getClassName());
                 }
                 catch (ClassNotFoundException e) {
-                    if (pCtx != null && pCtx.isStrongTyping()) 
-                        pCtx.addError(new ErrorDetail("could not resolve class: " + typeDescr.getClassName(), true));
-
                     // do nothing.
                 }
             }
@@ -151,11 +145,7 @@ public class NewObjectNode extends ASTNode {
             }
 
             AccessorOptimizer optimizer = getThreadAccessorOptimizer();
-
-            ParserContext pCtx = new ParserContext();
-            pCtx.getParserConfiguration().setAllImports(getInjectedImports(factory));
-
-            newObjectOptimizer = optimizer.optimizeObjectCreation(pCtx, name, ctx, thisValue, factory);
+            newObjectOptimizer = optimizer.optimizeObjectCreation(getCurrentThreadParserContext(), name, ctx, thisValue, factory);
 
             /**
              * Check to see if the optimizer actually produced the object during optimization.  If so,
@@ -198,7 +188,7 @@ public class NewObjectNode extends ASTNode {
                         parms[i] = eval(constructorParms[i], ctx, factory);
                     }
 
-                    Constructor cns = getBestConstructorCanadidate(parms, cls, false);
+                    Constructor cns = getBestConstructorCanadidate(parms, cls);
 
                     if (cns == null)
                         throw new CompileException("unable to find constructor for: " + cls.getName());
@@ -216,8 +206,8 @@ public class NewObjectNode extends ASTNode {
                     }
                 }
                 else {
-                    Constructor<?> cns = Class.forName(typeDescr.getClassName(), true, currentThread().getContextClassLoader())
-                            .getConstructor(EMPTYCLS);
+                    Constructor<?> cns = currentThread().getContextClassLoader()
+                            .loadClass(typeDescr.getClassName()).getConstructor(EMPTYCLS);
 
                     if (cnsRes.length > 1) {
                         return PropertyAccessor.get(cnsRes[1], cns.newInstance(), factory, thisValue);

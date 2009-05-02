@@ -44,7 +44,6 @@ public class DeepAssignmentNode extends ASTNode implements Assignment {
         this.name = expr;
         int mark;
 
-
         if (operation != -1) {
             this.egressType = ((statement =
                     (ExecutableStatement) subCompileExpression(stmt =
@@ -63,7 +62,9 @@ public class DeepAssignmentNode extends ASTNode implements Assignment {
         }
 
         if ((fields & COMPILE_IMMEDIATE) != 0) {
+            //   ParserContext pCtx = getCurrentThreadParserContext();
             acc = (CompiledAccExpression) compileSetExpression(property.toCharArray(), pCtx);
+//            pCtx.addVariable(property.substring(0, property.indexOf('.')), egressType);
         }
     }
 

@@ -20,8 +20,7 @@ package org.mvel2;
 
 import org.mvel2.compiler.AbstractParser;
 import static org.mvel2.util.ParseTools.isWhitespace;
-import static org.mvel2.util.ParseTools.isIdentifierPart;
-import static org.mvel2.util.ParseTools.captureStringLiteral;
+import static org.mvel2.util.ParseTools.balancedCapture;
 import org.mvel2.util.StringAppender;
 import org.mvel2.util.ParseTools;
 
@@ -46,71 +45,38 @@ public class MacroProcessor extends AbstractParser implements PreProcessor {
         StringAppender appender = new StringAppender();
 
         int start;
-        boolean macroArmed = true;
         String token;
 
         for (; cursor < length; cursor++) {
+            if ('\'' == expr[cursor] || '"' == expr[cursor]) {
+                start = cursor;
+                cursor = balancedCapture(expr, cursor, expr[cursor]) + 1;
+                appender.append(new String(expr, start, cursor - start));
+            }
+            
+            while (cursor < length && (isWhitespace(expr[cursor]) || expr[cursor] == ';')) {
+                appender.append(expr[cursor++]);
+            }
+
             start = cursor;
-            while (cursor < length && isIdentifierPart(expr[cursor])) cursor++;
-            if (cursor > start) {
-                if (macros.containsKey(token = new String(expr, start, cursor - start)) && macroArmed) {
-                    appender.append(macros.get(token).doMacro());
-                }
-                else {
-                    appender.append(token);
-                }
+
+            while (cursor < length
+                    && (!isWhitespace(expr[cursor])
+                    && expr[cursor] != '('
+                    && expr[cursor] != ')')) {
+
+                cursor++;
+            }
+
+            if (macros.containsKey(token = new String(expr, start, cursor - start))) {
+                appender.append(macros.get(token).doMacro());
+            }
+            else {
+                appender.append(token);
             }
 
             if (cursor < length) {
-                switch (expr[cursor]) {
-                    case '\\':
-                        cursor++;
-                        break;
-                    case '/':
-                        start = cursor;
-
-                        if (cursor + 1 != length) {
-                            switch (expr[cursor + 1]) {
-                                  case '/':
-                                      while (cursor != length && expr[cursor] != '\n') cursor++;
-                                      break;
-                                  case '*':
-                                      int len = length-1;
-                                      while (cursor != len && !(expr[cursor] == '*' && expr[cursor+1] == '/')) cursor++;
-                                      cursor += 2;
-                                      break;
-                            }
-                        }
-
-                        if (cursor < length) cursor++;
-
-                        appender.append(new String(expr, start, cursor - start));
-
-                        if (cursor < length) cursor--;
-                        break;
-
-                    case '"':
-                    case '\'':
-                        appender.append(new String(expr, (start = cursor),
-                                (cursor = captureStringLiteral(expr[cursor], expr, cursor, length)) - start));
-
-                        if (cursor >= length) break;
-                        else if (isIdentifierPart(expr[cursor])) cursor--;
-
-                    default:
-                        switch (expr[cursor]) {
-                            case '.':
-                                macroArmed = false;
-                                break;
-                            case ';':
-                            case '{':
-                            case '(':
-                                macroArmed = true;
-                                break;
-                        }
-
-                        appender.append(expr[cursor]);
-                }
+                appender.append(expr[cursor]);
             }
         }
 

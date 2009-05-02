@@ -75,8 +75,4 @@ public class DeclTypedVarNode extends ASTNode implements Assignment {
     public void setValueStatement(ExecutableStatement stmt) {
         throw new RuntimeException("illegal operation");
     }
-
-    public String toString() {
-        return "var:" + name;
-    }
 }

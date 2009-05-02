@@ -74,7 +74,7 @@ public class ParserContext implements Serializable {
     private boolean executableCodeReached = false;
     private boolean indexAllocation = false;
     private boolean allowBootstrapBypass = true;
-                                           
+
     public ParserContext() {
     }
 
@@ -139,7 +139,7 @@ public class ParserContext implements Serializable {
      * @return int of lines
      */
     public int setLineCount(int lineCount) {
-        return this.lineCount = lineCount;
+        return this.lineCount = (short) lineCount;
     }
 
     /**
@@ -302,6 +302,7 @@ public class ParserContext implements Serializable {
     }
 
     public void addVariable(String name, Class type) {
+     //   assert name != null;
         initializeTables();
         if (variables.containsKey(name)) return;
         if (type == null) type = Object.class;
@@ -565,7 +566,7 @@ public class ParserContext implements Serializable {
     }
 
     public Type[] getTypeParametersAsArray(String name) {
-        Class c = (variables != null && variables.containsKey(name)) ? variables.get(name) : inputs.get(name);
+        Class c = inputs.get(name);
         if (c == null) return null;
 
         Type[] tp = c.getTypeParameters();

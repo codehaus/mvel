@@ -52,6 +52,7 @@ public class PropertyVerifier extends AbstractOptimizer {
 
     private Class ctx = null;
 
+
     public PropertyVerifier(char[] property, ParserContext parserContext) {
         this.length = (this.expr = property).length;
         this.pCtx = parserContext;
@@ -124,7 +125,7 @@ public class PropertyVerifier extends AbstractOptimizer {
             if (pCtx.hasVarOrInput(property)) {
                 if (pCtx.isStrictTypeEnforcement()) {
                     if ((paramTypes = pCtx.getTypeParameters(property)) == null) {
-                        pCtx.addTypeParameters(property, pCtx.getVarOrInputType(property));
+                        pCtx.addTypeParameters(property, ctx);
                     }
                     pCtx.setLastTypeParameters(pCtx.getTypeParametersAsArray(property));
                 }
@@ -178,10 +179,9 @@ public class PropertyVerifier extends AbstractOptimizer {
                 if (parametricReturnType instanceof ParameterizedType) {
                     pCtx.setLastTypeParameters(((ParameterizedType) parametricReturnType).getActualTypeArguments());
                 }
-            }
 
-            Class rt = method.getReturnType();
-            return rt.isPrimitive() ? boxPrimitive(rt) : rt;
+            }
+            return method.getReturnType();
         }
         else if (pCtx != null && pCtx.hasImport(property)) {
             return pCtx.getImport(property);
@@ -247,8 +247,8 @@ public class PropertyVerifier extends AbstractOptimizer {
             }
         }
 
-        if (pCtx.isStrictTypeEnforcement()) {
-            if (Map.class.isAssignableFrom(property.length() != 0 ? ctx = getBeanProperty(ctx, property) : ctx)) {
+        if (pCtx.isStrongTyping()) {
+            if (Map.class.isAssignableFrom(ctx = getBeanProperty(ctx, property))) {
                 ctx = (Class) pCtx.getLastTypeParameters()[1];
             }
             else if (Collection.class.isAssignableFrom(ctx)) {
@@ -257,12 +257,9 @@ public class PropertyVerifier extends AbstractOptimizer {
             else if (ctx.isArray()) {
                 ctx = getBaseComponentType(ctx);
             }
-            else if (pCtx.isStrongTyping()) {
-                throw new CompileException("unknown collection type: " + ctx);
+            else {
+                throw new CompileException("unknown collection type");
             }
-        }
-        else {
-            ctx = Object.class;
         }
 
         ++cursor;
@@ -313,9 +310,9 @@ public class PropertyVerifier extends AbstractOptimizer {
             }
             else if (pCtx.hasFunction(name)) {
                 resolvedExternally = false;
+                String tk = ((cursor = balancedCapture(expr, cursor, '(')) - st) > 1 ? new String(expr, st + 1, cursor - st - 1) : "";
                 Function f = pCtx.getFunction(name);
-                f.checkArgumentCount(parseParameterList((((cursor = balancedCapture(expr, cursor, '(')) - st) > 1 ?
-                        new String(expr, st + 1, cursor - st - 1) : "").toCharArray(), 0, -1).length);
+                f.checkArgumentCount(parseParameterList(tk.toCharArray(), 0, -1).length);
                 return f.getEgressType();
             }
         }
@@ -343,11 +340,10 @@ public class PropertyVerifier extends AbstractOptimizer {
             /**
              *  Subcompile all the arguments to determine their known types.
              */
-          //  ExpressionCompiler compiler;
-            CompiledExpression ce;
+            ExpressionCompiler compiler;
             for (int i = 0; i < subtokens.length; i++) {
-                args[i] = (ce = new ExpressionCompiler(subtokens[i], true)._compile()).getKnownEgressType() != null
-                        ? ce.getKnownEgressType() : Object.class;
+                (compiler = new ExpressionCompiler(subtokens[i], true))._compile();
+                args[i] = compiler.getReturnType() != null ? compiler.getReturnType() : Object.class;
             }
         }
 
@@ -366,17 +362,16 @@ public class PropertyVerifier extends AbstractOptimizer {
             if ((m = getBestCandidate(args, name, ctx, ctx.getDeclaredMethods(), pCtx.isStrongTyping())) == null) {
                 StringAppender errorBuild = new StringAppender();
                 for (int i = 0; i < args.length; i++) {
-                    errorBuild.append(args[i] != null ? args[i].getName() : null);
+                    errorBuild.append(args[i] != null ? args[i].getClass().getName() : null);
                     if (i < args.length - 1) errorBuild.append(", ");
                 }
 
                 if ("size".equals(name) && args.length == 0 && ctx.isArray()) {
                     return Integer.class;
                 }
-                
+
                 if (pCtx.isStrictTypeEnforcement()) {
-                    addFatalError("unable to resolve method using strict-mode: "
-                            + ctx.getName() + "." + name + "(" + errorBuild.toString() + ")");
+                    addFatalError("unable to resolve method using strict-mode: " + ctx.getName() + "." + name + "(...)");
                 }
                 return Object.class;
             }

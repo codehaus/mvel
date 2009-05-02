@@ -52,7 +52,6 @@ public class ShellSession {
     VariableResolverFactory lvrf;
 
     private int depth;
-    private int cdepth;
 
     private boolean multi = false;
     private int multiIndentSize = 0;
@@ -105,6 +104,8 @@ public class ShellSession {
 
         lvrf =  new MapVariableResolverFactory(variables, new MapVariableResolverFactory(env));
 
+
+      //  lvrf.appendFactory(new MapVariableResolverFactory(env));
     }
 
     public ShellSession(String init) {
@@ -388,20 +389,9 @@ public class ShellSession {
         char[] buffer = new char[inBuf.length()];
         inBuf.getChars(0, inBuf.length(), buffer, 0);
 
-        depth = cdepth = 0;
-        for (int i = 0 ; i < buffer.length; i++) {
-            switch (buffer[i]) {
-                case '/':
-                    if (i+1<buffer.length && buffer[i+1] == '*') {
-                        cdepth++;
-                    }
-                    break;
-                case '*':
-                    if (i+1<buffer.length && buffer[i+1] == '/') {
-                        cdepth--;
-                    }
-                    break;
-
+        depth = 0;
+        for (char aBuffer : buffer) {
+            switch (aBuffer) {
                 case '{':
                     depth++;
                     break;
@@ -411,7 +401,7 @@ public class ShellSession {
             }
         }
 
-        return depth+cdepth > 0 ;
+        return depth > 0;
     }
 
     public String indent(int size) {

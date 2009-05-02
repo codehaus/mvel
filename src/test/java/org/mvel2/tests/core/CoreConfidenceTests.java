@@ -1,11 +1,17 @@
 package org.mvel2.tests.core;
 
 import org.mvel2.*;
+
 import static org.mvel2.MVEL.*;
+
 import org.mvel2.ast.ASTNode;
-import org.mvel2.compiler.AbstractParser;
+import org.mvel2.ast.Function;
+import org.mvel2.ast.WithNode;
 import org.mvel2.compiler.CompiledExpression;
 import org.mvel2.compiler.ExpressionCompiler;
+import org.mvel2.debug.DebugTools;
+import org.mvel2.debug.Debugger;
+import org.mvel2.debug.Frame;
 import org.mvel2.integration.Interceptor;
 import org.mvel2.integration.PropertyHandlerFactory;
 import org.mvel2.integration.ResolverTools;
@@ -16,22 +22,195 @@ import org.mvel2.integration.impl.MapVariableResolverFactory;
 import org.mvel2.integration.impl.StaticMethodImportResolverFactory;
 import org.mvel2.optimizers.OptimizerFactory;
 import org.mvel2.tests.core.res.*;
+import org.mvel2.util.CompilerTools;
 import org.mvel2.util.MethodStub;
-import org.mvel2.util.ReflectionUtil;
+import static org.mvel2.util.ParseTools.loadFromFile;
 
 import java.awt.*;
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.*;
+
 import static java.util.Collections.unmodifiableCollection;
 import java.util.List;
 
 @SuppressWarnings({"ALL"})
 public class CoreConfidenceTests extends AbstractTest {
+    public void testSingleProperty() {
+        assertEquals(false, test("fun"));
+    }
 
+    public void testMethodOnValue() {
+        assertEquals("DOG", test("foo.bar.name.toUpperCase()"));
+    }
+
+    public void testMethodOnValue2() {
+        assertEquals("DOG", test("foo. bar. name.toUpperCase()"));
+    }
+
+    public void testSimpleProperty() {
+        assertEquals("dog", test("foo.bar.name"));
+    }
+
+    public void testSimpleProperty2() {
+        assertEquals("cat", test("DATA"));
+    }
+
+    public void testPropertyViaDerivedClass() {
+        assertEquals("cat", test("derived.data"));
+    }
+
+    public void testDeepAssignment() {
+        Map map = createTestMap();
+        assertEquals("crap", testCompiledSimple("foo.bar.assignTest = 'crap'", map));
+        assertEquals("crap", testCompiledSimple("foo.bar.assignTest", map));
+    }
+
+    public void testDeepAssignment2() {
+        Map map = createTestMap();
+
+        ExpressionCompiler compiler = new ExpressionCompiler("foo.bar.age = 21");
+        ParserContext ctx = new ParserContext();
+
+        ctx.addInput("foo", Foo.class);
+        ctx.setStrongTyping(true);
+
+        CompiledExpression ce = compiler.compile(ctx);
+
+        executeExpression(ce, map);
+
+        assertEquals(((Foo) map.get("foo")).getBar().getAge(), 21);
+    }
+
+    public void testThroughInterface() {
+        assertEquals("FOOBAR!", test("testImpl.name"));
+    }
+
+    public void testThroughInterface2() {
+        assertEquals(true, test("testImpl.foo"));
+    }
+
+    public void testMapAccessWithMethodCall() {
+        assertEquals("happyBar", test("funMap['foo'].happy()"));
+    }
+
+    public void testSimpleIfStatement() {
+        test("if (true) { System.out.println(\"test!\") }  \n");
+    }
+
+    public void testBooleanOperator() {
+        assertEquals(true, test("foo.bar.woof == true"));
+    }
+
+    public void testBooleanOperator2() {
+        assertEquals(false, test("foo.bar.woof == false"));
+    }
+
+    public void testBooleanOperator3() {
+        assertEquals(true, test("foo.bar.woof== true"));
+    }
+
+    public void testBooleanOperator4() {
+        assertEquals(false, test("foo.bar.woof ==false"));
+    }
+
+    public void testBooleanOperator5() {
+        assertEquals(true, test("foo.bar.woof == true"));
+    }
+
+    public void testBooleanOperator6() {
+        assertEquals(false, test("foo.bar.woof==false"));
+    }
+
+
+    public void testTextComparison() {
+        assertEquals(true, test("foo.bar.name == 'dog'"));
+    }
+
+    public void testNETextComparison() {
+        assertEquals(true, test("foo.bar.name != 'foo'"));
+    }
+
+    public void testChor() {
+        assertEquals("cat", test("a or b or c"));
+    }
+
+    public void testChorWithLiteral() {
+        assertEquals("fubar", test("a or 'fubar'"));
+    }
+
+    public void testNullCompare() {
+        assertEquals(true, test("c != null"));
+    }
+
+    public void testUninitializedInt() {
+        assertEquals(0, test("sarahl"));
+    }
+
+    public void testAnd() {
+        assertEquals(true, test("c != null && foo.bar.name == 'dog' && foo.bar.woof"));
+    }
+
+    public void testAnd2() {
+        assertEquals(true, test("c!=null&&foo.bar.name=='dog'&&foo.bar.woof"));
+    }
+
+    public void testMath() {
+        assertEquals(188.4d, test("pi * hour"));
+    }
+
+    public void testMath2() {
+        assertEquals(3, test("foo.number-1"));
+    }
+
+    public void testMath3() {
+        assertEquals((10d * 5d) * 2d / 3d, test("(10 * 5) * 2 / 3"));
+    }
+
+    public void testMath4() {
+        int val = (int) ((100d % 3d) * 2d - 1d / 1d + 8d + (5d * 2d));
+        assertEquals(val, test("(100 % 3) * 2 - 1 / 1 + 8 + (5 * 2)"));
+    }
+
+    public void testMath4a() {
+        String expression = "(100 % 90) * 20 - 15 / 16 + 80 + (50 * 21)";
+        System.out.println("Expression: " + expression);
+        assertEquals(((100d % 90d) * 20d - 15d / 16d + 80d + (50d * 21d)), MVEL.eval(expression));
+    }
+
+    public void testMath5() {
+        assertEquals(300.5 / 5.3 / 2.1 / 1.5, test("300.5 / 5.3 / 2.1 / 1.5"));
+    }
+
+    public void testMath5a() {
+        String expression = "300.5 / 5.3 / 2.1 / 1.5";
+        System.out.println("Expression: " + expression);
+        assertEquals(300.5 / 5.3 / 2.1 / 1.5, MVEL.eval(expression));
+    }
+
+    public void testMath6() {
+        int val = (300 * 5 + 1) + 100 / 2 * 2;
+        assertEquals(val, test("(300 * five + 1) + (100 / 2 * 2)"));
+    }
+
+    public void testMath7() {
+        int val = (int) ((100d % 3d) * 2d - 1d / 1d + 8d + (5d * 2d));
+        assertEquals(val, test("(100 % 3) * 2 - 1 / 1 + 8 + (5 * 2)"));
+    }
+
+    public void testMath8() {
+        double val = 5d * (100.56d * 30.1d);
+        assertEquals(val, test("5 * (100.56 * 30.1)"));
+    }
+
+    public void testPowerOf() {
+        assertEquals(25, test("5 ** 2"));
+    }
 
     public void testWhileUsingImports() {
         Map<String, Object> imports = new HashMap<String, Object>();
@@ -43,6 +222,215 @@ public class CoreConfidenceTests extends AbstractTest {
         assertTrue((Boolean) executeExpression(compiler.compile(context), new DefaultLocalVariableResolverFactory()));
     }
 
+
+    public void testComplexExpression() {
+        assertEquals("bar", test("a = 'foo'; b = 'bar'; c = 'jim'; list = {a,b,c}; list[1]"));
+    }
+
+    public void testComplexAnd() {
+        assertEquals(true, test("(pi * hour) > 0 && foo.happy() == 'happyBar'"));
+    }
+
+    public void testOperatorPrecedence() {
+        String ex = "_x_001 = 500.2; _x_002 = 200.8; _r_001 = 701; _r_001 == _x_001 + _x_002 || _x_001 == 500 + 0.1";
+        assertEquals(true, test(ex));
+    }
+
+    public void testOperatorPrecedence2() {
+        String ex = "_x_001 = 500.2; _x_002 = 200.8; _r_001 = 701; _r_001 == _x_001 + _x_002 && _x_001 == 500 + 0.2";
+        assertEquals(true, test(ex));
+    }
+
+    public void testOperatorPrecedence3() {
+        String ex = "_x_001 = 500.2; _x_002 = 200.9; _r_001 = 701; _r_001 == _x_001 + _x_002 && _x_001 == 500 + 0.2";
+        assertEquals(false, test(ex));
+    }
+
+    public void testOperatorPrecedence4() {
+        String ex = "_x_001 = 500.2; _x_002 = 200.9; _r_001 = 701; _r_001 == _x_001 + _x_002 || _x_001 == 500 + 0.2";
+        assertEquals(true, test(ex));
+    }
+
+    public void testOperatorPrecedence5() {
+        String ex = "_x_001 == _x_001 / 2 - _x_001 + _x_001 + _x_001 / 2 && _x_002 / 2 == _x_002 / 2";
+
+        Map vars = new HashMap();
+        vars.put("_x_001", 500.2);
+        vars.put("_x_002", 200.9);
+        vars.put("_r_001", 701);
+
+        ExpressionCompiler compiler = new ExpressionCompiler(ex);
+
+        assertEquals(true, executeExpression(compiler.compile(), vars));
+    }
+
+    public void testShortPathExpression() {
+        assertEquals(null, MVEL.eval("3 > 4 && foo.toUC('test'); foo.register", new Base(), createTestMap()));
+    }
+
+    public void testShortPathExpression2() {
+        assertEquals(true, test("4 > 3 || foo.toUC('test')"));
+    }
+
+    public void testShortPathExpression4() {
+        assertEquals(true, test("4>3||foo.toUC('test')"));
+    }
+
+    public void testOrOperator() {
+        assertEquals(true, test("true||true"));
+    }
+
+    public void testOrOperator2() {
+        assertEquals(true, test("2 > 3 || 3 > 2"));
+    }
+
+    public void testOrOperator3() {
+        assertEquals(true, test("pi > 5 || pi > 6 || pi > 3"));
+    }
+
+
+    public void testShortPathExpression3() {
+        assertEquals(false, test("defnull != null  && defnull.length() > 0"));
+    }
+
+    public void testModulus() {
+        assertEquals(38392 % 2,
+                test("38392 % 2"));
+    }
+
+
+    public void testLessThan() {
+        assertEquals(true, test("pi < 3.15"));
+        assertEquals(true, test("pi <= 3.14"));
+        assertEquals(false, test("pi > 3.14"));
+        assertEquals(true, test("pi >= 3.14"));
+    }
+
+    public void testMethodAccess() {
+        assertEquals("happyBar", test("foo.happy()"));
+    }
+
+    public void testMethodAccess2() {
+        assertEquals("FUBAR", test("foo.toUC( 'fubar' )"));
+    }
+
+    public void testMethodAccess3() {
+        assertEquals(true, test("equalityCheck(c, 'cat')"));
+    }
+
+    public void testMethodAccess4() {
+        assertEquals(null, test("readBack(null)"));
+    }
+
+    public void testMethodAccess5() {
+        assertEquals("nulltest", test("appendTwoStrings(null, 'test')"));
+    }
+
+    public void testMethodAccess6() {
+        assertEquals(true, test("   equalityCheck(   c  \n  ,   \n   'cat'      )   "));
+    }
+
+    public void testNegation() {
+        assertEquals(true, test("!fun && !fun"));
+    }
+
+    public void testNegation2() {
+        assertEquals(false, test("fun && !fun"));
+    }
+
+    public void testNegation3() {
+        assertEquals(true, test("!(fun && fun)"));
+    }
+
+    public void testNegation4() {
+        assertEquals(false, test("(fun && fun)"));
+    }
+
+    public void testNegation5() {
+        assertEquals(true, test("!false"));
+    }
+
+    public void testNegation6() {
+        assertEquals(false, test("!true"));
+    }
+
+    public void testNegation7() {
+        assertEquals(true, test("s = false; t = !s; t"));
+    }
+
+    public void testNegation8() {
+        assertEquals(true, test("s = false; t =! s; t"));
+    }
+
+
+    public void testMultiStatement() {
+        assertEquals(true, test("populate(); barfoo == 'sarah'"));
+    }
+
+    public void testAssignment() {
+        assertEquals(true, test("populate(); blahfoo = 'sarah'; blahfoo == 'sarah'"));
+    }
+
+    public void testAssignment2() {
+        assertEquals("sarah", test("populate(); blahfoo = barfoo"));
+    }
+
+    public void testAssignment3() {
+        assertEquals(java.lang.Integer.class, test("blah = 5").getClass());
+    }
+
+    public void testAssignment4() {
+        assertEquals(102, test("a = 100 + 1 + 1"));
+    }
+
+    public void testAssignment6() {
+        assertEquals("blip", test("array[zero] = array[zero+1]; array[zero]"));
+    }
+
+    public void testOr() {
+        assertEquals(true, test("fun || true"));
+    }
+
+    public void testLiteralPassThrough() {
+        assertEquals(true, test("true"));
+    }
+
+    public void testLiteralPassThrough2() {
+        assertEquals(false, test("false"));
+    }
+
+    public void testLiteralPassThrough3() {
+        assertEquals(null, test("null"));
+    }
+
+    public void testLiteralReduction1() {
+        assertEquals("foo", test("null or 'foo'"));
+    }
+
+    public void testRegEx() {
+        assertEquals(true, test("foo.bar.name ~= '[a-z].+'"));
+    }
+
+    public void testRegExNegate() {
+        assertEquals(false, test("!(foo.bar.name ~= '[a-z].+')"));
+    }
+
+    public void testRegEx2() {
+        assertEquals(true, test("foo.bar.name ~= '[a-z].+' && foo.bar.name != null"));
+    }
+
+    public void testRegEx3() {
+        assertEquals(true, test("foo.bar.name~='[a-z].+'&&foo.bar.name!=null"));
+    }
+
+    public void testBlank() {
+        assertEquals(true, test("'' == empty"));
+    }
+
+    public void testBlank2() {
+        assertEquals(true, test("BWAH == empty"));
+    }
+
     public void testBooleanModeOnly2() {
         assertEquals(false, (Object) DataConversion.convert(test("BWAH"), Boolean.class));
     }
@@ -51,6 +439,319 @@ public class CoreConfidenceTests extends AbstractTest {
         assertEquals(true, test("hour == (hour + 0)"));
     }
 
+    public void testTernary() {
+        assertEquals("foobie", test("zero==0?'foobie':zero"));
+    }
+
+    public void testTernary2() {
+        assertEquals("blimpie", test("zero==1?'foobie':'blimpie'"));
+    }
+
+    public void testTernary3() {
+        assertEquals("foobiebarbie", test("zero==1?'foobie':'foobie'+'barbie'"));
+    }
+
+    public void testTernary5() {
+        assertEquals("skat!", test("isdef someWierdVar ? 'squid' : 'skat!';"));
+    }
+
+    public void testStrAppend() {
+        assertEquals("foobarcar", test("'foo' + 'bar' + 'car'"));
+    }
+
+    public void testStrAppend2() {
+        assertEquals("foobarcar1", test("'foobar' + 'car' + 1"));
+    }
+
+    public void testInstanceCheck1() {
+        assertEquals(true, test("c is java.lang.String"));
+    }
+
+    public void testInstanceCheck2() {
+        assertEquals(false, test("pi is java.lang.Integer"));
+    }
+
+    public void testInstanceCheck3() {
+        assertEquals(true, test("foo is org.mvel2.tests.core.res.Foo"));
+    }
+
+    public void testBitwiseOr1() {
+        assertEquals(6, test("2|4"));
+    }
+
+    public void testBitwiseOr2() {
+        assertEquals(true, test("(2 | 1) > 0"));
+    }
+
+    public void testBitwiseOr3() {
+        assertEquals(true, test("(2|1) == 3"));
+    }
+
+    public void testBitwiseOr4() {
+        assertEquals(2 | 5, test("2|five"));
+    }
+
+    public void testBitwiseAnd1() {
+        assertEquals(2, test("2 & 3"));
+    }
+
+    public void testBitwiseAnd2() {
+        assertEquals(5 & 3, test("five & 3"));
+    }
+
+    public void testShiftLeft() {
+        assertEquals(4, test("2 << 1"));
+    }
+
+    public void testShiftLeft2() {
+        assertEquals(5 << 1, test("five << 1"));
+    }
+
+    public void testUnsignedShiftLeft() {
+        assertEquals(2, test("-2 <<< 0"));
+    }
+
+//    public void testUnsignedShiftLeft2() {
+//        assertEquals(5, test("(five - 10) <<< 0"));
+//    }
+
+    public void testShiftRight() {
+        assertEquals(128, test("256 >> 1"));
+    }
+
+    public void testShiftRight2() {
+        assertEquals(5 >> 1, test("five >> 1"));
+    }
+
+    public void testUnsignedShiftRight() {
+        assertEquals(-5 >>> 1, test("-5 >>> 1"));
+    }
+
+    public void testUnsignedShiftRight2() {
+        assertEquals(-5 >>> 1, test("(five - 10) >>> 1"));
+    }
+
+    public void testXOR() {
+        assertEquals(3, test("1 ^ 2"));
+    }
+
+    public void testXOR2() {
+        assertEquals(5 ^ 2, test("five ^ 2"));
+    }
+
+    public void testContains1() {
+        assertEquals(true, test("list contains 'Happy!'"));
+    }
+
+    public void testContains2() {
+        assertEquals(false, test("list contains 'Foobie'"));
+    }
+
+    public void testContains3() {
+        assertEquals(true, test("sentence contains 'fox'"));
+    }
+
+    public void testContains4() {
+        assertEquals(false, test("sentence contains 'mike'"));
+    }
+
+    public void testContains5() {
+        assertEquals(true, test("!(sentence contains 'mike')"));
+    }
+
+    public void testContains6() {
+        assertEquals(true, test("bwahbwah = 'mikebrock'; testVar10 = 'mike'; bwahbwah contains testVar10"));
+    }
+
+    public void testInvert() {
+        assertEquals(~10, test("~10"));
+    }
+
+    public void testInvert2() {
+        assertEquals(~(10 + 1), test("~(10 + 1)"));
+    }
+
+    public void testInvert3() {
+        assertEquals(~10 + (1 + ~50), test("~10 + (1 + ~50)"));
+    }
+
+    public void testListCreation2() {
+        assertTrue(test("[\"test\"]") instanceof List);
+    }
+
+    public void testListCreation3() {
+        assertTrue(test("[66]") instanceof List);
+    }
+
+    public void testListCreation4() {
+        List ar = (List) test("[   66   , \"test\"   ]");
+        assertEquals(2, ar.size());
+        assertEquals(66, ar.get(0));
+        assertEquals("test", ar.get(1));
+    }
+
+    public void testListCreationWithCall() {
+        assertEquals(1, test("[\"apple\"].size()"));
+    }
+
+    public void testArrayCreationWithLength() {
+        assertEquals(2, test("Array.getLength({'foo', 'bar'})"));
+    }
+
+    public void testEmptyList() {
+        assertTrue(test("[]") instanceof List);
+    }
+
+    public void testEmptyArray() {
+        assertTrue(((Object[]) test("{}")).length == 0);
+    }
+
+    public void testEmptyArray2() {
+        assertTrue(((Object[]) test("{    }")).length == 0);
+    }
+
+    public void testArrayCreation() {
+        assertEquals(0, test("arrayTest = {{1, 2, 3}, {2, 1, 0}}; arrayTest[1][2]"));
+    }
+
+    public void testMapCreation() {
+        assertEquals("sarah", test("map = ['mike':'sarah','tom':'jacquelin']; map['mike']"));
+    }
+
+    public void testMapCreation2() {
+        assertEquals("sarah", test("map = ['mike' :'sarah'  ,'tom'  :'jacquelin'  ]; map['mike']"));
+    }
+
+    public void testMapCreation3() {
+        assertEquals("foo", test("map = [1 : 'foo']; map[1]"));
+    }
+
+    public void testProjectionSupport() {
+        assertEquals(true, test("(name in things)contains'Bob'"));
+    }
+
+    public void testProjectionSupport1() {
+        assertEquals(true, test("(name in things) contains 'Bob'"));
+    }
+
+    public void testProjectionSupport2() {
+        assertEquals(3, test("(name in things).size()"));
+    }
+
+    public void testProjectionSupport3() {
+        assertEquals("FOO", test("(toUpperCase() in ['bar', 'foo'])[1]"));
+    }
+
+    public void testProjectionSupport4() {
+        Collection col = (Collection) test("(toUpperCase() in ['zero', 'zen', 'bar', 'foo'] if ($ == 'bar'))");
+        assertEquals(1, col.size());
+        assertEquals("BAR", col.iterator().next());
+    }
+
+    public void testProjectionSupport5() {
+        Collection col = (Collection) test("(toUpperCase() in ['zero', 'zen', 'bar', 'foo'] if ($.startsWith('z')))");
+        assertEquals(2, col.size());
+        Iterator iter = col.iterator();
+        assertEquals("ZERO", iter.next());
+        assertEquals("ZEN", iter.next());
+    }
+
+
+    public void testSizeOnInlineArray() {
+        assertEquals(3, test("{1,2,3}.size()"));
+    }
+
+    public void testSimpleListCreation() {
+        test("['foo', 'bar', 'foobar', 'FOOBAR']");
+    }
+
+    public void testStaticMethodFromLiteral() {
+        assertEquals(String.class.getName(), test("String.valueOf(Class.forName('java.lang.String').getName())"));
+    }
+
+    public void testObjectInstantiation() {
+        test("new java.lang.String('foobie')");
+    }
+
+    public void testObjectInstantiationWithMethodCall() {
+        assertEquals("FOOBIE", test("new String('foobie')  . toUpperCase()"));
+    }
+
+    public void testObjectInstantiation2() {
+        test("new String() is String");
+    }
+
+    public void testObjectInstantiation3() {
+        test("new java.text.SimpleDateFormat('yyyy').format(new java.util.Date(System.currentTimeMillis()))");
+    }
+
+    public void testArrayCoercion() {
+        assertEquals("gonk", test("funMethod( {'gonk', 'foo'} )"));
+    }
+
+    public void testArrayCoercion2() {
+        assertEquals(10, test("sum({2,2,2,2,2})"));
+    }
+
+    public void testMapAccess() {
+        assertEquals("dog", test("funMap['foo'].bar.name"));
+    }
+
+    public void testMapAccess2() {
+        assertEquals("dog", test("funMap.foo.bar.name"));
+    }
+
+    public void testSoundex() {
+        assertTrue((Boolean) test("'foobar' soundslike 'fubar'"));
+    }
+
+    public void testSoundex2() {
+        assertFalse((Boolean) test("'flexbar' soundslike 'fubar'"));
+    }
+
+    public void testSoundex3() {
+        assertEquals(true, test("(c soundslike 'kat')"));
+    }
+
+    public void testSoundex4() {
+        assertEquals(true, test("_xx1 = 'cat'; _xx2 = 'katt'; (_xx1 soundslike _xx2)"));
+    }
+
+    public void testSoundex5() {
+        assertEquals(true, test("_type = 'fubar';_type soundslike \"foobar\""));
+    }
+
+    public void testSimilarity1() {
+        assertEquals(0.6666667f, test("c strsim 'kat'"));
+    }
+
+    public void testThisReference() {
+        assertEquals(true, test("this") instanceof Base);
+    }
+
+    public void testThisReference2() {
+        assertEquals(true, test("this.funMap") instanceof Map);
+    }
+
+    public void testThisReference3() {
+        assertEquals(true, test("this is org.mvel2.tests.core.res.Base"));
+    }
+
+    public void testThisReference4() {
+        assertEquals(true, test("this.funMap instanceof java.util.Map"));
+    }
+
+    public void testThisReference5() {
+        assertEquals(true, test("this.data == 'cat'"));
+    }
+
+    public void testThisReferenceInMethodCall() {
+        assertEquals(101, test("Integer.parseInt(this.number)"));
+    }
+
+    public void testThisReferenceInConstructor() {
+        assertEquals("101", test("new String(this.number)"));
+    }
 
     // interpreted
     public void testThisReferenceMapVirtualObjects() {
@@ -95,26 +796,208 @@ public class CoreConfidenceTests extends AbstractTest {
         assertEquals(true, executeExpression(compileExpression("this.foo == 'bar'"), map, factory));
     }
 
+    public void testStringEscaping() {
+        assertEquals("\"Mike Brock\"", test("\"\\\"Mike Brock\\\"\""));
+    }
+
+    public void testStringEscaping2() {
+        assertEquals("MVEL's Parser is Fast", test("'MVEL\\'s Parser is Fast'"));
+    }
 
     public void testEvalToBoolean() {
         assertEquals(true, (boolean) evalToBoolean("true ", "true"));
         assertEquals(true, (boolean) evalToBoolean("true ", "true"));
     }
 
+    public void testCompiledMapStructures() {
+        executeExpression(compileExpression("['foo':'bar'] contains 'foo'"), null, null, Boolean.class);
+    }
+
+    public void testSubListInMap() {
+        assertEquals("pear", test("map = ['test' : 'poo', 'foo' : [c, 'pear']]; map['foo'][1]"));
+    }
+
+    public void testCompiledMethodCall() {
+        assertEquals(String.class, executeExpression(compileExpression("c.getClass()"), new Base(), createTestMap()));
+    }
+
+    public void testStaticNamespaceCall() {
+        assertEquals(java.util.ArrayList.class, test("java.util.ArrayList"));
+    }
+
+    public void testStaticNamespaceClassWithMethod() {
+        assertEquals("FooBar", test("java.lang.String.valueOf('FooBar')"));
+    }
+
+    public void testConstructor() {
+        assertEquals("foo", test("a = 'foobar'; new String(a.toCharArray(), 0, 3)"));
+    }
+
+    public void testStaticNamespaceClassWithField() {
+        assertEquals(Integer.MAX_VALUE, test("java.lang.Integer.MAX_VALUE"));
+    }
+
+    public void testStaticNamespaceClassWithField2() {
+        assertEquals(Integer.MAX_VALUE, test("Integer.MAX_VALUE"));
+    }
+
+    public void testStaticFieldAsMethodParm() {
+        assertEquals(String.valueOf(Integer.MAX_VALUE), test("String.valueOf(Integer.MAX_VALUE)"));
+    }
+
+    public void testEmptyIf() {
+        assertEquals(5, test("a = 5; if (a == 5) { }; return a;"));
+    }
+
+    public void testEmptyIf2() {
+        assertEquals(5, test("a=5;if(a==5){};return a;"));
+    }
+
+    public void testIf() {
+        assertEquals(10, test("if (5 > 4) { return 10; } else { return 5; }"));
+    }
+
+    public void testIf2() {
+        assertEquals(10, test("if (5 < 4) { return 5; } else { return 10; }"));
+    }
+
+    public void testIf3() {
+        assertEquals(10, test("if(5<4){return 5;}else{return 10;}"));
+    }
+
+    public void testIfAndElse() {
+        assertEquals(true, test("if (false) { return false; } else { return true; }"));
+    }
+
+    public void testIfAndElseif() {
+        assertEquals(true, test("if (false) { return false; } else if(100 < 50) { return false; } else if (10 > 5) return true;"));
+    }
+
+    public void testIfAndElseIfCondensedGrammar() {
+        assertEquals("Foo", test("if (false) return 'Bar'; else return 'Foo';"));
+    }
+
+    public void testForEach2() {
+        assertEquals(6, test("total = 0; a = {1,2,3}; foreach(item : a) { total += item }; total"));
+    }
+
+    public void testForEach3() {
+        assertEquals(true, test("a = {1,2,3}; foreach (i : a) { if (i == 1) { return true; } }"));
+    }
+
+    public void testForEach4() {
+        assertEquals("OneTwoThreeFour", test("a = {1,2,3,4}; builder = ''; foreach (i : a) {" +
+                " if (i == 1) { builder += 'One' } else if (i == 2) { builder += 'Two' } " +
+                "else if (i == 3) { builder += 'Three' } else { builder += 'Four' }" +
+                "}; builder;"));
+    }
+
+    public void testWith() {
+        assertEquals("OneTwo", test("with (foo) {aValue = 'One',bValue='Two'}; foo.aValue + foo.bValue;"));
+    }
+
+    public void testWith2() {
+        assertEquals("OneTwo", test(
+                "with (foo) { \n" +
+                        "aValue = 'One', // this is a comment \n" +
+                        "bValue='Two'  // this is also a comment \n" +
+                        "}; \n" +
+                        "foo.aValue + foo.bValue;"));
+    }
+
+    public void testMagicArraySize() {
+        assertEquals(5, test("stringArray.size()"));
+    }
+
+    public void testMagicArraySize2() {
+        assertEquals(5, test("intArray.size()"));
+    }
+
+    public void testStaticVarAssignment() {
+        assertEquals("1", test("String mikeBrock = 1; mikeBrock"));
+    }
 
     public void testImport() {
         assertEquals(HashMap.class, test("import java.util.HashMap; HashMap;"));
     }
 
-    public void testImport2() {
-        HashMap[] maps = (HashMap[]) MVEL.eval("import java.util.*; HashMap[] maps = new HashMap[10]; maps", new HashMap());
-
-        //    HashMap[] maps = (HashMap[]) test("import java.util.*; HashMap[] maps = new HashMap[10]; maps");
-        assertEquals(10, maps.length);
-    }
-
     public void testStaticImport() {
         assertEquals(2.0, test("import_static java.lang.Math.sqrt; sqrt(4)"));
+    }
+
+    public void testFunctionPointer() {
+        assertEquals(2.0, test("squareRoot = java.lang.Math.sqrt; squareRoot(4)"));
+    }
+
+    public void testFunctionPointerAsParam() {
+        assertEquals("2.0", test("squareRoot = Math.sqrt; new String(String.valueOf(squareRoot(4)));"));
+    }
+
+    public void testFunctionPointerInAssignment() {
+        assertEquals(5.0, test("squareRoot = Math.sqrt; i = squareRoot(25); return i;"));
+    }
+
+    public void testIncrementOperator() {
+        assertEquals(2, test("x = 1; x++; x"));
+    }
+
+    public void testPreIncrementOperator() {
+        assertEquals(2, test("x = 1; ++x"));
+    }
+
+    public void testDecrementOperator() {
+        assertEquals(1, test("x = 2; x--; x"));
+    }
+
+    public void testPreDecrementOperator() {
+        assertEquals(1, test("x = 2; --x"));
+    }
+
+    public void testQualifiedStaticTyping() {
+        Object val = test("java.math.BigDecimal a = new java.math.BigDecimal( 10.0 ); java.math.BigDecimal b = new java.math.BigDecimal( 10.0 ); java.math.BigDecimal c = a + b; return c; ");
+        assertEquals(new BigDecimal(20), val);
+    }
+
+    public void testUnQualifiedStaticTyping() {
+        CompiledExpression ce = (CompiledExpression) compileExpression("import java.math.BigDecimal; BigDecimal a = new BigDecimal( 10.0 ); BigDecimal b = new BigDecimal( 10.0 ); BigDecimal c = a + b; return c; ");
+        System.out.println(DebugTools.decompile(ce));
+
+
+        assertEquals(new BigDecimal(20), testCompiledSimple("import java.math.BigDecimal; BigDecimal a = new BigDecimal( 10.0 ); BigDecimal b = new BigDecimal( 10.0 ); BigDecimal c = a + b; return c; ", new HashMap()));
+    }
+
+    public void testObjectCreation() {
+        assertEquals(6, test("new Integer( 6 )"));
+    }
+
+    public void testTernary4() {
+        assertEquals("<test>", test("true ? '<test>' : '<poo>'"));
+    }
+
+    public void testStringAsCollection() {
+        assertEquals('o', test("abc = 'foo'; abc[1]"));
+    }
+
+    public void testSubExpressionIndexer() {
+        assertEquals("bar", test("xx = new java.util.HashMap(); xx.put('foo', 'bar'); prop = 'foo'; xx[prop];"));
+    }
+
+    public void testCompileTimeLiteralReduction() {
+        assertEquals(1000, test("10 * 100"));
+    }
+
+    public void testInterfaceResolution() {
+        Serializable ex = compileExpression("foo.collectionTest.size()");
+
+        Map map = createTestMap();
+        Foo foo = (Foo) map.get("foo");
+        foo.setCollectionTest(new HashSet());
+        Object result1 = executeExpression(ex, foo, map);
+
+        foo.setCollectionTest(new ArrayList());
+        Object result2 = executeExpression(ex, foo, map);
+
+        assertEquals(result1, result2);
     }
 
 
@@ -180,12 +1063,423 @@ public class CoreConfidenceTests extends AbstractTest {
         test("a = 0;\r\nSystem.out.println('This is a test');");
     }
 
+    public void testBreakpoints() {
+        ExpressionCompiler compiler = new ExpressionCompiler("a = 5;\nb = 5;\n\nif (a == b) {\n\nSystem.out.println('Good');\nreturn a + b;\n}\n");
+        System.out.println("-------\n" + compiler.getExpression() + "\n-------\n");
+
+        //   compiler.setDebugSymbols(true);
+
+        ParserContext ctx = new ParserContext();
+        ctx.setSourceFile("test.mv");
+        ctx.setDebugSymbols(true);
+
+        CompiledExpression compiled = compiler.compile(ctx);
+
+        System.out.println(DebugTools.decompile(compiled));
+
+        MVELRuntime.registerBreakpoint("test.mv", 7);
+
+        Debugger testDebugger = new Debugger() {
+            public int onBreak(Frame frame) {
+                System.out.println("Breakpoint [source:" + frame.getSourceName() + "; line:" + frame.getLineNumber() + "]");
+
+                return 0;
+            }
+        };
+
+        MVELRuntime.setThreadDebugger(testDebugger);
+
+        assertEquals(10, MVEL.executeDebugger(compiled, null, new MapVariableResolverFactory(createTestMap())));
+    }
+
+    public void testBreakpoints2() {
+        ExpressionCompiler compiler = new ExpressionCompiler("System.out.println('test the debugger');\n a = 0;");
+        //  compiler.setDebugSymbols(true);
+
+        ParserContext ctx = new ParserContext();
+        ctx.setSourceFile("test.mv");
+        ctx.setDebugSymbols(true);
+
+        CompiledExpression compiled = compiler.compile(ctx);
+
+        System.out.println(DebugTools.decompile(compiled));
+    }
+
+    public void testBreakpoints3() {
+        String expr = "System.out.println( \"a1\" );\n" +
+                "System.out.println( \"a2\" );\n" +
+                "System.out.println( \"a3\" );\n" +
+                "System.out.println( \"a4\" );\n";
+
+        ExpressionCompiler compiler = new ExpressionCompiler(expr);
+
+        ParserContext context = new ParserContext();
+        context.addImport("System", System.class);
+        context.setStrictTypeEnforcement(true);
+        context.setDebugSymbols(true);
+        context.setSourceFile("mysource");
+
+        //  Serializable compiledExpression = compiler.compile(context);
+
+        String s = org.mvel2.debug.DebugTools.decompile(compiler.compile(context));
+
+        System.out.println("output: " + s);
+
+        int fromIndex = 0;
+        int count = 0;
+        while ((fromIndex = s.indexOf("DEBUG_SYMBOL", fromIndex + 1)) > -1) {
+            count++;
+        }
+        assertEquals(4, count);
+
+    }
+
+    public void testBreakpointsAcrossWith() {
+        String line1 = "System.out.println( \"a1\" );\n";
+        String line2 = "c = new Cheese();\n";
+        String line3 = "with ( c ) { type = 'cheddar',\n" +
+                "             price = 10 };\n";
+        String line4 = "System.out.println( \"a1\" );\n";
+        String expr = line1 + line2 + line3 + line4;
+
+        System.out.println(expr);
+
+        ExpressionCompiler compiler = new ExpressionCompiler(expr);
+
+        ParserContext context = new ParserContext();
+        context.addImport("System", System.class);
+        context.addImport("Cheese", Cheese.class);
+        context.setStrictTypeEnforcement(true);
+        context.setDebugSymbols(true);
+        context.setSourceFile("mysource");
+
+        //      Serializable compiledExpression = compiler.compile(context);
+
+        String s = org.mvel2.debug.DebugTools.decompile(compiler.compile(context));
+
+        System.out.println("output: " + s);
+
+        int fromIndex = 0;
+        int count = 0;
+        while ((fromIndex = s.indexOf("DEBUG_SYMBOL", fromIndex + 1)) > -1) {
+            count++;
+        }
+        assertEquals(5, count);
+
+    }
+
+    public void testBreakpointsAcrossComments() {
+        String expression = "/** This is a comment\n" +  // 1
+                " *  Second comment line\n" +        // 2
+                " *  Third Comment Line\n" +         // 3
+                " */\n" +                         // 4
+                "System.out.println('4');\n" +   // 5
+                "System.out.println('5');\n" +   // 6
+                "a = 0;\n" +                     // 7
+                "b = 1;\n" +                    // 8
+                "a + b";                        // 9
+
+        ExpressionCompiler compiler = new ExpressionCompiler(expression);
+        //  compiler.setDebugSymbols(true);
+
+        System.out.println("Expression:\n------------");
+        System.out.println(expression);
+        System.out.println("------------");
+
+        ParserContext ctx = new ParserContext();
+        ctx.setSourceFile("test2.mv");
+        ctx.setDebugSymbols(true);
+
+        CompiledExpression compiled = compiler.compile(ctx);
+
+        System.out.println(DebugTools.decompile(compiled));
+
+        MVELRuntime.registerBreakpoint("test2.mv", 9);
+
+        Debugger testDebugger = new Debugger() {
+
+            public int onBreak(Frame frame) {
+                System.out.println("Breakpoint Encountered [source:" + frame.getSourceName() + "; line:" + frame.getLineNumber() + "]");
+                System.out.println("vars:" + frame.getFactory().getKnownVariables());
+                System.out.println("Resume Execution");
+                return 0;
+            }
+
+        };
+
+        MVELRuntime.setThreadDebugger(testDebugger);
+
+        assertEquals(1, MVEL.executeDebugger(compiled, null, new MapVariableResolverFactory(createTestMap())));
+    }
+
+    public void testBreakpointsAcrossComments2() {
+        ExpressionCompiler compiler = new ExpressionCompiler(
+                "// This is a comment\n" +                  // 1
+                        "//Second comment line\n" +         // 2
+                        "//Third Comment Line\n" +          // 3
+                        "\n" +                              // 4
+                        "//Test\n" +                        // 5
+                        "System.out.println('4');\n" +      // 6
+                        "//System.out.println('5'); \n" +    // 7
+                        "a = 0;\n" +                        // 8
+                        "b = 1;\n" +                        // 9
+                        " a + b");                          // 10
+
+
+        ParserContext ctx = new ParserContext();
+        ctx.setSourceFile("test2.mv");
+        ctx.setDebugSymbols(true);
+
+        CompiledExpression compiled = compiler.compile(ctx);
+
+        System.out.println(DebugTools.decompile(compiled));
+
+        MVELRuntime.registerBreakpoint("test2.mv", 6);
+        MVELRuntime.registerBreakpoint("test2.mv", 8);
+        MVELRuntime.registerBreakpoint("test2.mv", 9);
+        MVELRuntime.registerBreakpoint("test2.mv", 10);
+
+        Debugger testDebugger = new Debugger() {
+            public int onBreak(Frame frame) {
+                System.out.println("Breakpoint [source:" + frame.getSourceName() + "; line:" + frame.getLineNumber() + "]");
+                return 0;
+            }
+        };
+
+        MVELRuntime.setThreadDebugger(testDebugger);
+
+        assertEquals(1, MVEL.executeDebugger(compiled, null, new MapVariableResolverFactory(createTestMap())));
+    }
+
+    public void testBreakpoints4() {
+        String expression = "System.out.println('foo');\n" +
+                "a = new Foo();\n" +
+                "update (a) { name = 'bar' };\n" +
+                "System.out.println('name:' + a.name);\n" +
+                "return a.name;";
+
+
+        Map<String, Interceptor> interceptors = new HashMap<String, Interceptor>();
+        Map<String, Macro> macros = new HashMap<String, Macro>();
+
+        interceptors.put("Update", new Interceptor() {
+            public int doBefore(ASTNode node, VariableResolverFactory factory) {
+                ((WithNode) node).getNestedStatement().getValue(null,
+                        factory);
+                System.out.println("fired update interceptor -- before");
+                return 0;
+            }
+
+            public int doAfter(Object val, ASTNode node, VariableResolverFactory factory) {
+                System.out.println("fired update interceptor -- after");
+                return 0;
+            }
+        });
+
+        macros.put("update", new Macro() {
+            public String doMacro() {
+                return "@Update with";
+            }
+        });
+
+        expression = parseMacros(expression, macros);
+
+        ExpressionCompiler compiler = new ExpressionCompiler(expression);
+        //  compiler.setDebugSymbols(true);
+
+        ParserContext ctx = new ParserContext();
+        ctx.setDebugSymbols(true);
+        ctx.setSourceFile("test2.mv");
+        ctx.addImport("Foo", Foo.class);
+        ctx.setInterceptors(interceptors);
+
+        CompiledExpression compiled = compiler.compile(ctx);
+
+        System.out.println("\nExpression:------------");
+        System.out.println(expression);
+        System.out.println("------------");
+
+        System.out.println(DebugTools.decompile(compiled));
+
+        MVELRuntime.registerBreakpoint("test2.mv", 3);
+        MVELRuntime.registerBreakpoint("test2.mv", 4);
+        MVELRuntime.registerBreakpoint("test2.mv", 5);
+
+        Debugger testDebugger = new Debugger() {
+            public int onBreak(Frame frame) {
+                System.out.println("Breakpoint [source:" + frame.getSourceName() + "; line:" + frame.getLineNumber() + "]");
+                return 0;
+            }
+        };
+
+        MVELRuntime.setThreadDebugger(testDebugger);
+
+        assertEquals("bar", MVEL.executeDebugger(compiled, null, new MapVariableResolverFactory(createTestMap())));
+    }
+
+    public void testBreakpoints5() {
+        OptimizerFactory.setDefaultOptimizer("ASM");
+        String expression = "System.out.println('foo');\r\n" +
+                "a = new Foo();\r\n" +
+                "a.name = 'bar';\r\n" +
+                "foo.happy();\r\n" +
+                "System.out.println( 'name:' + a.name );               \r\n" +
+                "System.out.println( 'name:' + a.name );         \r\n" +
+                "System.out.println( 'name:' + a.name );     \r\n" +
+                "return a.name;";
+
+        Map<String, Interceptor> interceptors = new HashMap<String, Interceptor>();
+        Map<String, Macro> macros = new HashMap<String, Macro>();
+
+        interceptors.put("Update", new Interceptor() {
+            public int doBefore(ASTNode node, VariableResolverFactory factory) {
+                ((WithNode) node).getNestedStatement().getValue(null,
+                        factory);
+                System.out.println("fired update interceptor -- before");
+                return 0;
+            }
+
+            public int doAfter(Object val, ASTNode node, VariableResolverFactory factory) {
+                System.out.println("fired update interceptor -- after");
+                return 0;
+            }
+        });
+
+        macros.put("update", new Macro() {
+            public String doMacro() {
+                return "@Update with";
+            }
+        });
+
+        expression = parseMacros(expression, macros);
+
+        ExpressionCompiler compiler = new ExpressionCompiler(expression);
+        //  compiler.setDebugSymbols(true);
+
+        ParserContext ctx = new ParserContext();
+        ctx.setSourceFile("test2.mv");
+        ctx.setDebugSymbols(true);
+        ctx.addImport("Foo", Foo.class);
+        ctx.setInterceptors(interceptors);
+
+        CompiledExpression compiled = compiler.compile(ctx);
+
+        System.out.println("\nExpression:------------");
+        System.out.println(expression);
+        System.out.println("------------");
+
+        System.out.println(DebugTools.decompile(compiled));
+        MVELRuntime.registerBreakpoint("test2.mv", 1);
+
+        Debugger testDebugger = new Debugger() {
+            public int onBreak(Frame frame) {
+                System.out.println("Breakpoint [source:" + frame.getSourceName() + "; line:" + frame.getLineNumber() + "]");
+                return Debugger.STEP_OVER;
+            }
+        };
+
+        MVELRuntime.setThreadDebugger(testDebugger);
+
+        System.out.println("\n==RUN==\n");
+
+        assertEquals("bar", MVEL.executeDebugger(compiled, null, new MapVariableResolverFactory(createTestMap())));
+    }
+
+    public void testDebugSymbolsWithWindowsLinedEndings() throws Exception {
+        String expr = "   System.out.println( \"a1\" );\r\n" +
+                "   System.out.println( \"a2\" );\r\n" +
+                "   System.out.println( \"a3\" );\r\n" +
+                "   System.out.println( \"a4\" );\r\n";
+
+        ExpressionCompiler compiler = new ExpressionCompiler(expr);
+        // compiler.setDebugSymbols(true);
+
+        ParserContext ctx = new ParserContext();
+        ctx.setStrictTypeEnforcement(true);
+        ctx.setDebugSymbols(true);
+        ctx.setSourceFile("mysource");
+
+
+        //   Serializable compiledExpression = compiler.compile(ctx);
+
+        String s = org.mvel2.debug.DebugTools.decompile(compiler.compile(ctx));
+
+        System.out.println(s);
+
+        int fromIndex = 0;
+        int count = 0;
+        while ((fromIndex = s.indexOf("DEBUG_SYMBOL", fromIndex + 1)) > -1) {
+            count++;
+        }
+        assertEquals(4, count);
+    }
+
+    public void testDebugSymbolsWithUnixLinedEndings() throws Exception {
+        String expr = "   System.out.println( \"a1\" );\n" +
+                "   System.out.println( \"a2\" );\n" +
+                "   System.out.println( \"a3\" );\n" +
+                "   System.out.println( \"a4\" );\n";
+
+        ExpressionCompiler compiler = new ExpressionCompiler(expr);
+        //  compiler.setDebugSymbols(true);
+
+        ParserContext ctx = new ParserContext();
+        ctx.setStrictTypeEnforcement(true);
+        ctx.setDebugSymbols(true);
+        ctx.setSourceFile("mysource");
+
+        //   Serializable compiledExpression = compiler.compile(ctx);
+
+        String s = org.mvel2.debug.DebugTools.decompile(compiler.compile(ctx));
+
+        int fromIndex = 0;
+        int count = 0;
+        while ((fromIndex = s.indexOf("DEBUG_SYMBOL", fromIndex + 1)) > -1) {
+            count++;
+        }
+        assertEquals(4, count);
+
+    }
+
+    public void testDebugSymbolsWithMixedLinedEndings() throws Exception {
+        String expr = "   System.out.println( \"a1\" );\n" +
+                "   System.out.println( \"a2\" );\r\n" +
+                "   System.out.println( \"a3\" );\n" +
+                "   System.out.println( \"a4\" );\r\n";
+
+        ExpressionCompiler compiler = new ExpressionCompiler(expr);
+        // compiler.setDebugSymbols(true);
+
+        ParserContext ctx = new ParserContext();
+        ctx.setStrictTypeEnforcement(true);
+        ctx.setDebugSymbols(true);
+        ctx.setSourceFile("mysource");
+
+        //    Serializable compiledExpression = compiler.compile(ctx);
+
+        String s = org.mvel2.debug.DebugTools.decompile(compiler.compile(ctx));
+
+        System.out.println(s);
+
+        int fromIndex = 0;
+        int count = 0;
+        while ((fromIndex = s.indexOf("DEBUG_SYMBOL", fromIndex + 1)) > -1) {
+            count++;
+        }
+        assertEquals(4, count);
+
+    }
+
+    public void testReflectionCache() {
+        assertEquals("happyBar", test("foo.happy(); foo.bar.happy()"));
+    }
 
     public void testVarInputs() {
-        ParserContext pCtx = new ParserContext();
-        ExpressionCompiler compiler = new ExpressionCompiler("test != foo && bo.addSomething(trouble) && 1 + 2 / 3 == 1; String bleh = foo; twa = bleh;");
-        compiler.setVerifyOnly(true);
-        compiler.compile(pCtx);
+        ExpressionCompiler compiler = new ExpressionCompiler("test != foo && bo.addSomething(trouble); String bleh = foo; twa = bleh;");
+
+        compiler.compile();
+
+        ParserContext pCtx = compiler.getParserContextState();
 
         assertEquals(4, pCtx.getInputs().size());
 
@@ -248,6 +1542,8 @@ public class CoreConfidenceTests extends AbstractTest {
 
         ResolverTools.appendFactory(mvf, classes);
 
+        //  Serializable compiled = compileExpression("HashMap map = new HashMap()", classes.getImportedClasses());
+
         assertTrue(executeExpression(
                 compileExpression("HashMap map = new HashMap()", classes.getImportedClasses()), mvf) instanceof HashMap);
     }
@@ -258,6 +1554,8 @@ public class CoreConfidenceTests extends AbstractTest {
         classes.addClass(Person.class);
 
         ResolverTools.appendFactory(mvf, classes);
+
+        // Serializable compiled = compileExpression("p = new Person('tom'); return p.name;", classes.getImportedClasses());
 
         assertEquals("tom",
                 executeExpression(compileExpression("p = new Person('tom'); return p.name;",
@@ -272,6 +1570,8 @@ public class CoreConfidenceTests extends AbstractTest {
 
         ResolverTools.appendFactory(mvf, classes);
 
+        //   Serializable compiled = compileExpression("p = new Person('tom'); p.age = 20; with( p ) { age = p.age + 1 }; return p.age;", classes.getImportedClasses());
+
         assertEquals(21, executeExpression(compileExpression(
                 "p = new Person('tom'); p.age = 20; with( p ) { age = p.age + 1 }; return p.age;",
                 classes.getImportedClasses()), mvf));
@@ -283,6 +1583,9 @@ public class CoreConfidenceTests extends AbstractTest {
         classes.addClass(Cheese.class);
 
         ResolverTools.appendFactory(mvf, classes);
+
+        //   Serializable compiled = compileExpression("cheese = new Cheese(\"cheddar\", 15);", classes.getImportedClasses());
+
         assertTrue(executeExpression(
                 compileExpression("cheese = new Cheese(\"cheddar\", 15);", classes.getImportedClasses()), mvf) instanceof Cheese);
     }
@@ -303,9 +1606,134 @@ public class CoreConfidenceTests extends AbstractTest {
         Map<String, Interceptor> interceptors = new HashMap<String, Interceptor>();
         interceptors.put("test", testInterceptor);
 
+        //    Serializable compiled = compileExpression("@test System.out.println('MIDDLE');", null, interceptors);
+
         executeExpression(compileExpression("@test System.out.println('MIDDLE');", null, interceptors));
     }
 
+    public void testMacroSupport() {
+        Map<String, Object> vars = new HashMap<String, Object>();
+        vars.put("foo", new Foo());
+
+        Map<String, Interceptor> interceptors = new HashMap<String, Interceptor>();
+        Map<String, Macro> macros = new HashMap<String, Macro>();
+
+        interceptors.put("Modify", new Interceptor() {
+            public int doBefore(ASTNode node, VariableResolverFactory factory) {
+                ((WithNode) node).getNestedStatement().getValue(null,
+                        factory);
+                factory.createVariable("mod", "FOOBAR!");
+                return 0;
+            }
+
+            public int doAfter(Object val, ASTNode node, VariableResolverFactory factory) {
+                return 0;
+            }
+        });
+
+        macros.put("modify", new Macro() {
+            public String doMacro() {
+                return "@Modify with";
+            }
+        });
+
+        ExpressionCompiler compiler = new ExpressionCompiler(parseMacros("modify (foo) { aValue = 'poo' }; mod", macros));
+        //   compiler.setDebugSymbols(true);
+
+        ParserContext ctx = new ParserContext(null, interceptors, null);
+        ctx.setSourceFile("test.mv");
+        ctx.setDebugSymbols(true);
+
+        //   CompiledExpression compiled = compiler.compile(ctx);
+
+        assertEquals("FOOBAR!", executeExpression(compiler.compile(ctx), null, vars));
+    }
+
+    public void testMacroSupportWithStrings() {
+        Map<String, Object> vars = new HashMap<String, Object>();
+        Foo foo = new Foo();
+        vars.put("foo", foo);
+
+        Map<String, Macro> macros = new HashMap<String, Macro>();
+
+        macros.put("modify", new Macro() {
+            public String doMacro() {
+                return "drools.modify";
+            }
+        });
+
+        assertEquals("", foo.aValue);
+
+        ExpressionCompiler compiler = new ExpressionCompiler(parseMacros("\"This is an modify()\"", macros));
+
+        ParserContext ctx = new ParserContext(null, null, null);
+        ctx.setSourceFile("test.mv");
+        ctx.setDebugSymbols(true);
+
+        assertEquals("This is an modify()", executeExpression(compiler.compile(ctx), null, vars));
+    }
+
+
+    public void testMacroSupportWithDebugging() {
+        Map<String, Object> vars = new HashMap<String, Object>();
+        vars.put("foo", new Foo());
+
+        Map<String, Interceptor> interceptors = new HashMap<String, Interceptor>();
+        Map<String, Macro> macros = new HashMap<String, Macro>();
+
+        interceptors.put("Modify", new Interceptor() {
+            public int doBefore(ASTNode node, VariableResolverFactory factory) {
+                ((WithNode) node).getNestedStatement().getValue(null,
+                        factory);
+
+                factory.createVariable("mod", "FOOBAR!");
+
+
+                return 0;
+            }
+
+            public int doAfter(Object val, ASTNode node, VariableResolverFactory factory) {
+                return 0;
+            }
+        });
+
+        macros.put("modify", new Macro() {
+            public String doMacro() {
+                return "@Modify with";
+            }
+        });
+
+        ExpressionCompiler compiler = new ExpressionCompiler(
+                parseMacros(
+                        "System.out.println('hello');\n" +
+                                "System.out.println('bye');\n" +
+                                "modify (foo) { aValue = 'poo', \n" +
+                                " aValue = 'poo' };\n mod", macros)
+        );
+        // compiler.setDebugSymbols(true);
+
+        ParserContext ctx = new ParserContext(null, interceptors, null);
+        ctx.setSourceFile("test.mv");
+        ctx.setDebugSymbols(true);
+
+        CompiledExpression compiled = compiler.compile(ctx);
+
+        MVELRuntime.setThreadDebugger(new Debugger() {
+
+            public int onBreak(Frame frame) {
+                System.out.println(frame.getSourceName() + ":" + frame.getLineNumber());
+
+                return Debugger.STEP;
+            }
+        });
+
+        MVELRuntime.registerBreakpoint("test.mv", 3);
+
+        System.out.println(DebugTools.decompile(compiled
+        ));
+
+        assertEquals("FOOBAR!", MVEL.executeDebugger(compiled, null, new MapVariableResolverFactory(vars)));
+    }
 
     public void testExecuteCoercionTwice() {
         OptimizerFactory.setDefaultOptimizer("reflective");
@@ -315,6 +1743,7 @@ public class CoreConfidenceTests extends AbstractTest {
         vars.put("$value", new Long(5));
 
         ExpressionCompiler compiler = new ExpressionCompiler("with (foo) { countTest = $value };");
+        //  compiler.setDebugSymbols(true);
 
         ParserContext ctx = new ParserContext();
         ctx.setSourceFile("test.mv");
@@ -334,6 +1763,7 @@ public class CoreConfidenceTests extends AbstractTest {
         vars.put("$value", new Long(5));
 
         ExpressionCompiler compiler = new ExpressionCompiler("with (foo) { countTest = $value };");
+        //    compiler.setDebugSymbols(true);
 
         ParserContext ctx = new ParserContext();
         ctx.setSourceFile("test.mv");
@@ -372,10 +1802,6 @@ public class CoreConfidenceTests extends AbstractTest {
                 "// last comment\n"));
     }
 
-    public void testComments5() {
-        assertEquals("dog", test("foo./*Hey!*/name"));
-    }
-
     public void testSubtractNoSpace1() {
         assertEquals(59, test("hour-1"));
     }
@@ -403,6 +1829,8 @@ public class CoreConfidenceTests extends AbstractTest {
         ctx.setStrictTypeEnforcement(true);
 
         Serializable s = compiler.compile(ctx);
+
+        DebugTools.decompile(s);
 
         assertEquals(1, executeExpression(s));
     }
@@ -485,6 +1913,29 @@ public class CoreConfidenceTests extends AbstractTest {
                 compiler.getParserContextState().getVarOrInputType("total"));
     }
 
+    public void testDateComparison() {
+
+        assertTrue((Boolean) test("dt1 < dt2"));
+    }
+
+    public void testDynamicDeop() {
+        Serializable s = compileExpression("name");
+
+        assertEquals("dog", executeExpression(s, new Foo()));
+        assertEquals("dog", executeExpression(s, new Foo().getBar()));
+    }
+
+    public void testVirtProperty() {
+        //   OptimizerFactory.setDefaultOptimizer("ASM");
+
+        Map<String, Object> testMap = new HashMap<String, Object>();
+        testMap.put("test", "foo");
+
+        Map<String, Object> vars = new HashMap<String, Object>();
+        vars.put("mp", testMap);
+
+        assertEquals("bar", executeExpression(compileExpression("mp.test = 'bar'; mp.test"), vars));
+    }
 
     public void testMapPropertyCreateCondensed() {
         assertEquals("foo", test("map = new java.util.HashMap(); map['test'] = 'foo'; map['test'];"));
@@ -514,6 +1965,42 @@ public class CoreConfidenceTests extends AbstractTest {
         assertEquals("foo", test("new String(new String(new String(\"foo\")));"));
     }
 
+    public void testDeepPropertyAdd() {
+        assertEquals(10, test("foo.countTest+ 10"));
+    }
+
+    public void testDeepAssignmentIncrement() {
+        assertEquals(true, test("foo.countTest += 5; if (foo.countTest == 5) { foo.countTest = 0; return true; } else { foo.countTest = 0; return false; }"));
+    }
+
+    public void testDeepAssignmentWithBlock() {
+        assertEquals(true, test("with (foo) { countTest += 5 }; if (foo.countTest == 5) { foo.countTest = 0; return true; } else { foo.countTest = 0; return false; }"));
+    }
+
+    public void testOperativeAssignMod() {
+        int val = 5;
+        assertEquals(val %= 2, test("int val = 5; val %= 2; val"));
+    }
+
+    public void testOperativeAssignDiv() {
+        int val = 10;
+        assertEquals(val /= 2, test("int val = 10; val /= 2; val"));
+    }
+
+    public void testOperativeAssignShift1() {
+        int val = 5;
+        assertEquals(val <<= 2, test("int val = 5; val <<= 2; val"));
+    }
+
+    public void testOperativeAssignShift2() {
+        int val = 5;
+        assertEquals(val >>= 2, test("int val = 5; val >>= 2; val"));
+    }
+
+    public void testOperativeAssignShift3() {
+        int val = -5;
+        assertEquals(val >>>= 2, test("int val = -5; val >>>= 2; val"));
+    }
 
     public void testTypeCast() {
         assertEquals("10", test("(String) 10"));
@@ -566,6 +2053,7 @@ public class CoreConfidenceTests extends AbstractTest {
         ctx.addImport("User", User.class);
 
         ExpressionCompiler compiler = new ExpressionCompiler("users = [ new User('Darth', 'Vadar'), new User('Bobba', 'Feta') ]; [ users.get( 0 ), users.get( 1 ) ]");
+        ///  Serializable s = compiler.compile(ctx);
         List list = (List) executeExpression(compiler.compile(ctx), new HashMap());
         User user = (User) list.get(0);
         assertEquals("Darth", user.getFirstName());
@@ -573,6 +2061,7 @@ public class CoreConfidenceTests extends AbstractTest {
         assertEquals("Bobba", user.getFirstName());
 
         compiler = new ExpressionCompiler("users = [ new User('Darth', 'Vadar'), new User('Bobba', 'Feta') ]; [ users[0], users[1] ]");
+        //    s = compiler.compile(ctx);
         list = (List) executeExpression(compiler.compile(ctx), new HashMap());
         user = (User) list.get(0);
         assertEquals("Darth", user.getFirstName());
@@ -651,7 +2140,9 @@ public class CoreConfidenceTests extends AbstractTest {
         ParserContext ctx = new ParserContext();
         ctx.addPackageImport("org.mvel2.tests.core.res");
 
+
         ExpressionCompiler compiler = new ExpressionCompiler("new Cheesery(\"bobbo\", new Cheese(\"cheddar\", 15))");
+        //  Serializable s = compiler.compile(ctx);
 
         Cheesery p1 = new Cheesery("bobbo", new Cheese("cheddar", 15));
         Cheesery p2 = (Cheesery) executeExpression(compiler.compile(ctx), new DefaultLocalVariableResolverFactory());
@@ -663,9 +2154,12 @@ public class CoreConfidenceTests extends AbstractTest {
         ParserContext ctx = new ParserContext();
         ctx.addPackageImport("org.mvel2.tests.core.res");
 
+
         ExpressionCompiler compiler = new ExpressionCompiler("new Cheesery(\"bobbo\", null)");
+        //    Serializable s = compiler.compile(ctx);
 
         Cheesery p1 = new Cheesery("bobbo", null);
+
         Cheesery p2 = (Cheesery) executeExpression(compiler.compile(ctx), new DefaultLocalVariableResolverFactory());
 
         assertEquals(p1, p2);
@@ -692,6 +2186,12 @@ public class CoreConfidenceTests extends AbstractTest {
         assertTrue((Boolean) test("5 > 6 && 2 < 1 || 10 > 9"));
     }
 
+    public void testPrecedenceOrder1() {
+        String ex = "50 > 60 && 20 < 10 || 100 > 90";
+        System.out.println("Expression: " + ex);
+
+        assertTrue((Boolean) MVEL.eval(ex));
+    }
 
     @SuppressWarnings({"unchecked"})
     public void testDifferentImplSameCompile() {
@@ -703,6 +2203,7 @@ public class CoreConfidenceTests extends AbstractTest {
             Base b = new Base();
             b.funMap.put("hello", "dog");
             testMap.put("a", b);
+
 
             assertEquals("dog", executeExpression(compiled, testMap));
 
@@ -716,6 +2217,7 @@ public class CoreConfidenceTests extends AbstractTest {
 
     @SuppressWarnings({"unchecked"})
     public void testInterfaceMethodCallWithSpace() {
+        //       Serializable compiled = compileExpression("drools.retract (cheese)");
         Map map = new HashMap();
         DefaultKnowledgeHelper helper = new DefaultKnowledgeHelper();
         map.put("drools", helper);
@@ -737,6 +2239,7 @@ public class CoreConfidenceTests extends AbstractTest {
                     }
                 });
 
+        //   Serializable compiled = compileExpression(parseMacros("retract(cheese)", macros));
         Map map = new HashMap();
         DefaultKnowledgeHelper helper = new DefaultKnowledgeHelper();
         map.put("drools", helper);
@@ -781,6 +2284,7 @@ public class CoreConfidenceTests extends AbstractTest {
 
         ctx.setStrictTypeEnforcement(true);
         ExpressionCompiler compiler = new ExpressionCompiler(text);
+        //  Serializable expr = compiler.compile(ctx);
 
         List list = (List) executeExpression(compiler.compile(ctx), createTestMap());
 
@@ -834,45 +2338,47 @@ public class CoreConfidenceTests extends AbstractTest {
         ctx.setDebugSymbols(true);
         ctx.setSourceFile("source.mv");
 
+        //   Serializable c = parser.compile(ctx);
+
         assertEquals("foobar", executeExpression(parser.compile(ctx)));
     }
-
+    
     public void testMapWithStrictTyping() {
         ExpressionCompiler compiler = new ExpressionCompiler("map['KEY1'] == $msg");
         ParserContext ctx = new ParserContext();
         ctx.setStrictTypeEnforcement(true);
-        ctx.setStrongTyping(true);
-        ctx.addInput("$msg", String.class);
-        ctx.addInput("map", Map.class);
+        ctx.setStrongTyping( true );
+        ctx.addInput( "$msg", String.class);
+        ctx.addInput( "map", Map.class );
         Serializable expr = compiler.compile(ctx);
-
+        
         Map map = new HashMap();
-        map.put("KEY1", "MSGONE");
+        map.put(  "KEY1", "MSGONE" );
         Map vars = new HashMap();
-        vars.put("$msg", "MSGONE");
-        vars.put("map", map);
+        vars.put(  "$msg", "MSGONE" );
+        vars.put(  "map", map );
 
-        Boolean bool = (Boolean) executeExpression(expr, map, vars);
-        assertEquals(Boolean.TRUE, bool);
+        Boolean bool = ( Boolean ) MVEL.executeExpression( expr, map, vars );
+        assertEquals( Boolean.TRUE, bool);
     }
-
+    
     public void testMapAsContextWithStrictTyping() {
         ExpressionCompiler compiler = new ExpressionCompiler("this['KEY1'] == $msg");
         ParserContext ctx = new ParserContext();
         ctx.setStrictTypeEnforcement(true);
-        ctx.setStrongTyping(true);
-        ctx.addInput("$msg", String.class);
-        ctx.addInput("this", Map.class);
+        ctx.setStrongTyping( true );
+        ctx.addInput( "$msg", String.class);
+        ctx.addInput( "this", Map.class );
         Serializable expr = compiler.compile(ctx);
-
+        
         Map map = new HashMap();
-        map.put("KEY1", "MSGONE");
+        map.put(  "KEY1", "MSGONE" );
         Map vars = new HashMap();
-        vars.put("$msg", "MSGONE");
+        vars.put(  "$msg", "MSGONE" );
 
-        Boolean bool = (Boolean) executeExpression(expr, map, vars);
-        assertEquals(Boolean.TRUE, bool);
-    }
+        Boolean bool = ( Boolean ) MVEL.executeExpression( expr, map, vars );
+        assertEquals( Boolean.TRUE, bool);
+    }    
 
     /**
      * Community provided test cases
@@ -892,6 +2398,7 @@ public class CoreConfidenceTests extends AbstractTest {
     /**
      * Provided by: Alex Roytman
      */
+
     public void testMethodResolutionWithNullParameter() {
         Context ctx = new Context();
         ctx.setBean(new Bean());
@@ -942,6 +2449,7 @@ public class CoreConfidenceTests extends AbstractTest {
         context.setStrictTypeEnforcement(false);
 
         context.addImport("Message", Message.class);
+        //     Serializable compiledExpression = compiler.compile(context);
 
         assertEquals(1, executeExpression(compiler.compile(context)));
     }
@@ -977,6 +2485,7 @@ public class CoreConfidenceTests extends AbstractTest {
         RuleBase ruleBase = new RuleBaseImpl();
         WorkingMemory wm = new WorkingMemoryImpl(ruleBase);
         KnowledgeHelper drools = new DefaultKnowledgeHelper(wm);
+        //    Serializable compiledExpression = compiler.compile(context);
 
         Map vars = new HashMap();
         vars.put("drools", drools);
@@ -1048,6 +2557,7 @@ public class CoreConfidenceTests extends AbstractTest {
         ParserContext ctx = new ParserContext();
         ctx.addImport(Foo.class);
 
+        //      CompiledExpression s = compiler.compile(ctx);
         compiler.removeParserContext();
 
         System.out.println(executeExpression(compiler.compile(ctx)));
@@ -1113,6 +2623,9 @@ public class CoreConfidenceTests extends AbstractTest {
         // rather than inside innerMap in outerMap
         PropertyAccessor.set(outerMap, "innerMap['foo']", 42);
 
+        // mvel2 set it here
+//        assertEquals(42, outerMap.get("tak"));
+
         // instead of here
         assertEquals(42, innerMap.get("foo"));
     }
@@ -1144,6 +2657,7 @@ public class CoreConfidenceTests extends AbstractTest {
     }
 
     public void testDeepProperty() {
+
         before();
 
         Object obj = executeExpression(compileExpression("map.bean.var"), context);
@@ -1212,6 +2726,43 @@ public class CoreConfidenceTests extends AbstractTest {
     }
 
 
+    public void testBooleanStrAppend() {
+        assertEquals("footrue", test("\"foo\" + true"));
+    }
+
+    public void testStringAppend() {
+        assertEquals("catbar", test("c + 'bar'"));
+    }
+
+    public void testConvertableTo() {
+        assertEquals(true, test("pi convertable_to Integer"));
+    }
+
+    public void testAssignPlus() {
+        assertEquals(10, test("xx0 = 5; xx0 += 4; xx0 + 1"));
+    }
+
+    public void testAssignPlus2() {
+        assertEquals(10, test("xx0 = 5; xx0 =+ 4; xx0 + 1"));
+    }
+
+    public void testAssignDiv() {
+        assertEquals(2, test("xx0 = 20; xx0 /= 10; xx0"));
+    }
+
+    public void testAssignMult() {
+        assertEquals(36, test("xx0 = 6; xx0 *= 6; xx0"));
+    }
+
+    public void testAssignSub() {
+        assertEquals(11, test("xx0 = 15; xx0 -= 4; xx0"));
+    }
+
+    public void testAssignSub2() {
+        assertEquals(-95, test("xx0 = 5; xx0 =- 100"));
+    }
+
+
     public void testStaticWithExplicitParam() {
         PojoStatic pojo = new PojoStatic("10");
         eval("org.mvel2.tests.core.res.AStatic.Process('10')", pojo, new HashMap());
@@ -1247,19 +2798,235 @@ public class CoreConfidenceTests extends AbstractTest {
         assertEquals(10, test("xStr = new String[5][10]; xStr[4][0] = 'foo'; xStr[4].length"));
     }
 
-    public void testAssertKeyword() {
-        ExpressionCompiler compiler = new ExpressionCompiler("assert 1 == 2;");
-        Serializable s = compiler.compile();
+    public void testMath14() {
+        assertEquals(10 - 5 * 2 + 5 * 8 - 4, test("10-5*2 + 5*8-4"));
+    }
+
+    public void testMath15() {
+        String ex = "100-500*200 + 500*800-400";
+        //   System.out.println("Expression: " + ex);
+
+        assertEquals(100 - 500 * 200 + 500 * 800 - 400, test(ex));
+    }
+
+    public void testMath16() {
+        String ex = "100-500*200*150 + 500*800-400";
+        assertEquals(100 - 500 * 200 * 150 + 500 * 800 - 400, test(ex));
+    }
+
+    public void testMath17() {
+        String ex = "(100d * 50d) * 20d / 30d * 2d";
+        //    System.out.println("Expression: " + ex);
+        Object o = test(ex);
+        assertEquals((100d * 50d) * 20d / 30d * 2d, o);
+    }
+
+    public void testMath18() {
+        String ex = "a = 100d; b = 50d; c = 20d; d = 30d; e = 2d; (a * b) * c / d * e";
+        System.out.println("Expression: " + ex);
+        assertEquals((100d * 50d) * 20d / 30d * 2d, testCompiledSimple(ex, new HashMap()));
+    }
+
+    public void testMath19() {
+        String ex = "a = 100; b = 500; c = 200; d = 150; e = 500; f = 800; g = 400; a-b*c*d + e*f-g";
+        System.out.println("Expression: " + ex);
+        assertEquals(100 - 500 * 200 * 150 + 500 * 800 - 400, testCompiledSimple(ex, new HashMap()));
+    }
+
+    public void testMath32() {
+        String ex = "x = 20; y = 10; z = 5; x-y-z";
+        System.out.println("Expression: " + ex);
+        assertEquals(20 - 10 - 5, testCompiledSimple(ex, new HashMap()));
+    }
+
+    public void testMath33() {
+        String ex = "x = 20; y = 2; z = 2; x/y/z";
+        System.out.println("Expression: " + ex);
+        assertEquals(20 / 2 / 2, testCompiledSimple(ex, new HashMap()));
+    }
+
+    public void testMath20() {
+        String ex = "10-5*7-3*8-6";
+        System.out.println("Expression: " + ex);
+        assertEquals(10 - 5 * 7 - 3 * 8 - 6, test(ex));
+    }
+
+    public void testMath21() {
+        String expression = "100-50*70-30*80-60";
+        System.out.println("Expression: " + expression);
+        assertEquals(100 - 50 * 70 - 30 * 80 - 60, test(expression));
+    }
+
+    public void testMath22() {
+        String expression = "(100-50)*70-30*(20-9)**3";
+        System.out.println("Expression: " + expression);
+        assertEquals((int) ((100 - 50) * 70 - 30 * Math.pow(20 - 9, 3)), test(expression));
+    }
+
+    public void testMath22b() {
+        String expression = "a = 100; b = 50; c = 70; d = 30; e = 20; f = 9; g = 3; (a-b)*c-d*(e-f)**g";
+        System.out.println("Expression: " + expression);
+        assertEquals((int) ((100 - 50) * 70 - 30 * Math.pow(20 - 9, 3)), testCompiledSimple(expression, new HashMap()));
+    }
+
+    public void testMath23() {
+        String expression = "10 ** (3)*10**3";
+        System.out.println("Expression: " + expression);
+        assertEquals((int) (Math.pow(10, 3) * Math.pow(10, 3)), test(expression));
+    }
+
+    public void testMath24() {
+        String expression = "51 * 52 * 33 / 24 / 15 + 45 * 66 * 47 * 28 + 19";
+        double val = 51d * 52d * 33d / 24d / 15d + 45d * 66d * 47d * 28d + 19d;
+        System.out.println("Expression: " + expression);
+        System.out.println("Expected Result: " + val);
+        assertEquals(val, test(expression));
+    }
+
+    public void testMath25() {
+        String expression = "51 * (4 - 100 * 5) + 10 + 5 * 2 / 1 + 0 + 0 - 80";
+        int val = 51 * (4 - 100 * 5) + 10 + 5 * 2 / 1 + 0 + 0 - 80;
+        System.out.println("Expression: " + expression);
+        System.out.println("Expected Result: " + val);
+        assertEquals(val, test(expression));
+    }
+
+    public void testMath26() {
+        String expression = "5 + 3 * 8 * 2 ** 2";
+        int val = (int) (5d + 3d * 8d * Math.pow(2, 2));
+        System.out.println("Expression: " + expression);
+        System.out.println("Expected Result: " + val);
+        Object result = test(expression);
+        assertEquals(val, result);
+    }
+
+    public void testMath27() {
+        String expression = "50 + 30 * 80 * 20 ** 3 * 51";
+        double val = 50 + 30 * 80 * Math.pow(20, 3) * 51;
+        System.out.println("Expression: " + expression);
+        System.out.println("Expected Result: " + val);
+        Object result = test(expression);
+        assertEquals((int) val, result);
+    }
+
+    public void testMath28() {
+        String expression = "50 + 30 + 80 + 11 ** 2 ** 2 * 51";
+        double val = 50 + 30 + 80 + Math.pow(Math.pow(11, 2), 2) * 51;
+        Object result = test(expression);
+
+        assertEquals((int) val, result);
+    }
+
+    public void testMath29() {
+        String expression = "10 + 20 / 4 / 4";
+        System.out.println("Expression: " + expression);
+        double val = 10d + 20d / 4d / 4d;
+
+        assertEquals(val, MVEL.eval(expression));
+    }
+
+    public void testMath30() {
+        String expression = "40 / 20 + 10 + 6 / 2";
+        float val = 40f / 20f + 10f + 6f / 2f;
+        assertEquals((int) val, MVEL.eval(expression));
+    }
+
+    public void testMath31() {
+        String expression = "40 / 20 + 5 - 4 + 8 / 2 * 2 * 6 ** 2 + 6 - 8";
+        double val = 40f / 20f + 5f - 4f + 8f / 2f * 2f * Math.pow(6, 2) + 6f - 8f;
+        assertEquals((int) val, MVEL.eval(expression));
+    }
+
+    public void testMath34() {
+        String expression = "a+b-c*d*x/y-z+10";
+
+        Map map = new HashMap();
+        map.put("a", 200);
+        map.put("b", 100);
+        map.put("c", 150);
+        map.put("d", 2);
+        map.put("x", 400);
+        map.put("y", 300);
+        map.put("z", 75);
+
+        Serializable s = compileExpression(expression);
+
+        assertEquals(200 + 100 - 150 * 2 * 400 / 300 - 75 + 10, executeExpression(s, map));
+    }
+
+    public void testMath34_Interpreted() {
+        String expression = "a+b-c*x/y-z";
+
+        Map map = new HashMap();
+        map.put("a", 200);
+        map.put("b", 100);
+        map.put("c", 150);
+        map.put("x", 400);
+        map.put("y", 300);
+        map.put("z", 75);
+
+        assertEquals(200 + 100 - 150 * 400 / 300 - 75, MVEL.eval(expression, map));
+    }
+
+    public void testMath35() {
+        String expression = "b/x/b/b*y+a";
+
+        Map map = new HashMap();
+        map.put("a", 10);
+        map.put("b", 20);
+        map.put("c", 30);
+        map.put("x", 40);
+        map.put("y", 50);
+        map.put("z", 60);
+
+        assertNumEquals(20d / 40d / 20d / 20d * 50d + 10d, executeExpression(compileExpression(expression), map));
+    }
+
+    public void testMath35_Interpreted() {
+        String expression = "b/x/b/b*y+a";
+
+        Map map = new HashMap();
+        map.put("a", 10);
+        map.put("b", 20);
+        map.put("c", 30);
+        map.put("x", 40);
+        map.put("y", 50);
+        map.put("z", 60);
 
 
-        try {
-            executeExpression(s);
-        }
-        catch (AssertionError e) {
-            return;
-        }
+        assertNumEquals(20d / 40d / 20d / 20d * 50d + 10d, MVEL.eval(expression, map));
+    }
 
-        assertTrue(false);
+    public void testMath36() {
+        String expression = "b/x*z/a+x-b+x-b/z+y";
+
+        Map map = new HashMap();
+        map.put("a", 10);
+        map.put("b", 20);
+        map.put("c", 30);
+        map.put("x", 40);
+        map.put("y", 50);
+        map.put("z", 60);
+
+        Serializable s = compileExpression(expression);
+
+        assertNumEquals(20d / 40d * 60d / 10d + 40d - 20d + 40d - 20d / 60d + 50d, executeExpression(s, map));
+    }
+
+    public void testMath37() {
+        String expression = "x+a*a*c/x*b*z+x/y-b";
+
+        Map map = new HashMap();
+        map.put("a", 10);
+        map.put("b", 20);
+        map.put("c", 30);
+        map.put("x", 2);
+        map.put("y", 2);
+        map.put("z", 60);
+
+        Serializable s = compileExpression(expression);
+
+        assertNumEquals(2d + 10d * 10d * 30d / 2d * 20d * 60d + 2d / 2d - 20d, executeExpression(s, map));
     }
 
     public void testNullSafe() {
@@ -1277,7 +3044,6 @@ public class CoreConfidenceTests extends AbstractTest {
         assertEquals(true, executeExpression(compiled, map)); // execute a second time (to search for optimizer problems)
 
         OptimizerFactory.setDefaultOptimizer("ASM");
-        compiled = compileExpression(expression);
         foo.setBar(new Bar());
         assertEquals(false, executeExpression(compiled, map));
         foo.setBar(null);
@@ -1324,6 +3090,97 @@ public class CoreConfidenceTests extends AbstractTest {
         List result = (List) executeExpression(execution, new HashMap());
         assertEquals(list, result);
     }
+
+//    public void testNestedWithInMethod() {
+//        Recipient recipient1 = new Recipient();
+//        recipient1.setName("userName1");
+//        recipient1.setEmail("user1@domain.com");
+//
+//        Recipients recipients = new Recipients();
+//        recipients.addRecipient(recipient1);
+//
+//        String text =
+//                "recipients = new Recipients();\n" +
+//                        "recipients.addRecipient( (with ( new Recipient() ) {name = 'userName1', email = 'user1@domain.com' }) );\n" +
+//                        "return recipients;\n";
+//
+//        ParserContext context;
+//        context = new ParserContext();
+//        context.addImport(Recipient.class);
+//        context.addImport(Recipients.class);
+//
+//        ExpressionCompiler compiler = new ExpressionCompiler(text);
+//        Serializable execution = compiler.compile(context);
+//        Recipients result = (Recipients) MVEL.executeExpression(execution);
+//        assertEquals(recipients, result);
+//    }
+//
+//    public void testNestedWithInComplexGraph() {
+//        Recipients recipients = new Recipients();
+//
+//        Recipient recipient1 = new Recipient();
+//        recipient1.setName("user1");
+//        recipient1.setEmail("user1@domain.com");
+//        recipients.addRecipient(recipient1);
+//
+//        Recipient recipient2 = new Recipient();
+//        recipient2.setName("user2");
+//        recipient2.setEmail("user2@domain.com");
+//        recipients.addRecipient(recipient2);
+//
+//        EmailMessage msg = new EmailMessage();
+//        msg.setRecipients(recipients);
+//        msg.setFrom("from@domain.com");
+//
+//        String text = "(with ( new EmailMessage() ) { recipients = (with (new Recipients()) { recipients = [(with ( new Recipient() ) {name = 'user1', email = 'user1@domain.com'}), (with ( new Recipient() ) {name = 'user2', email = 'user2@domain.com'}) ] }), " +
+//                " from = 'from@domain.com' } )";
+//        ParserContext context;
+//        context = new ParserContext();
+//        context.addImport(Recipient.class);
+//        context.addImport(Recipients.class);
+//        context.addImport(EmailMessage.class);
+//
+//        ExpressionCompiler compiler = new ExpressionCompiler(text);
+//        Serializable execution = compiler.compile(context);
+//        EmailMessage result = (EmailMessage) MVEL.executeExpression(execution);
+//        assertEquals(msg, result);
+//    }
+//
+//    public void testNestedWithInComplexGraph2() {
+//        Recipients recipients = new Recipients();
+//
+//        Recipient recipient1 = new Recipient();
+//        recipient1.setName("user1");
+//        recipient1.setEmail("user1@domain.com");
+//        recipients.addRecipient(recipient1);
+//
+//        Recipient recipient2 = new Recipient();
+//        recipient2.setName("user2");
+//        recipient2.setEmail("user2@domain.com");
+//        recipients.addRecipient(recipient2);
+//
+//        EmailMessage msg = new EmailMessage();
+//        msg.setRecipients(recipients);
+//        msg.setFrom("from@domain.com");
+//
+//        String text = "";
+//        text += "with( new EmailMessage() ) { ";
+//        text += "     recipients = with( new Recipients() ){ ";
+//        text += "         recipients = [ with( new Recipient() ) { name = 'user1', email = 'user1@domain.com' }, ";
+//        text += "                        with( new Recipient() ) { name = 'user2', email = 'user2@domain.com' } ] ";
+//        text += "     }, ";
+//        text += "     from = 'from@domain.com' }";
+//        ParserContext context;
+//        context = new ParserContext();
+//        context.addImport(Recipient.class);
+//        context.addImport(Recipients.class);
+//        context.addImport(EmailMessage.class);
+//
+//        ExpressionCompiler compiler = new ExpressionCompiler(text);
+//        Serializable execution = compiler.compile(context);
+//        EmailMessage result = (EmailMessage) MVEL.executeExpression(execution);
+//        assertEquals(msg, result);
+//    }
 
     public void testNestedWithInComplexGraph3() {
         Recipients recipients = new Recipients();
@@ -1480,6 +3337,7 @@ public class CoreConfidenceTests extends AbstractTest {
         private String from;
 
         public EmailMessage() {
+
         }
 
         public Recipients getRecipients() {
@@ -1600,6 +3458,47 @@ public class CoreConfidenceTests extends AbstractTest {
     }
 
 
+    public void testFunctionDefAndCall() {
+        assertEquals("FoobarFoobar",
+                test("function heyFoo() { return 'Foobar'; };\n" +
+                        "return heyFoo() + heyFoo();"));
+    }
+
+    public void testFunctionDefAndCall2() {
+        ExpressionCompiler compiler = new ExpressionCompiler("function heyFoo() { return 'Foobar'; };\n" +
+                "return heyFoo() + heyFoo();");
+
+        Serializable s = compiler.compile();
+
+        Map<String, Function> m = CompilerTools.extractAllDeclaredFunctions((CompiledExpression) s);
+
+        assertTrue(m.containsKey("heyFoo"));
+
+        OptimizerFactory.setDefaultOptimizer("reflective");
+
+        assertEquals("FoobarFoobar", executeExpression(s, new HashMap()));
+        assertEquals("FoobarFoobar", executeExpression(s, new HashMap()));
+
+        OptimizerFactory.setDefaultOptimizer("dynamic");
+
+    }
+
+    public void testFunctionDefAndCall3() {
+        assertEquals("FOOBAR", test("function testFunction() { a = 'foo'; b = 'bar'; a + b; }; testFunction().toUpperCase();  "));
+    }
+
+    public void testFunctionDefAndCall4() {
+        assertEquals("barfoo", test("function testFunction(input) { return input; }; testFunction('barfoo');"));
+    }
+
+    public void testFunctionDefAndCall5() {
+        assertEquals(10, test("function testFunction(x, y) { return x + y; }; testFunction(7, 3);"));
+    }
+
+    public void testFunctionDefAndCall6() {
+        assertEquals("foo", MVEL.eval("def fooFunction(x) x; fooFunction('foo')", new HashMap()));
+    }
+
     public void testDynamicImports2() {
         assertEquals(BufferedReader.class, test("import java.io.*; BufferedReader"));
     }
@@ -1608,6 +3507,47 @@ public class CoreConfidenceTests extends AbstractTest {
         test("System.out.print(\"Hello : \" + (foo != null ? \"FOO!\" : \"NO FOO\") + \". Bye.\");");
     }
 
+    public void testFunctionsScript1() throws IOException {
+        MVEL.evalFile(new File("samples/scripts/functions1.mvel"));
+    }
+
+    public void testQuickSortScript1() throws IOException {
+        MVEL.evalFile(new File("samples/scripts/quicksort.mvel"));
+    }
+
+
+    public void testQuickSortScript2() throws IOException {
+        Object[] sorted = (Object[]) test(new String(loadFromFile(new File("samples/scripts/quicksort.mvel"))));
+        int last = -1;
+        for (Object o : sorted) {
+            if (last == -1) {
+                last = (Integer) o;
+            }
+            else {
+                assertTrue(((Integer) o) > last);
+                last = (Integer) o;
+            }
+        }
+    }
+
+    public void testQuickSortScript3() throws IOException {
+        Object[] sorted = (Object[]) test(new String(loadFromFile(new File("samples/scripts/quicksort2.mvel"))));
+        int last = -1;
+        for (Object o : sorted) {
+            if (last == -1) {
+                last = (Integer) o;
+            }
+            else {
+                assertTrue(((Integer) o) > last);
+                last = (Integer) o;
+            }
+        }
+    }
+
+
+    public void testMultiLineString() throws IOException {
+        MVEL.evalFile(new File("samples/scripts/multilinestring.mvel"));
+    }
 
     public void testCompactIfElse() {
         assertEquals("foo", test("if (false) 'bar'; else 'foo';"));
@@ -1645,6 +3585,18 @@ public class CoreConfidenceTests extends AbstractTest {
 
     }
 
+    public void testInlineCollectionNestedObjectCreation() {
+        Map m = (Map) test("['Person.age' : [1, 2, 3, 4], 'Person.rating' : ['High', 'Low']," +
+                " 'Person.something' : (new String('foo').toUpperCase())]");
+
+        assertEquals("FOO", m.get("Person.something"));
+    }
+
+    public void testInlineCollectionNestedObjectCreation1() {
+        Map m = (Map) test("[new String('foo') : new String('bar')]");
+
+        assertEquals("bar", m.get("foo"));
+    }
 
     public void testEgressType() {
         ExpressionCompiler compiler = new ExpressionCompiler("( $cheese )");
@@ -1671,6 +3623,11 @@ public class CoreConfidenceTests extends AbstractTest {
         assertEquals(1, test("java.lang.Integer number = (java.lang.Integer) '1';"));
     }
 
+    public void testAnonymousFunction() {
+        assertEquals("foobar", test("a = function { 'foobar' }; a();"));
+    }
+
+
     public void testThreadSafetyInterpreter1() {
         //First evaluation
         System.out.println("First evaluation: " + MVEL.eval("true"));
@@ -1683,6 +3640,9 @@ public class CoreConfidenceTests extends AbstractTest {
         }).start();
     }
 
+    public void testStringEquals() {
+        assertEquals(true, test("ipaddr == '10.1.1.2'"));
+    }
 
     public void testArrayList() throws SecurityException, NoSuchMethodException {
         Collection<String> collection = new ArrayList<String>();
@@ -1702,6 +3662,13 @@ public class CoreConfidenceTests extends AbstractTest {
         assertEquals(collection.size(), MVEL.eval("size()", collection));
     }
 
+    public void testCharComparison() {
+        assertEquals(true, test("'z' > 'a'"));
+    }
+
+    public void testCharComparison2() {
+        assertEquals(false, test("'z' < 'a'"));
+    }
 
     public void testRegExMatch() {
         assertEquals(true, MVEL.eval("$test = 'foo'; $ex = 'f.*'; $test ~= $ex", new HashMap()));
@@ -1763,6 +3730,7 @@ public class CoreConfidenceTests extends AbstractTest {
         }
 
         assertTrue(false);
+
     }
 
     public void testStringToArrayCast() {
@@ -1813,6 +3781,18 @@ public class CoreConfidenceTests extends AbstractTest {
         assertEquals(new BigDecimal(20), test("java.math.BigDecimal axx = new java.math.BigDecimal( 10.0 ); java.math.BigDecimal bxx = new java.math.BigDecimal( 10.0 ); java.math.BigDecimal cxx = axx + bxx; return cxx; "));
     }
 
+//    public void testJIRA100a() {
+//        assertEquals(new BigDecimal(233.23d), test("java.math.BigDecimal axx = new java.math.BigDecimal( 109.45 ); java.math.BigDecimal bxx = new java.math.BigDecimal( 123.78 ); java.math.BigDecimal cxx = axx + bxx; return cxx; "));
+//    }
+
+    public void testJIRA100b() {
+        String expression = "(8 / 10) * 100 <= 80;";
+        assertEquals((8 / 10) * 100 <= 80, testCompiledSimple(expression, new HashMap()));
+    }
+
+    public void testJIRA92() {
+        assertEquals(false, test("'stringValue' > null"));
+    }
 
     public void testAssignToBean() {
         Person person = new Person();
@@ -1825,7 +3805,28 @@ public class CoreConfidenceTests extends AbstractTest {
         assertEquals("bar", person.getName());
     }
 
+    public void testAssignListToBean() {
 
+        OptimizerFactory.setDefaultOptimizer("reflective");
+
+        MockClass mock = new MockClass();
+
+        MVEL.executeExpression(MVEL.compileExpression("this.values = [0, 1, 2, 3, 4]"), mock);
+        assertEquals(5, mock.getValues().size());
+    }
+
+    public static class MockClass {
+        List values;
+
+        public List getValues() {
+            return values;
+        }
+
+        public void setValues(List values) {
+            this.values = values;
+        }
+
+    }
 
     public void testParameterizedTypeInStrictMode() {
         ParserContext ctx = new ParserContext();
@@ -1841,6 +3842,8 @@ public class CoreConfidenceTests extends AbstractTest {
         ctx.addInput("ctx", Object.class);
 
         ExpressionCompiler compiler = new ExpressionCompiler("org.mvel2.DataConversion.convert(ctx, String).toUpperCase()");
+        //    CompiledExpression ce = compiler.compile(ctx);
+
         assertEquals(String.class, compiler.compile(ctx).getKnownEgressType());
     }
 
@@ -1884,6 +3887,7 @@ public class CoreConfidenceTests extends AbstractTest {
         assertEquals("foo", executeExpression(compileExpression(ex), map));
         assertEquals("foo", MVEL.eval(ex, map));
     }
+
 
     /**
      * MVEL-103
@@ -2000,6 +4004,7 @@ public class CoreConfidenceTests extends AbstractTest {
                 "}\n");
     }
 
+
     public void testRegExpOK() throws Exception {
         // This works OK intepreted
         assertEquals(Boolean.TRUE, MVEL.eval("'Hello'.toUpperCase() ~= '[A-Z]{0,5}'"));
@@ -2027,6 +4032,7 @@ public class CoreConfidenceTests extends AbstractTest {
     }
 
     public void testLiteralUnionWithComparison() {
+        //     Serializable ce = compileExpression("'Foo'.toUpperCase() == 'FOO'");
         assertEquals(Boolean.TRUE, executeExpression(compileExpression("1 == 1 && ('Hello'.toUpperCase() ~= '[A-Z]{0,5}')")));
     }
 
@@ -2037,6 +4043,7 @@ public class CoreConfidenceTests extends AbstractTest {
             return STRINGS;
         }
     }
+
 
     public final void testDetermineEgressParametricType() {
         final ParserContext parserContext = new ParserContext();
@@ -2052,6 +4059,7 @@ public class CoreConfidenceTests extends AbstractTest {
         assertTrue(typeParameters != null);
         assertTrue(String.class.equals(typeParameters[0]));
     }
+
 
     public final void testDetermineEgressParametricType2() {
         final ParserContext parserContext = new ParserContext();
@@ -2071,12 +4079,9 @@ public class CoreConfidenceTests extends AbstractTest {
     }
 
     public void testCustomPropertyHandler() {
-        MVEL.COMPILER_OPT_ALLOW_OVERRIDE_ALL_PROPHANDLING = true;
         PropertyHandlerFactory.registerPropertyHandler(SampleBean.class, new SampleBeanAccessor());
         assertEquals("dog", test("foo.sampleBean.bar.name"));
         PropertyHandlerFactory.unregisterPropertyHandler(SampleBean.class);
-        MVEL.COMPILER_OPT_ALLOW_OVERRIDE_ALL_PROPHANDLING = false;
-
     }
 
     public void testSetAccessorOverloadedEqualsStrictMode() {
@@ -2111,15 +4116,80 @@ public class CoreConfidenceTests extends AbstractTest {
     }
 
     public void testAnalysisCompile() {
+        CompiledExpression ce = new ExpressionCompiler("foo.aValue = 'bar'").compile();
+        assertTrue(ce.getParserContext().getInputs().keySet().contains("foo"));
+        assertEquals(1, ce.getParserContext().getInputs().size());
+        assertEquals(0, ce.getParserContext().getVariables().size());
+    }
+
+    public void testInlineWith() {
+        CompiledExpression expr = new ExpressionCompiler("foo.{name='poopy', aValue='bar'}").compile();
+        Foo f = (Foo) executeExpression(expr, createTestMap());
+        assertEquals("poopy", f.getName());
+        assertEquals("bar", f.aValue);
+    }
+
+    public void testInlineWith2() {
+        CompiledExpression expr = new ExpressionCompiler("foo.{name = 'poopy', aValue = 'bar', bar.{name = 'foobie'}}").compile();
+
+        Foo f = (Foo) executeExpression(expr, createTestMap());
+
+        assertEquals("poopy", f.getName());
+        assertEquals("bar", f.aValue);
+        assertEquals("foobie", f.getBar().getName());
+    }
+
+    public void testInlineWith3() {
+        CompiledExpression expr = new ExpressionCompiler("foo.{name = 'poopy', aValue = 'bar', bar.{name = 'foobie'}, toUC('doopy')}").compile();
+
+        Foo f = (Foo) executeExpression(expr, createTestMap());
+
+
+        assertEquals("poopy", f.getName());
+        assertEquals("bar", f.aValue);
+        assertEquals("foobie", f.getBar().getName());
+        assertEquals("doopy", f.register);
+    }
+
+    public void testInlineWith4() {
+        OptimizerFactory.setDefaultOptimizer("ASM");
+        ExpressionCompiler expr = new ExpressionCompiler("new Foo().{ name = 'bar' }");
         ParserContext pCtx = new ParserContext();
-        ExpressionCompiler e = new ExpressionCompiler("foo.aValue = 'bar'");
-        e.setVerifyOnly(true);
+        pCtx.addImport(Foo.class);
 
-        e.compile(pCtx);
+        CompiledExpression c = expr.compile(pCtx);
 
-        assertTrue(pCtx.getInputs().keySet().contains("foo"));
-        assertEquals(1, pCtx.getInputs().size());
-        assertEquals(0, pCtx.getVariables().size());
+        Foo f = (Foo) executeExpression(c);
+
+        assertEquals("bar", f.getName());
+
+        f = (Foo) executeExpression(c);
+
+        assertEquals("bar", f.getName());
+    }
+
+    public void testInlineWith5() {
+        OptimizerFactory.setDefaultOptimizer("ASM");
+
+        ParserContext pCtx = new ParserContext();
+        pCtx.setStrongTyping(true);
+
+        pCtx.addInput("foo", Foo.class);
+
+        CompiledExpression expr = new ExpressionCompiler("foo.{name='poopy', aValue='bar'}").compile(pCtx);
+        Foo f = (Foo) executeExpression(expr, createTestMap());
+        assertEquals("poopy", f.getName());
+        assertEquals("bar", f.aValue);
+    }
+
+    public void testInlineWithImpliedThis() {
+        Base b = new Base();
+        ExpressionCompiler expr = new ExpressionCompiler(".{ data = 'foo' }");
+        CompiledExpression compiled = expr.compile();
+
+        executeExpression(compiled, b);
+
+        assertEquals(b.data, "foo");
     }
 
 
@@ -2318,17 +4388,41 @@ public class CoreConfidenceTests extends AbstractTest {
                 fixer.fix(raw));
     }
 
-    private void assertEqualsIgnoreWhitespace(final String expected, final String actual) {
+    private void assertEqualsIgnoreWhitespace(final String expected,
+                                              final String actual) {
         if (expected == null || actual == null) {
-            assertEquals(expected, actual);
+            assertEquals(expected,
+                    actual);
             return;
         }
-        final String cleanExpected = expected.replaceAll("\\s+", "");
-        final String cleanActual = actual.replaceAll("\\s+", "");
+        final String cleanExpected = expected.replaceAll("\\s+",
+                "");
+        final String cleanActual = actual.replaceAll("\\s+",
+                "");
 
-        assertEquals(cleanExpected, cleanActual);
+        assertEquals(cleanExpected,
+                cleanActual);
     }
 
+    public void testIsDefOperator() {
+        assertEquals(true, test("_v1 = 'bar'; isdef _v1"));
+    }
+
+    public void testIsDefOperator2() {
+        assertEquals(false, test("isdef _v1"));
+    }
+
+    public void testIsDefOperator3() {
+        assertEquals(true, test("!(isdef _v1)"));
+    }
+
+    public void testIsDefOperator4() {
+        assertEquals(true, test("! (isdef _v1)"));
+    }
+
+    public void testIsDefOperator5() {
+        assertEquals(true, test("!isdef _v1"));
+    }
 
     public void testReturnType1() {
         assertEquals(Double.class, new ExpressionCompiler("100.5").compile().getKnownEgressType());
@@ -2351,6 +4445,27 @@ public class CoreConfidenceTests extends AbstractTest {
         }
 
         assertTrue(false);
+    }
+
+
+    public void testDoLoop() {
+        assertEquals(10, test("i = 0; do { i++ } while (i != 10); i"));
+    }
+
+    public void testDoLoop2() {
+        assertEquals(50, test("i=100;do{i--}until(i==50); i"));
+    }
+
+    public void testForLoop() {
+        assertEquals("012345", test("String str = ''; for(i=0;i<6;i++) { str += i }; str"));
+    }
+
+    public void testForLoop2() {
+        assertEquals("012345", MVEL.eval("String str='';for(i=0;i<6;i++){str+=i};str", new HashMap()));
+    }
+
+    public void testUntilLoop() {
+        assertEquals("012345", test("String str = ''; int i = 0; until (i == 6) { str += i++; }; str"));
     }
 
 
@@ -2474,10 +4589,10 @@ public class CoreConfidenceTests extends AbstractTest {
         OptimizerFactory.setDefaultOptimizer("ASM");
 
         Serializable ce =
-                compileExpression("new String[][] {{\"2008-04-01\", \"2008-05-10\"}, {\"2007-03-01\", \"2007-02-12\"}}");
+                MVEL.compileExpression("new String[][] {{\"2008-04-01\", \"2008-05-10\"}, {\"2007-03-01\", \"2007-02-12\"}}");
 
         String[][] s = (String[][])
-                executeExpression(ce);
+                MVEL.executeExpression(ce);
 
         assertEquals("2007-03-01", s[1][0]);
     }
@@ -2493,22 +4608,22 @@ public class CoreConfidenceTests extends AbstractTest {
 
         OptimizerFactory.setDefaultOptimizer("ASM");
 
-        Serializable c = compileExpression("tm = System.currentTimeMillis");
-        assertTrue(((Long) executeExpression(c, new HashMap())) > 0);
+        Serializable c = MVEL.compileExpression("tm = System.currentTimeMillis");
+        assertTrue(((Long) MVEL.executeExpression(c, new HashMap())) > 0);
 
         OptimizerFactory.setDefaultOptimizer("reflective");
 
-        assertTrue(((Long) executeExpression(c, new HashMap())) > 0);
+        assertTrue(((Long) MVEL.executeExpression(c, new HashMap())) > 0);
 
         Map map = new HashMap();
         map.put("foo", new Foo());
-        c = compileExpression("foo.happy");
-        assertEquals("happyBar", executeExpression(c, map));
+        c = MVEL.compileExpression("foo.happy");
+        assertEquals("happyBar", MVEL.executeExpression(c, map));
 
         OptimizerFactory.setDefaultOptimizer("ASM");
-        c = compileExpression("foo.happy");
+        c = MVEL.compileExpression("foo.happy");
 
-        assertEquals("happyBar", executeExpression(c, map));
+        assertEquals("happyBar", MVEL.executeExpression(c, map));
 
         MVEL.COMPILER_OPT_ALLOW_NAKED_METH_CALL = false;
     }
@@ -2581,6 +4696,7 @@ public class CoreConfidenceTests extends AbstractTest {
         executeSetExpression(s, foo, new Integer(12));
 
         assertEquals(12, foo.getSampleBean().getMap2().get("bleh").intValue());
+
     }
 
 
@@ -2732,15 +4848,15 @@ public class CoreConfidenceTests extends AbstractTest {
     }
 
     public void testJIRA122() {
-        Serializable s = compileExpression("java.lang.Character.toLowerCase(name.charAt(0)) == 'a'");
+        Serializable s = MVEL.compileExpression("java.lang.Character.toLowerCase(name.charAt(0)) == 'a'");
 
         OptimizerFactory.setDefaultOptimizer("ASM");
 
         Map map = new HashMap();
         map.put("name", "Adam");
 
-        assertEquals(true, executeExpression(s, map));
-        assertEquals(true, executeExpression(s, map));
+        assertEquals(true, MVEL.executeExpression(s, map));
+        assertEquals(true, MVEL.executeExpression(s, map));
     }
 
     public void testJIRA103() {
@@ -2752,9 +4868,9 @@ public class CoreConfidenceTests extends AbstractTest {
         MvelContext mvelContext = new MvelContext();
         Map map = new HashMap();
         map.put("ctx", mvelContext);
-        Serializable c = compileExpression("ctx.regkeys = 'foo'");
-        executeExpression(c, map);
-        executeExpression(c, map);
+        Serializable c = MVEL.compileExpression("ctx.regkeys = 'foo'");
+        MVEL.executeExpression(c, map);
+        MVEL.executeExpression(c, map);
     }
 
     public void testNewUsingWith() {
@@ -2763,10 +4879,10 @@ public class CoreConfidenceTests extends AbstractTest {
         ctx.addImport(Foo.class);
         ctx.addImport(Bar.class);
 
-        Serializable s = compileExpression("[ 'foo' : (with ( new Foo() ) { bar = with ( new Bar() ) { name = 'ziggy' } }) ]", ctx);
+        Serializable s = MVEL.compileExpression("[ 'foo' : (with ( new Foo() ) { bar = with ( new Bar() ) { name = 'ziggy' } }) ]", ctx);
 
         OptimizerFactory.setDefaultOptimizer("reflective");
-        assertEquals("ziggy", (((Foo) ((Map) executeExpression(s)).get("foo")).getBar().getName()));
+        assertEquals("ziggy", (((Foo) ((Map) MVEL.executeExpression(s)).get("foo")).getBar().getName()));
     }
 
     private static Map<String, Boolean> JIRA124_CTX = Collections.singletonMap("testValue", true);
@@ -2793,7 +4909,7 @@ public class CoreConfidenceTests extends AbstractTest {
         Object val;
         Object val2;
         try {
-            val = executeExpression(compileExpression(expression), JIRA124_CTX);
+            val = MVEL.executeExpression(MVEL.compileExpression(expression), JIRA124_CTX);
         }
         catch (Exception e) {
             System.out.println("FailedCompiled[" + i + "]:" + expression);
@@ -2813,7 +4929,9 @@ public class CoreConfidenceTests extends AbstractTest {
         }
 
         return val;
+
     }
+
 
     public void testMethodCaching() {
         MVEL.eval("for (pet: getPets()) pet.run();", new PetStore());
@@ -2855,6 +4973,40 @@ public class CoreConfidenceTests extends AbstractTest {
         assertEquals(col, foo.getCollectionTest());
     }
 
+//    public void testRec1() {
+//        tak(24, 16, 8);
+//    }
+//
+//    public int tak(int x, int y, int z) {
+//        System.out.println("x=" + x + "; y=" + y + "; z=" + z);
+//        return y >= x ? z : tak(tak(x-1, y, z), tak(y-1, z, x), tak(z-1, x, y));
+//    }
+//
+//    public void testDhanjiBreak() {
+//        MVEL.eval(
+//                " def tak(x, y, z) {  System.out.println('x=' + x + '; y=' + y + '; z=' + z);" +
+//                        "y >= x ? z : tak(tak(x-1, y, z), tak(y-1, z, x), tak(z-1, x, y))\n  " +
+//                        " }\n\n" +
+//
+//                        "i = 1;\n" +
+//                        "while(i-- > 0) {\n" +
+//                        "  tak(24, 16, 8);\n" +
+//                        "}", new HashMap());
+//    }      '
+
+
+//    public void testRecursionPerformance() {
+//        HashMap variables = new HashMap();
+//        MVEL.eval("def recurse(ary) { ary <= 0 ? 0 : recurse(ary - 1); }", variables);
+//
+//        for (int i = 0; i < 5; i++) {
+//            long start = System.currentTimeMillis();
+//            MVEL.eval("recurse(1000);", variables);
+//            System.out.println(System.currentTimeMillis() - start);
+//        }
+//    }
+
+
     public class Fruit {
         public class Apple {
 
@@ -2877,468 +5029,7 @@ public class CoreConfidenceTests extends AbstractTest {
 
     }
 
-    public void testOperatorPrecedenceOrder() {
-        Serializable compiled = compileExpression("bean1.successful && bean2.failed || bean1.failed && bean2.successful");
-        Map context = new HashMap();
 
-        BeanB bean1 = new BeanB(true);
-        BeanB bean2 = new BeanB(false);
-
-        context.put("bean1", bean1);
-        context.put("bean2", bean2);
-
-        System.out.println("interpreted: " +
-                MVEL.eval("bean1.successful && bean2.failed || bean1.failed && bean2.successful", context));
-
-
-        assertEquals(bean1.isSuccessful() && bean2.isFailed() || bean1.isFailed() && bean2.isSuccessful(),
-                (boolean) executeExpression(compiled, context, Boolean.class));
-    }
-
-
-    public static class BeanB {
-        private boolean successful;
-
-        public BeanB(boolean successful) {
-            this.successful = successful;
-        }
-
-        public boolean isSuccessful() {
-            return successful;
-        }
-
-        public boolean isFailed() {
-            return !successful;
-        }
-    }
-
-
-    public void testJIRA139() {
-        ParserContext ctx = new ParserContext();
-        ctx.addImport("ReflectionUtil", ReflectionUtil.class);
-        Serializable s = compileExpression("ReflectionUtil.getGetter('foo')", ctx);
-        assertEquals(ReflectionUtil.getGetter("foo"), executeExpression(s));
-    }
-
-
-    public void testJIRA140() {
-        ParserContext ctx = new ParserContext();
-        Serializable s = compileExpression(
-                "import org.mvel2.tests.core.res.*;" +
-                        "cols = new Column[] { new Column('name', 20), new Column('age', 2) };" +
-                        "grid = new Grid(new Model(cols));", ctx
-        );
-
-        Grid g = (Grid) executeExpression(s, new HashMap());
-
-        assertEquals(g.getModel().getColumns()[0].getName(), "name");
-        assertEquals(g.getModel().getColumns()[0].getLength(), 20);
-        assertEquals(g.getModel().getColumns()[1].getName(), "age");
-        assertEquals(g.getModel().getColumns()[1].getLength(), 2);
-    }
-
-    public void testVerifierWithIndexedProperties() {
-        ParserContext ctx = new ParserContext();
-        ctx.setStrictTypeEnforcement(true);
-        ctx.addInput("base", Base.class);
-
-        Serializable s = compileExpression("base.fooMap['foo'].setName('coffee')", ctx);
-
-        Map vars = new HashMap();
-        vars.put("base", new Base());
-
-        executeExpression(s, vars);
-
-        assertEquals("coffee", ((Base) vars.get("base")).fooMap.get("foo").getName());
-    }
-
-    public void testPrimitiveTypes() {
-        ParserContext ctx = new ParserContext();
-        ctx.setStrongTyping(true);
-        ctx.addInput("base", Base.class);
-
-        Serializable s = compileExpression("int x = 5; x = x + base.intValue; x", ctx);
-
-        Map vars = new HashMap();
-        vars.put("base", new Base());
-
-        Number x = (Number) executeExpression(s, vars);
-
-        assertEquals(15, x.intValue());
-
-    }
-
-    public void testAutoBoxing() {
-        ParserContext ctx = new ParserContext();
-        ctx.setStrongTyping(true);
-        //ctx.addInput("base", Base.class);
-
-        Serializable s = compileExpression("(list = new java.util.ArrayList()).add( 5 ); list", ctx);
-
-        Map vars = new HashMap();
-        //vars.put("base", new Base());
-
-        List list = (List) executeExpression(s, vars);
-
-        assertEquals(1, list.size());
-
-    }
-
-    public void testAutoBoxing2() {
-        ParserContext ctx = new ParserContext();
-        ctx.setStrongTyping(true);
-        ctx.addInput("base", Base.class);
-
-        Serializable s = compileExpression("java.util.List list = new java.util.ArrayList(); list.add( base.intValue ); list", ctx);
-
-        Map vars = new HashMap();
-        vars.put("base", new Base());
-
-        List list = (List) executeExpression(s, vars);
-
-        assertEquals(1, list.size());
-    }
-
-    public void testTypeCoercion() {
-        OptimizerFactory.setDefaultOptimizer("ASM");
-        ParserContext ctx = new ParserContext();
-        ctx.setStrongTyping(true);
-        ctx.addInput("base", Base.class);
-
-        Serializable s = compileExpression("java.math.BigInteger x = new java.math.BigInteger( \"5\" ); x + base.intValue;", ctx);
-
-        Map vars = new HashMap();
-        vars.put("base", new Base());
-
-        Number x = (Number) executeExpression(s, vars);
-
-        assertEquals(15, x.intValue());
-    }
-
-    public void testTypeCoercion2() {
-        OptimizerFactory.setDefaultOptimizer("reflective");
-        ParserContext ctx = new ParserContext();
-        ctx.setStrongTyping(true);
-        ctx.addInput("base", Base.class);
-
-        Serializable s = compileExpression("java.math.BigInteger x = new java.math.BigInteger( \"5\" ); x + base.intValue;", ctx);
-
-        Map vars = new HashMap();
-        vars.put("base", new Base());
-
-        Number x = (Number) executeExpression(s, vars);
-
-        assertEquals(15, x.intValue());
-    }
-
-    public void testEmpty() {
-        ParserContext ctx = new ParserContext();
-        ctx.setStrongTyping(true);
-
-        Serializable s = compileExpression("list = new java.util.ArrayList(); list == empty", ctx);
-
-        Map vars = new HashMap();
-
-        Boolean x = (Boolean) executeExpression(s, vars);
-
-        assertNotNull(x);
-        assertTrue(x.booleanValue());
-    }
-
-    public void testMapsAndLists() {
-        OptimizerFactory.setDefaultOptimizer("ASM");
-
-        ParserContext ctx = new ParserContext();
-        ctx.setStrongTyping(true);
-        ctx.addImport(HashMap.class);
-        ctx.addImport(ArrayList.class);
-        ctx.addInput("list", List.class);
-
-        String expression = "m = new HashMap();\n" +
-                "l = new ArrayList();\n" +
-                "l.add(\"first\");\n" +
-                "m.put(\"content\", l);\n" +
-                "list.add(((ArrayList)m[\"content\"])[0]);";
-
-        Serializable s = compileExpression(expression, ctx);
-
-        Map vars = new HashMap();
-        List list = new ArrayList();
-        vars.put("list", list);
-
-        Boolean result = (Boolean) executeExpression(s, vars);
-
-        assertNotNull(result);
-        assertTrue(result);
-        assertEquals(1, list.size());
-        assertEquals("first", list.get(0));
-    }
-
-    public void testMapsAndLists2() {
-        OptimizerFactory.setDefaultOptimizer("reflective");
-
-        ParserContext ctx = new ParserContext();
-        ctx.setStrongTyping(true);
-        ctx.addImport(HashMap.class);
-        ctx.addImport(ArrayList.class);
-        ctx.addInput("list", List.class);
-
-        String expression = "m = new HashMap();\n" +
-                "l = new ArrayList();\n" +
-                "l.add(\"first\");\n" +
-                "m.put(\"content\", l);\n" +
-                "list.add(((ArrayList)m[\"content\"])[0]);";
-
-        Serializable s = compileExpression(expression, ctx);
-
-        Map vars = new HashMap();
-        List list = new ArrayList();
-        vars.put("list", list);
-
-        Boolean result = (Boolean) executeExpression(s, vars);
-
-        assertNotNull(result);
-        assertTrue(result);
-        assertEquals(1, list.size());
-        assertEquals("first", list.get(0));
-    }
-
-    public void testReturnBoolean() {
-        String ex = "list = new java.util.ArrayList(); return list != null";
-
-        ParserContext ctx = new ParserContext();
-        ctx.setStrongTyping(true);
-        Serializable s = compileExpression(ex, ctx);
-
-        assertEquals(true, executeExpression(s, new HashMap()));
-    }
-
-    public void testInlineListSensitivenessToSpaces() {
-        String ex = "([\"a\",\"b\", \"c\"])";
-
-        ParserContext ctx = new ParserContext();
-        Serializable s = compileExpression(ex, ctx);
-
-        List result = (List) executeExpression(s, new HashMap());
-        assertNotNull(result);
-        assertEquals("a", result.get(0));
-        assertEquals("b", result.get(1));
-        assertEquals("c", result.get(2));
-    }
-
-    public void testComaProblemStrikesBack() {
-        String ex = "a.explanation = \"There is a coma, in here\"";
-
-        ParserContext ctx = new ParserContext();
-        ExpressionCompiler compiler = new ExpressionCompiler(ex);
-        Serializable s = compiler.compile(ctx);
-
-        Base a = new Base();
-        Map<String, Object> variables = new HashMap<String, Object>();
-        variables.put("a", a);
-
-        executeExpression(s, variables);
-        assertEquals("There is a coma, in here", a.data);
-    }
-
-    public void testMultiVarDeclr() {
-        String ex = "var a, b, c";
-
-        ParserContext ctx = new ParserContext();
-        ExpressionCompiler compiler = new ExpressionCompiler(ex);
-        compiler.setVerifyOnly(true);
-        compiler.compile(ctx);
-
-        assertEquals(3, ctx.getVariables().size());
-    }
-
-    public void testVarDeclr() {
-        String ex = "var a";
-
-        ParserContext ctx = new ParserContext();
-        ExpressionCompiler compiler = new ExpressionCompiler(ex);
-        compiler.setVerifyOnly(true);
-        compiler.compile(ctx);
-
-        assertEquals(1, ctx.getVariables().size());
-    }
-
-    public void testMultiTypeVarDeclr() {
-        String ex = "String a, b, c";
-        ParserContext ctx = new ParserContext();
-        ExpressionCompiler compiler = new ExpressionCompiler(ex);
-        compiler.compile(ctx);
-
-        assertNotNull(ctx.getVariables());
-        assertEquals(3, ctx.getVariables().entrySet().size());
-        for (Map.Entry<String, Class> entry : ctx.getVariables().entrySet()) {
-            assertEquals(String.class, entry.getValue());
-        }
-    }
-
-    public void testMultiTypeVarDeclr2() {
-        String ex = "String a = 'foo', b = 'baz', c = 'bar'";
-        ParserContext ctx = new ParserContext();
-        ExpressionCompiler compiler = new ExpressionCompiler(ex);
-        compiler.compile(ctx);
-
-        assertNotNull(ctx.getVariables());
-        assertEquals(3, ctx.getVariables().entrySet().size());
-        for (Map.Entry<String, Class> entry : ctx.getVariables().entrySet()) {
-            assertEquals(String.class, entry.getValue());
-        }
-    }
-
-    public void testMultiTypeVarDeclr3() {
-        String ex = "int a = 52 * 3, b = 8, c = 16;";
-        ParserContext ctx = new ParserContext();
-        ExpressionCompiler compiler = new ExpressionCompiler(ex);
-        Serializable s = compiler.compile(ctx);
-
-        assertNotNull(ctx.getVariables());
-        assertEquals(3, ctx.getVariables().entrySet().size());
-        for (Map.Entry<String, Class> entry : ctx.getVariables().entrySet()) {
-            assertEquals(Integer.class, entry.getValue());
-        }
-
-        Map vars = new HashMap();
-        executeExpression(s, vars);
-
-        assertEquals(52 * 3, vars.get("a"));
-        assertEquals(8, vars.get("b"));
-        assertEquals(16, vars.get("c"));
-
-    }
-
-    public void testTypeVarDeclr() {
-        String ex = "String a;";
-        ParserContext ctx = new ParserContext();
-        ExpressionCompiler compiler = new ExpressionCompiler(ex);
-        compiler.compile(ctx);
-
-        assertNotNull(ctx.getVariables());
-        assertEquals(1, ctx.getVariables().entrySet().size());
-        for (Map.Entry<String, Class> entry : ctx.getVariables().entrySet()) {
-            assertEquals(String.class, entry.getValue());
-        }
-    }
-
-    public static interface Services {
-        public final static String A_CONST = "Hello World";
-        public void log(String text);
-    }
-
-    public void testStringConcatenation() {
-        // debugging MVEL code, it seems that MVEL 'thinks' that the result of the expression:
-        // "Drop +5%: "+$sb+" avg: $"+$av+" price: $"+$pr
-        // is a double, and as so, he looks for a method:
-        // Services.log( double );
-        // but finds only:
-        // Services.log( String );
-        // raising the error.
-        String ex = "services.log( \"Drop +5%: \"+$sb+\" avg: $\"+$av+\" price: $\"+$pr );";
-        ParserContext ctx = new ParserContext();
-        ctx.setStrongTyping(true);
-        ctx.addInput("$sb", String.class);
-        ctx.addInput("$av", double.class);
-        ctx.addInput("$pr", double.class);
-        ctx.addInput("services", Services.class);
-        try {
-            ExpressionCompiler compiler = new ExpressionCompiler(ex);
-            compiler.compile(ctx);
-        }
-        catch (Throwable e) {
-            e.printStackTrace();
-            fail("Should not raise exception: " + e.getMessage());
-        }
-    }
-
-    public void testStringConcatenation2() {
-        String ex = "services.log( $cheese + \" some string \" );";
-        ParserContext ctx = new ParserContext();
-        ctx.setStrongTyping(true);
-        ctx.addInput("$cheese", Cheese.class);
-        ctx.addInput("services", Services.class);
-        try {
-            ExpressionCompiler compiler = new ExpressionCompiler(ex);
-            compiler.compile(ctx);
-        }
-        catch (Throwable e) {
-            e.printStackTrace();
-            fail("Should not raise exception: " + e.getMessage());
-        }
-    }
-
-    public void testImperativeCode() {
-        String ex = "if (cheese.price == 10) { cheese.price = 5; }";
-        ParserContext ctx = new ParserContext();
-        ctx.setStrongTyping(true);
-        ctx.addInput("cheese", Cheese.class);
-        // following line is causing an infinite loop when compiling the code
-        // NOTE: drools expects the code to compile, even in the presence of the
-        // "if" statement, but in case the application tries to execute the code,
-        // drools expects mvel to raise the exception, since control flow statements
-        // are disabled
-        AbstractParser.setLanguageLevel(AbstractParser.LEVEL_4_ASSIGNMENT);
-        try {
-            ExpressionCompiler compiler = new ExpressionCompiler(ex);
-            compiler.compile(ctx);
-        }
-        catch (Exception e) {
-            return;
-        }
-        finally {
-            AbstractParser.setLanguageLevel(AbstractParser.LEVEL_5_CONTROL_FLOW);
-        }
-
-        fail("Should have thrown exception");
-    }
-
-    public static void testProjectionUsingThis() {
-        Set records = new HashSet();
-        for (int i = 0; i < 53; i++) {
-            Bean2 record = new Bean2(i);
-            records.add(record);
-        }
-
-        Object result = MVEL.eval("(_prop in this)", records);
-        System.out.println("result: " + result);
-    }
-
-    public static final class Bean2 {
-        public final int _prop;
-
-        public Bean2(int prop_) {
-            _prop = prop_;
-        }
-
-        public int getProp() {
-            return _prop;
-        }
-
-        public String toString() {
-            return Integer.toString(_prop);
-        }
-    }
-
-
-    public void testUnaryOpNegation1() {
-        assertEquals(false, test("!new Boolean(true)"));
-    }
-
-    public void testUnaryOpNegation2() {
-        assertEquals(true, test("!isdef _foozy_"));
-    }
-
-//    public void testLargeRepeatingProjection() {
-//        Set<Foo> foo = new HashSet<Foo>();
-//
-//        for (int i = 0; i < 6000; i++ ) {
-//            foo.add(new Foo());
-//        }
-//
-//        Collection s = (Collection) MVEL.eval("(countTest in this)", foo);
-//    }
 }
 
 
