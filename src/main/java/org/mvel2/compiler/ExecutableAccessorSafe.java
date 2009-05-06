@@ -30,12 +30,16 @@ public class ExecutableAccessorSafe implements ExecutableStatement, Safe {
     private Class egress;
     private boolean convertable;
 
+    private boolean returnBigDecimal;
+
     public ExecutableAccessorSafe(ASTNode node, boolean returnBigDecimal) {
         this.node = node;
+        this.returnBigDecimal = returnBigDecimal;
     }
 
     public ExecutableAccessorSafe(ASTNode node, boolean returnBigDecimal, Class returnType) {
         this.node = node;
+        this.returnBigDecimal = returnBigDecimal;
         this.egress = returnType;
     }
 

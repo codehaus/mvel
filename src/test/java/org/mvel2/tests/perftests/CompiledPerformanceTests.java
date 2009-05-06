@@ -14,8 +14,6 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-import junit.framework.TestCase;
-
 public class CompiledPerformanceTests {
     protected Foo foo = new Foo();
     protected Map<String, Object> map = new HashMap<String, Object>();
@@ -38,14 +36,12 @@ public class CompiledPerformanceTests {
 
 
     public void testQuickSort() throws IOException {
-        Serializable s = MVEL.compileExpression(new String(ParseTools.loadFromFile(new File("samples/scripts/fquicksort.mvel"))));
+        Serializable s = MVEL.compileExpression(new String(ParseTools.loadFromFile(new File("samples/scripts/quicksort.mvel2"))));
 
-        HashMap map = new HashMap();
-        MapVariableResolverFactory mvrf = new MapVariableResolverFactory(map);
+        MapVariableResolverFactory mvrf = new MapVariableResolverFactory(new HashMap());
 
         for (int i = 0; i < 1000000; i++) {
             MVEL.executeExpression(s, mvrf);
-            mvrf.clear();
         }
 
 //        for (int x = 0; x < 4; x++) {

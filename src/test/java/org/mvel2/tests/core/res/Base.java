@@ -18,7 +18,6 @@ public class Base {
     public boolean ackbar = false;
 
     public Map funMap = new HashMap();
-    public Map<String, Foo> fooMap = new HashMap<String, Foo>();
 
     public String barfoo;
 
@@ -49,9 +48,6 @@ public class Base {
 
         funMap.put("foo", new Foo());
         funMap.put("foo_bar", new Foo());
-
-        fooMap.put("foo", foo);
-
     }
 
 
@@ -96,21 +92,5 @@ public class Base {
 
     public boolean equals(Object o) {
         return o instanceof Base;
-    }
-
-    public Map<String, Foo> getFooMap() {
-        return fooMap;
-    }
-
-    public int getIntValue() {
-        return 10;
-    }
-
-    public void setExplanation(String data) {
-        this.data = data;
-    }
-
-    public String getExplanation() {
-        return this.data;
     }
 }

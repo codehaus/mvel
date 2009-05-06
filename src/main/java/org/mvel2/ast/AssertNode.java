@@ -30,11 +30,9 @@ import static org.mvel2.util.ParseTools.subCompileExpression;
  */
 public class AssertNode extends ASTNode {
     public ExecutableStatement assertion;
-    public ExecutableStatement fail;
 
     public AssertNode(char[] expr, int fields, ParserContext pCtx) {
         this.name = expr;
-
         if ((fields & COMPILE_IMMEDIATE) != 0) {
             assertion = (ExecutableStatement) subCompileExpression(expr, pCtx);
         }
@@ -42,12 +40,9 @@ public class AssertNode extends ASTNode {
 
     public Object getReducedValueAccelerated(Object ctx, Object thisValue, VariableResolverFactory factory) {
         try {
-            if (!((Boolean) assertion.getValue(ctx, thisValue, factory))) {
-                throw new AssertionError("assertion failed in expression: " + new String(this.name));
-            }
-            else {
-                return true;
-            }
+            Boolean bool = (Boolean) assertion.getValue(ctx, thisValue, factory);
+            if (!bool) throw new AssertionError("assertion failed in expression: " + new String(this.name));
+            return bool;
         }
         catch (ClassCastException e) {
             throw new CompileException("assertion does not contain a boolean statement");
@@ -56,12 +51,9 @@ public class AssertNode extends ASTNode {
 
     public Object getReducedValue(Object ctx, Object thisValue, VariableResolverFactory factory) {
         try {
-            if (!((Boolean) MVEL.eval(this.name, ctx, factory))) {
-               throw new AssertionError("assertion failed in expression: " + new String(this.name));
-            }
-            else {
-                return true;
-            }
+            Boolean bool = (Boolean) MVEL.eval(this.name, ctx, factory);
+            if (!bool) throw new AssertionError("assertion failed in expression: " + new String(this.name));
+            return bool;
         }
         catch (ClassCastException e) {
             throw new CompileException("assertion does not contain a boolean statement");

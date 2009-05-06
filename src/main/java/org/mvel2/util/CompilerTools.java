@@ -22,9 +22,6 @@ import org.mvel2.CompileException;
 import org.mvel2.Operator;
 import static org.mvel2.Operator.PTABLE;
 import org.mvel2.ParserContext;
-import org.mvel2.integration.VariableResolverFactory;
-import org.mvel2.integration.impl.ClassImportResolverFactory;
-import org.mvel2.ast.BooleanNode;
 import org.mvel2.ast.*;
 import static org.mvel2.compiler.AbstractParser.getCurrentThreadParserContext;
 import org.mvel2.compiler.Accessor;
@@ -102,7 +99,12 @@ public class CompilerTools {
 
 
                     if (tkOp2 != null && tkOp2 != tkOp) {
+                      //  astLinkedList.setCurrentNode(tkOp2);
+
                         optimizeOperator(tkOp2.getOperator(), bo, tkOp2, astLinkedList, optimizedAst);
+
+
+                    //       optimizedAst.addTokenNode(tkOp2);
                     }
                     else {
                         optimizedAst.addTokenNode(bo);                        
@@ -143,25 +145,26 @@ public class CompilerTools {
                             && (tkOp.getOperator() == Operator.AND || tkOp.getOperator() == Operator.OR)) {
 
                         tkOp2 = null;
-                        BooleanNode bool;
+                        ASTNode bool = null;
 
-                        if (tkOp.getOperator() == Operator.AND) {
-                            bool = new And(tk, astLinkedList.nextNode(), ctx.isStrongTyping());
-                        }
-                        else {
-                            bool = new Or(tk, astLinkedList.nextNode(), ctx.isStrongTyping());
+                        switch (tkOp.getOperator()) {
+                            case Operator.AND:
+                                bool = new And(tk, astLinkedList.nextNode(), ctx.isStrongTyping());
+                                break;
+                            case Operator.OR:
+                                bool = new Or(tk, astLinkedList.nextNode(), ctx.isStrongTyping());
                         }
 
                         while (astLinkedList.hasMoreNodes() && (tkOp2 = astLinkedList.nextNode()).isOperator()
                                 && (tkOp2.isOperator(Operator.AND) || tkOp2.isOperator(Operator.OR))) {
 
-                            if ((tkOp = tkOp2).getOperator() == Operator.AND) {
-                                bool.setRightMost(new And(bool.getRightMost(), astLinkedList.nextNode(), ctx.isStrongTyping()));                                
+                            switch ((tkOp = tkOp2).getOperator()) {
+                                case Operator.AND:
+                                    bool = new And(bool, astLinkedList.nextNode(), ctx.isStrongTyping());
+                                    break;
+                                case Operator.OR:
+                                    bool = new Or(bool, astLinkedList.nextNode(), ctx.isStrongTyping());
                             }
-                            else {
-                                bool = new Or(bool, astLinkedList.nextNode(), ctx.isStrongTyping());
-                            }
-
                         }
 
                         optimizedAst.addTokenNode(bool);
@@ -206,6 +209,10 @@ public class CompilerTools {
             case Operator.SOUNDEX:
                 optimizedAst.addTokenNode(new Soundslike(tk, astLinkedList.nextNode()));
                 break;
+//            case Operator.TERNARY:
+//                ExecutableAccessor cond = new ExecutableAccessor(tk, tk.getEgressType());
+//                ExecutableAccessor b
+
 
             default:
                 optimizedAst.addTokenNode(tk, tkOp);
@@ -220,7 +227,7 @@ public class CompilerTools {
      */
     public static Map<String, Function> extractAllDeclaredFunctions(CompiledExpression compile) {
         Map<String, Function> allFunctions = new LinkedHashMap<String, Function>();
-        ASTIterator instructions = new ASTLinkedList(compile.getFirstNode());
+        ASTIterator instructions = new ASTLinkedList(compile.getInstructions());
 
         ASTNode n;
         while (instructions.hasMoreNodes()) {
@@ -250,9 +257,9 @@ public class CompilerTools {
     public static void expectType(ASTNode node, Class type, boolean compileMode) {
         Class retType = node.getEgressType();
         if (compileMode) {
-            if ((retType == null || !type.isAssignableFrom(retType)) && (!Object.class.equals(retType) &&
+            if ((retType == null || !type.isAssignableFrom(retType)) &&
                     (getCurrentThreadParserContext().isStrictTypeEnforcement()
-                            || getCurrentThreadParserContext().isStrictTypeEnforcement()))) {
+                            || getCurrentThreadParserContext().isStrictTypeEnforcement())) {
                 throw new CompileException("was expecting type: " + type.getName() + "; but found type: "
                         + (retType != null ? retType.getName() : "null"));
             }
@@ -304,19 +311,6 @@ public class CompilerTools {
     public static Accessor extractAccessor(ASTNode n) {
         if (n instanceof LiteralNode) return new ExecutableLiteral(n.getLiteralValue());
         else return new ExecutableAccessor(n, n.getEgressType());
-    }
-
-
-    public static Map<String, Object> getInjectedImports(VariableResolverFactory factory) {
-        if (factory == null) return null;
-        do {
-            if (factory instanceof ClassImportResolverFactory) {
-                return ((ClassImportResolverFactory) factory).getImportedClasses();
-            }
-        }
-        while ((factory = factory.getNextFactory()) != null);
-
-        return null;
     }
 
 }

@@ -26,8 +26,11 @@ import org.mvel2.Operator;
 import static org.mvel2.Operator.PTABLE;
 import org.mvel2.ParserContext;
 import org.mvel2.debug.DebugTools;
+import org.mvel2.ast.ASTNode;
 import static org.mvel2.ast.ASTNode.COMPILE_IMMEDIATE;
-import org.mvel2.ast.*;
+import org.mvel2.ast.Assignment;
+import org.mvel2.ast.LiteralNode;
+import org.mvel2.ast.Substatement;
 import org.mvel2.util.ASTLinkedList;
 import static org.mvel2.util.CompilerTools.optimizeAST;
 import org.mvel2.util.ExecutionStack;
@@ -41,7 +44,6 @@ import org.mvel2.util.StringAppender;
 public class ExpressionCompiler extends AbstractParser {
     private Class returnType;
 
-    private boolean verifyOnly = false;
     private boolean verifying = true;
     private boolean secondPassOptimization = false;
 
@@ -129,7 +131,7 @@ public class ExpressionCompiler extends AbstractParser {
                  * This kludge of code is to handle compile-time literal reduction.  We need to avoid
                  * reducing for certain literals like, 'this', ternary and ternary else.
                  */
-                if (!verifyOnly && tk.isLiteral()) {
+                if (tk.isLiteral()) {
                     if (literalOnly == -1) literalOnly = 1;
 
                     if ((tkOp = nextTokenSkipSymbols()) != null && tkOp.isOperator()
@@ -239,7 +241,7 @@ public class ExpressionCompiler extends AbstractParser {
 
             astBuild.finish();
 
-            if (verifying && !verifyOnly) {
+            if (verifying) {
                 pCtx.processTables();
             }            
 
@@ -248,12 +250,7 @@ public class ExpressionCompiler extends AbstractParser {
             }
 
 
-            if (!verifyOnly) {
-                return new CompiledExpression(optimizeAST(astBuild, secondPassOptimization, pCtx), pCtx.getSourceFile(), returnType, pCtx, literalOnly==1);
-            }
-            else {
-                return null;
-            }
+            return new CompiledExpression(optimizeAST(astBuild, secondPassOptimization, pCtx), pCtx.getSourceFile(), returnType, pCtx, literalOnly==1);
 
         }
         catch (NullPointerException e) {
@@ -301,11 +298,6 @@ public class ExpressionCompiler extends AbstractParser {
         if (verifying) {
             if (tk.isIdentifier()) {
                 PropertyVerifier propVerifier = new PropertyVerifier(tk.getNameAsArray(), pCtx);
-
-                if (tk instanceof Union) {
-                    propVerifier.setCtx(((Union)tk).getLeftEgressType());
-                }
-
                 tk.setEgressType(returnType = propVerifier.analyze());
 
                 if (propVerifier.isResolvedExternally()) {
@@ -319,9 +311,13 @@ public class ExpressionCompiler extends AbstractParser {
                     PropertyVerifier propVerifier = new PropertyVerifier(a.getAssignmentVar(), pCtx);
                     tk.setEgressType(returnType = propVerifier.analyze());
 
-                    if (!a.isNewDeclaration() && propVerifier.isResolvedExternally()) {
+                    if (propVerifier.isResolvedExternally()) {
                         pCtx.addInput(tk.getAbsoluteName(), returnType);
                     }
+
+//                    if (propVerifier.isResolvedExternally()) {
+//                        pCtx.addInput(tk.getAbsoluteName(), returnType);
+//                    }
 
                     ExecutableStatement c = (ExecutableStatement) subCompileExpression(a.getExpression());
 
@@ -394,14 +390,6 @@ public class ExpressionCompiler extends AbstractParser {
         this.verifying = verifying;
     }
 
-    public boolean isVerifyOnly() {
-        return verifyOnly;
-    }
-
-    public void setVerifyOnly(boolean verifyOnly) {
-        this.verifyOnly = verifyOnly;
-    }
-
     public Class getReturnType() {
         return returnType;
     }
@@ -425,4 +413,8 @@ public class ExpressionCompiler extends AbstractParser {
     public boolean isLiteralOnly() {
         return literalOnly == 1;
     }
+
+
+
+
 }

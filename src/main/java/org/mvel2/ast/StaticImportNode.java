@@ -37,9 +37,8 @@ public class StaticImportNode extends ASTNode {
 
     public StaticImportNode(char[] expr) {
         try {
-            declaringClass = Class.forName(new String(subset(expr, 0, findLast('.', this.name = expr))),
-                    true, currentThread().getContextClassLoader());
-
+            declaringClass = currentThread().getContextClassLoader()
+                    .loadClass(new String(subset(expr, 0, findLast('.', this.name = expr))));
             methodName = new String(subset(expr, findLast('.', expr) + 1));
 
             if (resolveMethod() == null) {
@@ -62,7 +61,11 @@ public class StaticImportNode extends ASTNode {
     }
 
     public Object getReducedValueAccelerated(Object ctx, Object thisValue, VariableResolverFactory factory) {
-        factory.createVariable(methodName, method == null ? method = resolveMethod() : method);
+        if (method == null) {
+            method = resolveMethod();
+        }
+
+        factory.createVariable(methodName, method);
         return null;
     }
 

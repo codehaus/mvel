@@ -23,7 +23,6 @@ import org.mvel2.integration.VariableResolverFactory;
 import org.mvel2.templates.TemplateError;
 import org.mvel2.templates.TemplateRuntime;
 import static org.mvel2.templates.util.TemplateTools.captureToEOS;
-import org.mvel2.templates.util.TemplateOutputStream;
 import org.mvel2.util.ExecutionStack;
 import static org.mvel2.util.ParseTools.subset;
 import org.mvel2.util.StringAppender;
@@ -65,7 +64,7 @@ public class IncludeNode extends Node {
         this.next = next;
     }
 
-    public Object eval(TemplateRuntime runtime, TemplateOutputStream appender, Object ctx, VariableResolverFactory factory) {
+    public Object eval(TemplateRuntime runtime, StringAppender appender, Object ctx, VariableResolverFactory factory) {
         String file = MVEL.eval(includeExpression, ctx, factory, String.class);
 
         if (this.preExpression != null) {
@@ -73,10 +72,10 @@ public class IncludeNode extends Node {
         }
 
         if (next != null) {
-            return next.eval(runtime, appender.append(String.valueOf(TemplateRuntime.eval(readInFile(file), ctx, factory))), ctx, factory);
+            return next.eval(runtime, appender.append(TemplateRuntime.eval(readInFile(file), ctx, factory)), ctx, factory);
         }
         else {
-            return appender.append(String.valueOf(MVEL.eval(readInFile(file), ctx, factory)));
+            return appender.append(MVEL.eval(readInFile(file), ctx, factory));
         }
     }
 

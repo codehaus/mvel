@@ -20,11 +20,11 @@ package org.mvel2.util;
 
 import org.mvel2.*;
 import static org.mvel2.DataConversion.canConvert;
-import static org.mvel2.DataTypes.*;
 import static org.mvel2.MVEL.getDebuggingOutputFileName;
 import org.mvel2.ast.ASTNode;
-import static org.mvel2.compiler.AbstractParser.LITERALS;
-import static org.mvel2.compiler.AbstractParser.isReservedWord;
+import org.mvel2.ast.Substatement;
+import org.mvel2.ast.InlineCollectionNode;
+import static org.mvel2.compiler.AbstractParser.*;
 import org.mvel2.compiler.*;
 import static org.mvel2.integration.ResolverTools.insertFactory;
 import org.mvel2.integration.VariableResolverFactory;
@@ -253,19 +253,19 @@ public class ParseTools {
                         }
                     }
                     else if (parmTypes[i] == arguments[i]) {
-                        score += 6;
+                        score += 5;
                     }
                     else if (parmTypes[i].isPrimitive() && boxPrimitive(parmTypes[i]) == arguments[i]) {
-                        score += 5;
-                    }
-                    else if (arguments[i].isPrimitive() && unboxPrimitive(arguments[i]) == parmTypes[i]) {
-                        score += 5;
-                    }
-                    else if (isNumericallyCoercible(arguments[i], parmTypes[i])) {
                         score += 4;
                     }
-                    else if (boxPrimitive(parmTypes[i]).isAssignableFrom(boxPrimitive(arguments[i]))) {
+                    else if (arguments[i].isPrimitive() && unboxPrimitive(arguments[i]) == parmTypes[i]) {
+                        score += 4;
+                    }
+                    else if (isNumericallyCoercible(arguments[i], parmTypes[i])) {
                         score += 3;
+                    }
+                    else if (parmTypes[i].isAssignableFrom(arguments[i])) {
+                        score += 2;
                     }
                     else if (!requireExact && canConvert(parmTypes[i], arguments[i])) {
                         if (parmTypes[i].isArray() && arguments[i].isArray()) score += 1;
@@ -351,20 +351,20 @@ public class ParseTools {
         }
     }
 
-    public static Constructor getBestConstructorCanadidate(Object[] args, Class cls, boolean requireExact) {
+    public static Constructor getBestConstructorCanadidate(Object[] arguments, Class cls) {
         Class[] parmTypes;
         Constructor bestCandidate = null;
         int bestScore = 0;
         int score = 0;
 
-        Class[] arguments = new Class[args.length];
+        Class[] targetParms = new Class[arguments.length];
 
-        for (int i = 0; i < args.length; i++) {
-            if (args[i] != null) {
-                arguments[i] = args[i].getClass();
+        for (int i = 0; i < arguments.length; i++) {
+            if (arguments[i] != null) {
+                targetParms[i] = arguments[i].getClass();
             }
         }
-        Integer hash = createClassSignatureHash(cls, arguments);
+        Integer hash = createClassSignatureHash(cls, targetParms);
 
         Map<Integer, Constructor> cache = RESOLVED_CONST_CACHE.get(cls);
         if (cache != null) {
@@ -372,47 +372,37 @@ public class ParseTools {
         }
 
         for (Constructor construct : getConstructors(cls)) {
-            if ((parmTypes = getConstructors(construct)).length != args.length) {
+            if ((parmTypes = getConstructors(construct)).length != arguments.length) {
                 continue;
             }
-            else if (args.length == 0 && parmTypes.length == 0) {
+            else if (arguments.length == 0 && parmTypes.length == 0) {
                 return construct;
             }
 
-            for (int i = 0; i < args.length; i++) {
-
-
-                if (arguments[i] == null) {
-                    if (!parmTypes[i].isPrimitive()) {
-                        score += 5;
-                    }
+            for (int i = 0; i < arguments.length; i++) {
+                if (targetParms[i] == null) {
+                    if (!parmTypes[i].isPrimitive()) score += 5;
                     else {
                         score = 0;
                         break;
                     }
                 }
-                else if (parmTypes[i] == arguments[i]) {
-                    score += 6;
-                }
-                else if (parmTypes[i].isPrimitive() && boxPrimitive(parmTypes[i]) == arguments[i]) {
+                else if (parmTypes[i] == targetParms[i]) {
                     score += 5;
                 }
-                else if (arguments[i].isPrimitive() && unboxPrimitive(arguments[i]) == parmTypes[i]) {
-                    score += 5;
-                }
-                else if (isNumericallyCoercible(arguments[i], parmTypes[i])) {
+                else if (parmTypes[i].isPrimitive() && boxPrimitive(parmTypes[i]) == targetParms[i]) {
                     score += 4;
                 }
-                else if (boxPrimitive(parmTypes[i]).isAssignableFrom(boxPrimitive(arguments[i]))) {
+                else if (targetParms[i].isPrimitive() && unboxPrimitive(targetParms[i]) == parmTypes[i]) {
+                    score += 4;
+                }
+                else if (isNumericallyCoercible(targetParms[i], parmTypes[i])) {
                     score += 3;
                 }
-                else if (!requireExact && canConvert(parmTypes[i], arguments[i])) {
-                    if (parmTypes[i].isArray() && arguments[i].isArray()) score += 1;
-                    else if (parmTypes[i] == char.class && arguments[i] == String.class) score += 1;
-
-                    score += 1;
+                else if (parmTypes[i].isAssignableFrom(targetParms[i])) {
+                    score += 2;
                 }
-                else if (arguments[i] == Object.class) {
+                else if (canConvert(parmTypes[i], targetParms[i])) {
                     score += 1;
                 }
                 else {
@@ -426,6 +416,7 @@ public class ParseTools {
                 bestScore = score;
             }
             score = 0;
+
         }
 
         if (bestCandidate != null) {
@@ -444,7 +435,7 @@ public class ParseTools {
     private static Map<Class, Constructor[]> CLASS_CONSTRUCTOR_CACHE = new WeakHashMap<Class, Constructor[]>(10);
 
 
-    public static Class createClass(String className, ParserContext pCtx) throws ClassNotFoundException {
+    public static Class createClass(String className) throws ClassNotFoundException {
         ClassLoader classLoader = currentThread().getContextClassLoader();
         Map<String, Class> cache = CLASS_RESOLVER_CACHE.get(classLoader);
         if (cache == null) {
@@ -458,14 +449,13 @@ public class ParseTools {
         }
         else {
             try {
-                cls = pCtx == null ? Class.forName(className, true, Thread.currentThread().getContextClassLoader()) :
-                        Class.forName(className, true, pCtx.getParserConfiguration().getClassLoader());
+                cls = getCurrentThreadParserContext().getParserConfiguration().getClassLoader().loadClass(className);
             }
             catch (ClassNotFoundException e) {
                 /**
                  * Now try the system classloader.
                  */
-                cls = forName(className, true, Thread.currentThread().getContextClassLoader());
+                cls = forName(className);
             }
 
             cache.put(className, cls);
@@ -501,7 +491,6 @@ public class ParseTools {
         }
         return new String[]{new String(cs)};
     }
-
 
     public static Class boxPrimitive(Class cls) {
         if (cls == int.class || cls == Integer.class) {
@@ -553,7 +542,7 @@ public class ParseTools {
             return Byte[].class;
         }
 
-        return cls;
+        return null;
     }
 
     public static Class unboxPrimitive(Class cls) {
@@ -764,6 +753,7 @@ public class ParseTools {
             case Operator.BW_USHIFT_RIGHT:
                 op = '\u00AC';
                 break;
+
         }
 
         arraycopy(name.toCharArray(), 0, (stmt = new char[name.length() + statement.length + 1]), 0, name.length());
@@ -799,8 +789,11 @@ public class ParseTools {
             else if (factory != null && factory.isResolveable(name)) {
                 return (Class) factory.getVariableResolver(name).getValue();
             }
+            else if (ctx != null && ctx.hasImport(name)) {
+                return getCurrentThreadParserContext().getImport(name);
+            }
             else {
-                return createClass(name, ctx);
+                return createClass(name);
             }
         }
         catch (ClassNotFoundException e) {
@@ -840,7 +833,7 @@ public class ParseTools {
         t.put(BigInteger.class, DataTypes.BIG_INTEGER);
         t.put(String.class, DataTypes.STRING);
 
-        t.put(int.class, INTEGER);
+        t.put(int.class, DataTypes.INTEGER);
         t.put(Integer.class, DataTypes.W_INTEGER);
 
         t.put(short.class, DataTypes.SHORT);
@@ -849,10 +842,10 @@ public class ParseTools {
         t.put(float.class, DataTypes.FLOAT);
         t.put(Float.class, DataTypes.W_FLOAT);
 
-        t.put(double.class, DOUBLE);
+        t.put(double.class, DataTypes.DOUBLE);
         t.put(Double.class, DataTypes.W_DOUBLE);
 
-        t.put(long.class, LONG);
+        t.put(long.class, DataTypes.LONG);
         t.put(Long.class, DataTypes.W_LONG);
 
         t.put(boolean.class, DataTypes.BOOLEAN);
@@ -867,11 +860,6 @@ public class ParseTools {
         t.put(BlankLiteral.class, DataTypes.EMPTY);
     }
 
-    public static int resolveType(Object o) {
-        if (o == null) return DataTypes.OBJECT;
-        else return __resolveType(o.getClass());
-    }
-
     public static int resolveType(Class cls) {
         Integer i = typeResolveMap.get(cls);
         if (i == null) return DataTypes.OBJECT;
@@ -881,6 +869,7 @@ public class ParseTools {
     }
 
     public static int __resolveType(Class cls) {
+
         if (Integer.class == cls)
             return DataTypes.W_INTEGER;
         if (Double.class == cls)
@@ -909,15 +898,15 @@ public class ParseTools {
             return DataTypes.BIG_INTEGER;
 
         if (int.class == cls)
-            return INTEGER;
+            return DataTypes.INTEGER;
         if (short.class == cls)
             return DataTypes.SHORT;
         if (float.class == cls)
             return DataTypes.FLOAT;
         if (double.class == cls)
-            return DOUBLE;
+            return DataTypes.DOUBLE;
         if (long.class == cls)
-            return LONG;
+            return DataTypes.LONG;
         if (boolean.class == cls)
             return DataTypes.BOOLEAN;
         if (byte.class == cls)
@@ -927,6 +916,9 @@ public class ParseTools {
 
         if (BlankLiteral.class == cls)
             return DataTypes.EMPTY;
+
+//        if (Unit.class.isAssignableFrom(cls))
+//            return DataTypes.UNIT;
 
         return DataTypes.OBJECT;
     }
@@ -941,6 +933,7 @@ public class ParseTools {
         }
         return false;
     }
+
 
     public static Object narrowType(final BigDecimal result) {
         if (result.scale() > 0) {
@@ -970,6 +963,7 @@ public class ParseTools {
 
         return null;
     }
+
 
     /**
      * This is an important aspect of the core parser tools.  This method is used throughout the core parser
@@ -1012,7 +1006,9 @@ public class ParseTools {
             }
         }
         else {
+            int lines = 0;
             for (start++; start < chars.length; start++) {
+
                 if (start < chars.length && chars[start] == '/') {
                     if (start + 1 == chars.length) return start;
                     if (chars[start + 1] == '/') {
@@ -1091,7 +1087,7 @@ public class ParseTools {
                         case '\r':
                             continue;
                         case '\n':
-                            if (pCtx != null) pCtx.setLineOffset((short) start);
+                            pCtx.setLineOffset((short) start);
                             lines++;
                     }
                 }
@@ -1103,16 +1099,15 @@ public class ParseTools {
                     }
                     else if (chars[start + 1] == '*') {
                         start += 2;
-                        Skiploop:
                         while (start < chars.length) {
                             switch (chars[start]) {
                                 case '*':
                                     if (start + 1 < chars.length && chars[start + 1] == '/') {
-                                        break Skiploop;
+                                        break;
                                     }
                                 case '\r':
                                 case '\n':
-                                    if (pCtx != null) pCtx.setLineOffset((short) start);
+                                    pCtx.setLineOffset((short) start);
                                     lines++;
                                     break;
                             }
@@ -1128,7 +1123,7 @@ public class ParseTools {
                     depth++;
                 }
                 else if (chars[start] == term && --depth == 0) {
-                    if (pCtx != null) pCtx.incrementLineCount(lines);
+                    pCtx.incrementLineCount(lines);
                     return start;
                 }
             }
@@ -1180,20 +1175,15 @@ public class ParseTools {
     }
 
 
-    public static void parseWithExpressions(String nestParm, char[] block, int begin, int ending,
-                                            Object ctx, VariableResolverFactory factory) {
-        /**
-         *
-         * MAINTENANCE NOTE: A COMPILING VERSION OF THIS CODE IS DUPLICATED IN: WithNode
-         *
-         */
+    public static WithStatementPair[] parseWithExpressions(String nestParm, char[] block) {
+        List<WithStatementPair> parms = new ArrayList<WithStatementPair>();
 
-        int start = begin;
+        int start = 0;
         String parm = "";
         int end = -1;
         int oper = -1;
 
-        for (int i = begin; i < ending; i++) {
+        for (int i = 0; i < block.length; i++) {
             switch (block[i]) {
                 case '{':
                 case '[':
@@ -1201,55 +1191,69 @@ public class ParseTools {
                     i = balancedCapture(block, i, block[i]);
                     continue;
 
+                case '*':
+                    if (i < block.length && block[i + 1] == '=') {
+                        oper = Operator.MULT;
+                    }
+                    continue;
 
                 case '/':
-                    if (i < ending && block[i + 1] == '/') {
-                        while (i < ending && block[i] != '\n') block[i++] = ' ';
+                    if (i < block.length && block[i + 1] == '/') {
+                        end = i;
+                        while (i < block.length && block[i] != '\n') i++;
                         if (parm == null) start = i;
                     }
-                    else if (i < ending && block[i + 1] == '*') {
-                        int len = ending - 1;
-                        while (i < len && !(block[i] == '*' && block[i + 1] == '/')) {
-                            block[i++] = ' ';
+                    else if (i < block.length && block[i + 1] == '*') {
+                        end = i;
+
+                        while (i < block.length) {
+                            switch (block[i++]) {
+                                case '*':
+                                    if (i < block.length) {
+                                        if (block[i] == '/') break;
+                                    }
+                            }
                         }
-                        block[i++] = ' ';
-                        block[i++] = ' ';
 
                         if (parm == null) start = i;
                     }
-                    else if (i < ending && block[i + 1] == '=') {
+                    else if (i < block.length && block[i + 1] == '=') {
                         oper = Operator.DIV;
                     }
                     continue;
 
-                case '%':
-                case '*':
                 case '-':
-                case '+':
-                    if (i + 1 < ending && block[i + 1] == '=') {
-                        oper = opLookup(block[i]);
+                    if (i < block.length && block[i + 1] == '=') {
+                        oper = Operator.SUB;
                     }
                     continue;
 
+                case '+':
+                    if (i < block.length && block[i + 1] == '=') {
+                        oper = Operator.ADD;
+                    }
+                    continue;
 
                 case '=':
-                    parm = new String(block, start, i - start - (oper != -1 ? 1 : 0)).trim();
-                    start = i + 1;
+                    parm = createStringTrimmed(block, start, i - start - (oper != -1 ? 1 : 0));
+                    start = ++i;
                     continue;
 
                 case ',':
                     if (end == -1) end = i;
 
                     if (parm == null) {
-                        MVEL.eval(new StringAppender(nestParm).append('.')
-                                .append(block, start, end - start).toString(), ctx, factory);
+                        parms.add(
+                                new WithStatementPair(null, new StringAppender(nestParm).append('.')
+                                        .append(subset(block, start, end - start)).toString())
+                        );
 
                         oper = -1;
                         start = ++i;
                     }
                     else {
-                        MVEL.setProperty(ctx, parm, MVEL.eval(new String(createShortFormOperativeAssignment(new StringAppender(nestParm).append(".").append(parm).toString(),
-                                subset(block, start, end - start), oper)), ctx, factory));
+                        parms.add(new WithStatementPair(parm, new String(createShortFormOperativeAssignment(nestParm + "." + parm,
+                                subset(block, start, end - start), oper))));
 
                         parm = null;
                         oper = -1;
@@ -1261,20 +1265,24 @@ public class ParseTools {
             }
         }
 
-        if (start != (end = ending)) {
-            if (parm == null || "".equals(parm)) {
-                MVEL.eval(new StringAppender(nestParm).append('.')
-                        .append(block, start, end - start).toString(), ctx, factory);
+        if (start != (end = block.length)) {
+            if (parm == null) {
+                parms.add(new WithStatementPair(null, new StringAppender(nestParm).append('.')
+                        .append(subset(block, start, end - start)).toString()));
+
             }
             else {
-                MVEL.setProperty(ctx, parm, MVEL.eval(
-                        new String(createShortFormOperativeAssignment(new StringAppender(nestParm).append(".").append(parm).toString(),
-                                subset(block, start, end - start), oper)), ctx, factory));
+                parms.add(new WithStatementPair(
+                        parm,
+                        new String(createShortFormOperativeAssignment(nestParm + "." + parm, subset(block, start, end - start), oper))
+                ));
             }
-
         }
-    }
 
+        WithStatementPair[] ret;
+        parms.toArray(ret = new WithStatementPair[parms.size()]);
+        return ret;
+    }
 
     public static Object handleNumericConversion(final char[] val) {
         if (val.length != 1 && val[0] == '0' && val[1] != '.') {
@@ -1315,11 +1323,11 @@ public class ParseTools {
             switch (numericTest(val)) {
                 case DataTypes.FLOAT:
                     return java.lang.Float.parseFloat(new String(val));
-                case INTEGER:
+                case DataTypes.INTEGER:
                     return java.lang.Integer.parseInt(new String(val));
-                case LONG:
+                case DataTypes.LONG:
                     return java.lang.Long.parseLong(new String(val));
-                case DOUBLE:
+                case DataTypes.DOUBLE:
                     return parseDouble(new String(val));
                 case DataTypes.BIG_DECIMAL:
                     return new BigDecimal(val, MathContext.DECIMAL128);
@@ -1374,18 +1382,20 @@ public class ParseTools {
                     default:
                         return -1;
                 }
+
+
             }
         }
 
         if (len > 0) {
             if (fp) {
-                return DOUBLE;
+                return DataTypes.DOUBLE;
             }
             else if (len > 9) {
-                return LONG;
+                return DataTypes.LONG;
             }
             else {
-                return INTEGER;
+                return DataTypes.INTEGER;
             }
         }
         return -1;
@@ -1441,7 +1451,7 @@ public class ParseTools {
         }
         for (; i < len; i++) {
             if (!isDigit(c = val[i])) {
-                if (f && c == '.') {
+                if (c == '.' && f) {
                     f = false;
                 }
                 else if (len != 1 && i == len - 1) {
@@ -1456,7 +1466,7 @@ public class ParseTools {
                         case 'B':
                             return true;
                         case '.':
-                            throw new CompileException("invalid number literal: " + new String(val));
+                            throw new CompileException("invalid number literal");
                     }
                     return false;
                 }
@@ -1464,6 +1474,7 @@ public class ParseTools {
                     for (i++; i < len; i++) {
                         if (!isDigit(c = val[i])) {
                             if ((c < 'A' || c > 'F') && (c < 'a' || c > 'f')) {
+
                                 if (i == len - 1) {
                                     switch (c) {
                                         case 'l':
@@ -1485,7 +1496,7 @@ public class ParseTools {
                     if (val[++i] == '-' || val[i] == '+') i++;
                 }
                 else {
-                    if (i != 0) throw new CompileException("invalid number literal: " + new String(val));
+                    if (i != 0) throw new CompileException("invalid number literal");
                     return false;
                 }
             }
@@ -1534,6 +1545,7 @@ public class ParseTools {
         return true;
     }
 
+
     public static boolean isIdentifierPart(final int c) {
         return ((c > 96 && c < 123)
                 || (c > 64 && c < 91) || (c > 47 && c < 58) || (c == '_') || (c == '$')
@@ -1569,6 +1581,7 @@ public class ParseTools {
             comp = c2;
             against = c1;
         }
+
 
         while (cur1 < comp.length && cur1 < against.length) {
             if (comp[cur1] == against[cur1]) {
@@ -1620,32 +1633,6 @@ public class ParseTools {
         }
     }
 
-    public static int opLookup(char c) {
-        switch (c) {
-            case '|':
-                return Operator.BW_OR;
-            case '&':
-                return Operator.BW_AND;
-            case '^':
-                return Operator.BW_XOR;
-            case '*':
-                return Operator.MULT;
-            case '/':
-                return Operator.DIV;
-            case '+':
-                return Operator.ADD;
-            case '%':
-                return Operator.MOD;
-            case '\u00AB':
-                return Operator.BW_SHIFT_LEFT;
-            case '\u00BB':
-                return Operator.BW_SHIFT_RIGHT;
-            case '\u00AC':
-                return Operator.BW_USHIFT_RIGHT;
-        }
-        return -1;
-    }
-
     public static final class WithStatementPair implements java.io.Serializable {
         private String parm;
         private String value;
@@ -1670,15 +1657,6 @@ public class ParseTools {
         public void setValue(String value) {
             this.value = value;
         }
-
-        public void eval(Object ctx, VariableResolverFactory vrf) {
-            if (parm == null) {
-                MVEL.eval(value, ctx, vrf);
-            }
-            else {
-                MVEL.setProperty(ctx, parm, MVEL.eval(value, ctx, vrf));
-            }
-        }
     }
 
     public static void checkNameSafety(String name) {
@@ -1700,41 +1678,28 @@ public class ParseTools {
     }
 
     public static Serializable subCompileExpression(char[] expression) {
-        return _optimizeTree(new ExpressionCompiler(expression)._compile());
+        return optimizeTree(new ExpressionCompiler(expression)._compile());
     }
 
     public static Serializable subCompileExpression(char[] expression, ParserContext ctx) {
         ExpressionCompiler c = new ExpressionCompiler(expression);
-        if (ctx != null) c.setPCtx(ctx);
-        return _optimizeTree(c._compile());
+        c.setPCtx(ctx);
+        return optimizeTree(c._compile());
     }
 
     public static Serializable subCompileExpression(String expression, ParserContext ctx) {
         ExpressionCompiler c = new ExpressionCompiler(expression);
         c.setPCtx(ctx);
 
-        return _optimizeTree(c._compile());
+        return optimizeTree(c._compile());
     }
 
     public static Serializable optimizeTree(final CompiledExpression compiled) {
         /**
          * If there is only one token, and it's an identifier, we can optimize this as an accessor expression.
          */
-        if (!compiled.isImportInjectionRequired() &&
-                compiled.getParserContext().isAllowBootstrapBypass() && compiled.isSingleNode()) {
-
-            return _optimizeTree(compiled);
-        }
-
-        return compiled;
-    }
-
-    private static Serializable _optimizeTree(final CompiledExpression compiled) {
-        /**
-         * If there is only one token, and it's an identifier, we can optimize this as an accessor expression.
-         */
-        if (compiled.isSingleNode()) {
-            ASTNode tk = compiled.getFirstNode();
+        if (compiled.getParserContext().isAllowBootstrapBypass() && compiled.getInstructions().size() == 1) {
+            ASTNode tk = compiled.getInstructions().firstNode();
 
             if (tk.isLiteral() && !tk.isThisVal()) {
                 return new ExecutableLiteral(tk.getLiteralValue());
@@ -1781,7 +1746,7 @@ public class ParseTools {
                 buf.rewind();
 
                 for (; read > 0; read--) {
-                    sb.append(buf.get());
+                    sb.append((byte) buf.get());
                 }
             }
 
@@ -1797,26 +1762,5 @@ public class ParseTools {
         }
 
         return null;
-    }
-
-    public static char[] readIn(InputStream inStream, String encoding) throws IOException {
-        try {
-            byte[] buf = new byte[10];
-
-            StringAppender sb = new StringAppender(10, encoding);
-
-            int bytesRead;
-            while ((bytesRead = inStream.read(buf)) > 0) {
-                for (int i = 0; i < bytesRead; i++) {
-                    sb.append(buf[i]);
-                }
-            }
-
-            //noinspection unchecked
-            return sb.toChars();
-        }
-        finally {
-            if (inStream != null) inStream.close();
-        }
     }
 }

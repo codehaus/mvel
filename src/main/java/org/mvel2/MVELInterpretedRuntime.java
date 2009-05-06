@@ -28,6 +28,7 @@ import org.mvel2.integration.impl.MapVariableResolverFactory;
 import org.mvel2.util.ExecutionStack;
 import static org.mvel2.util.ParseTools.findClassImportResolverFactory;
 
+import java.math.BigDecimal;
 import java.util.Map;
 
 
@@ -36,13 +37,21 @@ import java.util.Map;
  */
 @SuppressWarnings({"CaughtExceptionImmediatelyRethrown"})
 public class MVELInterpretedRuntime extends AbstractParser {
-    public Object parse() {
+    private boolean returnBigDecimal = false;
+    private int roundingMode = BigDecimal.ROUND_HALF_DOWN;
+
+    Object parse() {
         try {
             stk = new ExecutionStack();
             dStack = new ExecutionStack();
+
             cursor = 0;
+
             parseAndExecuteInterpreted();
-            return stk.peek();
+
+            if (parserContext != null) contextControl(REMOVE, null, null);
+
+            return stk.pop();
         }
         catch (ArrayIndexOutOfBoundsException e) {
             e.printStackTrace();
@@ -59,9 +68,6 @@ public class MVELInterpretedRuntime extends AbstractParser {
         }
         catch (EndWithValue end) {
             return end.getValue();
-        }
-        finally {
-            if (parserContext != null) contextControl(REMOVE, null, null);
         }
     }
 
@@ -95,14 +101,19 @@ public class MVELInterpretedRuntime extends AbstractParser {
                      * If this is a substatement, we need to move the result into the d-stack to preserve
                      * proper execution order.
                      */
-                    if (tk instanceof Substatement && (tk = nextToken()) != null) {
-                        if (isArithmeticOperator(operator = tk.getOperator())) {
-                            stk.push(nextToken().getReducedValue(ctx, ctx, variableFactory), operator);
+                    if (tk instanceof Substatement) {
+                        if ((tk = nextToken()) != null) {
+                            if (isArithmeticOperator(operator = tk.getOperator())) {
+                                stk.push(nextToken().getReducedValue(ctx, ctx, variableFactory), operator);
 
-                            if (procBooleanOperator(arithmeticFunctionReduction(operator)) == -1)
-                                return;
-                            else
-                                continue;
+                                if (procBooleanOperator(arithmeticFunctionReduction(operator)) == -1)
+                                    return;
+                                else
+                                    continue;
+                            }
+                        }
+                        else {
+                            continue;
                         }
                     }
                     else {
@@ -135,6 +146,9 @@ public class MVELInterpretedRuntime extends AbstractParser {
                 }
 
                 if (procBooleanOperator(operator) == -1) return;
+
+                // Don't remove the "stk.push(operator); ruduce();" code duplication.
+                // It results in 3 GOTO instructions in the bytecode vs. one.
             }
 
             if (holdOverRegister != null) {
@@ -146,6 +160,7 @@ public class MVELInterpretedRuntime extends AbstractParser {
             e.setExpr(expr);
             e.setLineNumber(line + e.getLineNumber());
             e.setCursor(cursor);
+            //      e.setColumn(lastLineStart + e.getColumn());
             throw e;
         }
         catch (NullPointerException e) {
@@ -290,6 +305,22 @@ public class MVELInterpretedRuntime extends AbstractParser {
         return this;
     }
 
+    public int getRoundingMode() {
+        return roundingMode;
+    }
+
+    public void setRoundingMode(int roundingMode) {
+        this.roundingMode = roundingMode;
+    }
+
+    public boolean isReturnBigDecimal() {
+        return returnBigDecimal;
+    }
+
+    public void setReturnBigDecimal(boolean returnBigDecimal) {
+        this.returnBigDecimal = returnBigDecimal;
+    }
+
     MVELInterpretedRuntime(char[] expression, Object ctx, Map<String, Object> variables) {
         this.expr = expression;
         this.length = expr.length;
@@ -314,7 +345,7 @@ public class MVELInterpretedRuntime extends AbstractParser {
         this.length = (this.expr = expression).length;
     }
 
-    public MVELInterpretedRuntime(char[] expr, Object ctx, VariableResolverFactory resolverFactory) {
+    MVELInterpretedRuntime(char[] expr, Object ctx, VariableResolverFactory resolverFactory) {
         this.length = (this.expr = expr).length;
         this.ctx = ctx;
         this.variableFactory = resolverFactory;
@@ -324,7 +355,7 @@ public class MVELInterpretedRuntime extends AbstractParser {
         this.length = (this.expr = expr).length;
         this.ctx = ctx;
         this.variableFactory = resolverFactory;
-   //    this.returnBigDecimal = returnBigDecimal;
+        this.returnBigDecimal = returnBigDecimal;
     }
 
     MVELInterpretedRuntime(Object ctx, Map<String, Object> variables) {
@@ -332,7 +363,7 @@ public class MVELInterpretedRuntime extends AbstractParser {
         this.variableFactory = new MapVariableResolverFactory(variables);
     }
 
-    public MVELInterpretedRuntime(String expression, Object ctx, VariableResolverFactory resolverFactory) {
+    MVELInterpretedRuntime(String expression, Object ctx, VariableResolverFactory resolverFactory) {
         setExpression(expression);
         this.ctx = ctx;
         this.variableFactory = resolverFactory;
@@ -342,7 +373,7 @@ public class MVELInterpretedRuntime extends AbstractParser {
         setExpression(expression);
         this.ctx = ctx;
         this.variableFactory = resolverFactory;
-    //    this.returnBigDecimal = returnBigDecimal;
+        this.returnBigDecimal = returnBigDecimal;
     }
 
     MVELInterpretedRuntime(String expression, VariableResolverFactory resolverFactory) {

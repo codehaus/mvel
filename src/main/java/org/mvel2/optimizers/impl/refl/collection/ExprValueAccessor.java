@@ -35,14 +35,18 @@ import static org.mvel2.util.ParseTools.getSubComponentType;
 public class ExprValueAccessor implements Accessor {
     public ExecutableStatement stmt;
 
-    public ExprValueAccessor(String ex, Class expectedType, boolean strongType, Object ctx, VariableResolverFactory factory, ParserContext pCtx) {
-        stmt = (ExecutableStatement) ParseTools.subCompileExpression(ex.toCharArray(), pCtx);
+    public ExprValueAccessor(String ex) {
+        stmt = (ExecutableStatement) ParseTools.subCompileExpression(ex.toCharArray());
+    }
+
+    public ExprValueAccessor(String ex, Class expectedType, boolean strongType, Object ctx, VariableResolverFactory factory) {
+        stmt = (ExecutableStatement) ParseTools.subCompileExpression(ex.toCharArray());
 
         //if (expectedType.isArray()) {
         Class tt = getSubComponentType(expectedType);
         Class et = stmt.getKnownEgressType();
         if (stmt.getKnownEgressType() != null && !tt.isAssignableFrom(et)) {
-            if ((stmt instanceof ExecutableLiteral) && canConvert(et, tt)) {
+            if (!strongType || (stmt instanceof ExecutableLiteral) && canConvert(et, tt)) {
                 try {
                     stmt = new ExecutableLiteral(convert(stmt.getValue(ctx, factory), tt));
                     return;
@@ -51,7 +55,7 @@ public class ExprValueAccessor implements Accessor {
                     // fall through;
                 }
             }
-           if (strongType) throw new CompileException("was expecting type: " + tt + "; but found type: " + (et == null ? "null" : et.getName()));
+            throw new CompileException("was expecting type: " + tt + "; but found type: " + (et == null ? "null" : et.getName()));
         }
     }
 

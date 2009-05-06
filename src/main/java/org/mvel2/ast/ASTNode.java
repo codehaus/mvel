@@ -21,8 +21,6 @@ package org.mvel2.ast;
 import org.mvel2.CompileException;
 import static org.mvel2.Operator.NOOP;
 import org.mvel2.OptimizationFailure;
-import org.mvel2.ParserContext;
-import org.mvel2.ParserConfiguration;
 import static org.mvel2.PropertyAccessor.get;
 import static org.mvel2.compiler.AbstractParser.getCurrentThreadParserContext;
 import org.mvel2.compiler.Accessor;
@@ -33,14 +31,12 @@ import org.mvel2.optimizers.OptimizationNotSupported;
 import static org.mvel2.optimizers.OptimizerFactory.*;
 import static org.mvel2.util.ParseTools.handleNumericConversion;
 import static org.mvel2.util.ParseTools.isNumber;
-import org.mvel2.util.CompilerTools;
-import static org.mvel2.util.CompilerTools.getInjectedImports;
 
 import java.io.Serializable;
 import static java.lang.Thread.currentThread;
 
 @SuppressWarnings({"ManualArrayCopy", "CaughtExceptionImmediatelyRethrown"})
-public class ASTNode implements Cloneable, Serializable {
+public class ASTNode implements Cloneable,  Serializable {
     public static final int LITERAL = 1;
     public static final int DEEP_PROPERTY = 1 << 1;
     public static final int OPERATOR = 1 << 2;
@@ -98,6 +94,9 @@ public class ASTNode implements Cloneable, Serializable {
             try {
                 return accessor.getValue(ctx, thisValue, factory);
             }
+            catch (NullPointerException e) {
+                throw e;
+            }
             catch (ClassCastException ce) {
                 if ((fields & DEOP) == 0) {
                     accessor = null;
@@ -127,20 +126,19 @@ public class ASTNode implements Cloneable, Serializable {
                 optimizer = getDefaultAccessorCompiler();
             }
 
-            ParserContext pCtx = new ParserContext(new ParserConfiguration(getInjectedImports(factory), null));
-            
             try {
-                setAccessor(optimizer.optimizeAccessor(pCtx, name, ctx, thisValue, factory, true, egressType));
+                setAccessor(optimizer.optimizeAccessor(getCurrentThreadParserContext(), name, ctx, thisValue, factory, true, egressType));
             }
             catch (OptimizationNotSupported ne) {
                 setAccessor((optimizer = getAccessorCompiler(SAFE_REFLECTIVE))
-                        .optimizeAccessor(pCtx, name, ctx, thisValue, factory, true, null));
+                        .optimizeAccessor(getCurrentThreadParserContext(), name, ctx, thisValue, factory, true, null));
             }
 
 
             if (accessor == null) {
                 return get(name, ctx, factory, thisValue);
             }
+        //        throw new OptimizationFailure("failed optimization");
 
             if (retVal == null) {
                 retVal = optimizer.getResultOptPass();
@@ -203,10 +201,10 @@ public class ASTNode implements Cloneable, Serializable {
 
     public String getAbsoluteName() {
         if (firstUnion > 0) {
-            return new String(name, 0, getAbsoluteFirstPart());
+          return new String(name, 0, getAbsoluteFirstPart());
         }
         else {
-            return getName();
+           return getName();
         }
     }
 
@@ -249,14 +247,12 @@ public class ASTNode implements Cloneable, Serializable {
                     case '.':
                         if (depth == 0 && !meth) {
                             try {
-                                Class.forName(new String(name, 0, i), true, currentThread().getContextClassLoader());
-
                                 return get(new String(name, last, name.length - last),
-                                        Class.forName(new String(name, 0, last), true, currentThread().getContextClassLoader()), factory, thisRef);
+                                        currentThread().getContextClassLoader().loadClass(new String(name, 0, last)), factory, thisRef);
                             }
                             catch (ClassNotFoundException e) {
                                 return get(new String(name, i + 1, name.length - i - 1),
-                                        Class.forName(new String(name, 0, i), true, currentThread().getContextClassLoader()), factory, thisRef);
+                                        currentThread().getContextClassLoader().loadClass(new String(name, 0, i)), factory, thisRef);
                             }
                         }
                         meth = false;
@@ -318,6 +314,7 @@ public class ASTNode implements Cloneable, Serializable {
         if ((fields & INLINE_COLLECTION) != 0) {
             return;
         }
+
 
         if (firstUnion > 0) {
             fields |= DEEP_PROPERTY | IDENTIFIER;
@@ -420,6 +417,7 @@ public class ASTNode implements Cloneable, Serializable {
 
         setName(name);
     }
+
 
     public String toString() {
         return isOperator() ? "<<" + DebugTools.getOperatorName(getOperator()) + ">>" : String.valueOf(literal);

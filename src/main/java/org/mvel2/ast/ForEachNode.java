@@ -25,10 +25,10 @@ import org.mvel2.integration.VariableResolverFactory;
 import org.mvel2.integration.impl.DefaultLocalVariableResolverFactory;
 import org.mvel2.integration.impl.ItemResolverFactory;
 import org.mvel2.util.ParseTools;
-import static org.mvel2.util.ParseTools.*;
+import static org.mvel2.util.ParseTools.subCompileExpression;
+import static org.mvel2.util.ParseTools.subset;
 
 import java.lang.reflect.Array;
-import java.util.Iterator;
 
 /**
  * @author Christopher Brock
@@ -64,7 +64,24 @@ public class ForEachNode extends BlockNode {
         Object iterCond = condition.getValue(ctx, thisValue, factory);
 
         if (type == -1) {
-            determineIterType(iterCond.getClass());
+//            if (compiledBlock == null) {
+//                this.compiledBlock = (ExecutableStatement) subCompileExpression(block);
+//            }
+            if (iterCond instanceof Iterable) {
+                type = ITERABLE;
+            }
+            else if (iterCond.getClass().isArray()) {
+                type = ARRAY;
+            }
+            else if (iterCond instanceof CharSequence) {
+                type = CHARSEQUENCE;
+            }
+            else if (iterCond instanceof Integer) {
+                type = INTEGER;
+            }
+            else {
+                throw new CompileException("non-iterable type: " + iterCond.getClass().getName());
+            }
         }
 
         switch (type) {
@@ -94,7 +111,6 @@ public class ForEachNode extends BlockNode {
                     itemR.setValue(o);
                     compiledBlock.getValue(ctx, thisValue, itemFactory);
                 }
-
                 break;
         }
 
@@ -108,7 +124,7 @@ public class ForEachNode extends BlockNode {
         Object iterCond = MVEL.eval(cond, thisValue, factory);
 
         if (itemType != null && itemType.isArray())
-            enforceTypeSafety(itemType, getBaseComponentType(iterCond.getClass()));
+            enforceTypeSafety(itemType, ParseTools.getBaseComponentType(iterCond.getClass()));
 
         this.compiledBlock = (ExecutableStatement) subCompileExpression(block);
 
@@ -152,8 +168,10 @@ public class ForEachNode extends BlockNode {
         if (cursor == condition.length || condition[cursor] != ':')
             throw new CompileException("expected : in foreach");
 
+        item = ParseTools.createStringTrimmed(condition, 0, cursor);
+
         int x;
-        if ((x = (item = createStringTrimmed(condition, 0, cursor)).indexOf(' ')) != -1) {
+        if ((x = item.indexOf(' ')) != -1) {
             String tk = new String(condition, 0, x).trim();
             try {
                 itemType = ParseTools.findClass(null, tk, pCtx);
@@ -170,36 +188,32 @@ public class ForEachNode extends BlockNode {
             Class egress = (this.condition = (ExecutableStatement) subCompileExpression(this.cond)).getKnownEgressType();
 
             if (itemType != null && egress.isArray()) {
-                enforceTypeSafety(itemType, getBaseComponentType(this.condition.getKnownEgressType()));
+                enforceTypeSafety(itemType, ParseTools.getBaseComponentType(this.condition.getKnownEgressType()));
             }
             else if (pCtx.isStrongTyping()) {
-                determineIterType(egress);
+                if (Iterable.class.isAssignableFrom(egress)) {
+                    type = ITERABLE;
+                }
+                else if (egress.isArray()) {
+                    type = ARRAY;
+                }
+                else if (CharSequence.class.isAssignableFrom(egress)) {
+                    type = CHARSEQUENCE;
+                }
+                else if (Integer.class.isAssignableFrom(egress)) {
+                    type = INTEGER;
+                }
+                else {
+                    throw new CompileException("not a valid interable type: " + egress.getName());
+                }
             }
-        }
-    }
-
-    private void determineIterType(Class t) {
-        if (Iterable.class.isAssignableFrom(t)) {
-            type = ITERABLE;
-        }
-        else if (t.isArray()) {
-            type = ARRAY;
-        }
-        else if (CharSequence.class.isAssignableFrom(t)) {
-            type = CHARSEQUENCE;
-        }
-        else if (Integer.class.isAssignableFrom(t)) {
-            type = INTEGER;
-        }
-        else {
-            throw new CompileException("non-iterable type: " + t.getName());
         }
     }
 
     private static void enforceTypeSafety(Class required, Class actual) {
         if (!required.isAssignableFrom(actual)) {
             throw new CompileException("type mismatch in foreach: expected: "
-                    + required.getName() + "; but found: " + getBaseComponentType(actual));
+                    + required.getName() + "; but found: " + ParseTools.getBaseComponentType(actual));
         }
     }
 }

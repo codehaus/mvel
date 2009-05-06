@@ -25,7 +25,9 @@ import org.mvel2.compiler.CompiledExpression;
 import org.mvel2.debug.Debugger;
 import org.mvel2.debug.DebuggerContext;
 import org.mvel2.integration.VariableResolverFactory;
+import org.mvel2.integration.impl.ClassImportResolverFactory;
 import org.mvel2.integration.impl.ImmutableDefaultFactory;
+import org.mvel2.util.ASTLinkedList;
 import org.mvel2.util.ExecutionStack;
 import static org.mvel2.util.PropertyTools.isEmpty;
 
@@ -36,7 +38,6 @@ import static org.mvel2.util.PropertyTools.isEmpty;
 public class MVELRuntime {
     public static final ImmutableDefaultFactory IMMUTABLE_DEFAULT_FACTORY = new ImmutableDefaultFactory();
     private static ThreadLocal<DebuggerContext> debuggerContext;
-
 
     /**
      * Main interpreter.
@@ -51,15 +52,20 @@ public class MVELRuntime {
     public static Object execute(boolean debugger, final CompiledExpression expression, final Object ctx,
                                  VariableResolverFactory variableFactory) {
 
-        Object v1, v2;
-        ExecutionStack stk = new ExecutionStack();
+        ASTLinkedList node = new ASTLinkedList(expression.getInstructions().firstNode());
 
-        ASTNode tk = expression.getFirstNode();
+        if (expression.isImportInjectionRequired()) {
+            variableFactory = new ClassImportResolverFactory(expression.getParserContext().getParserConfiguration(), variableFactory);
+        }
+
+        ExecutionStack stk = new ExecutionStack();
+        Object v1, v2;
+
+        ASTNode tk = null;
         Integer operator;
 
-        if (tk == null) return null;
         try {
-            do {
+            while ((tk = node.nextNode()) != null) {
                 if (tk.fields == -1) {
                     /**
                      * This may seem silly and redundant, however, when an MVEL script recurses into a block
@@ -92,7 +98,7 @@ public class MVELRuntime {
                     case TERNARY:
                         if (!stk.popBoolean()) {
                             //noinspection StatementWithEmptyBody
-                            while (tk.nextASTNode != null && !(tk = tk.nextASTNode).isOperator(TERNARY_ELSE)) ;
+                            while (node.hasMoreNodes() && !node.nextNode().isOperator(TERNARY_ELSE)) ;
                         }
                         stk.clear();
                         continue;
@@ -106,14 +112,14 @@ public class MVELRuntime {
                          * Althought it may seem like intuitive stack optimizations could be leveraged by
                          * leaving hanging values on the stack,  trust me it's not a good idea.
                          */
-                        if (tk.nextASTNode != null) {
+                        if (node.hasMoreNodes()) {
                             stk.clear();
                         }
 
                         continue;
                 }
 
-                stk.push(tk.nextASTNode.getReducedValueAccelerated(ctx, ctx, variableFactory), operator);
+                stk.push(node.nextNode().getReducedValueAccelerated(ctx, ctx, variableFactory), operator);
 
                 try {
                     while (stk.isReduceable()) {
@@ -138,12 +144,11 @@ public class MVELRuntime {
                     throw new CompileException("failed to compile sub expression", e);
                 }
             }
-            while ((tk = tk.nextASTNode) != null);
 
-            return stk.peek();
+            return stk.pop();
         }
         catch (NullPointerException e) {
-            if (tk != null && tk.isOperator() && tk.nextASTNode != null) {
+            if (tk != null && tk.isOperator() && !node.hasMoreNodes()) {
                 throw new CompileException("incomplete statement: "
                         + tk.getName() + " (possible use of reserved keyword as identifier: " + tk.getName() + ")");
             }

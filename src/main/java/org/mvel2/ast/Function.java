@@ -23,7 +23,6 @@ import org.mvel2.ParserContext;
 import org.mvel2.compiler.AbstractParser;
 import org.mvel2.compiler.EndWithValue;
 import org.mvel2.compiler.ExecutableStatement;
-import org.mvel2.compiler.ExpressionCompiler;
 import org.mvel2.integration.VariableResolverFactory;
 import org.mvel2.integration.VariableResolver;
 import org.mvel2.integration.impl.DefaultLocalVariableResolverFactory;
@@ -51,7 +50,12 @@ public class Function extends ASTNode implements Safe {
 
         pCtx.declareFunction(this);
 
-        ParserContext ctx = new ParserContext(pCtx.getParserConfiguration());
+        ParserContext ctx = new ParserContext();
+
+        ctx.getParserConfiguration().setImports(pCtx.getParserConfiguration().getImports());
+        ctx.getParserConfiguration().setPackageImports(pCtx.getParserConfiguration().getPackageImports());
+
+
         ctx.setIndexAllocation(true);
 
         /**
@@ -63,13 +67,11 @@ public class Function extends ASTNode implements Safe {
             ctx.addIndexedVariable(s);
         }
 
+
         /**
          * Compile the expression so we can determine the input-output delta.
          */
-
-        ExpressionCompiler compiler = new ExpressionCompiler(block);
-        compiler.setVerifyOnly(true);
-        compiler.compile(ctx);
+        subCompileExpression(block, ctx);
 
         /**
          * Add globals as inputs
@@ -83,6 +85,7 @@ public class Function extends ASTNode implements Safe {
         }
 
         ctx.addIndexedVariables(ctx.getVariables().keySet());
+
         ctx.getVariables().clear();
 
         this.compiledBlock = (ExecutableStatement) subCompileExpression(block, ctx);
@@ -119,18 +122,17 @@ public class Function extends ASTNode implements Safe {
         try {
             if (parms != null && parms.length != 0) {
                 // detect tail recursion
-                if (factory instanceof FunctionVariableResolverFactory
-                        && ((FunctionVariableResolverFactory) factory).getIndexedVariableResolvers().length == parms.length) {
+                if (factory instanceof FunctionVariableResolverFactory) {
                     FunctionVariableResolverFactory fvrf = (FunctionVariableResolverFactory) factory;
-                    if (fvrf.getFunction().equals(this)) {
+                    if (fvrf.getFunction().equals(this))  {
                         VariableResolver[] swapVR = fvrf.getIndexedVariableResolvers();
                         fvrf.updateParameters(parms);
-                        try {
-                            return compiledBlock.getValue(ctx, thisValue, fvrf);
-                        }
-                        finally {
-                            fvrf.setIndexedVariableResolvers(swapVR);
-                        }
+
+                        Object v = compiledBlock.getValue(ctx, thisValue, fvrf);
+
+                        fvrf.setIndexedVariableResolvers(swapVR);
+
+                        return v;
                     }
                 }
                 return compiledBlock.getValue(ctx, thisValue, new FunctionVariableResolverFactory(this, factory, parameters, parms));
@@ -167,7 +169,7 @@ public class Function extends ASTNode implements Safe {
     public void checkArgumentCount(int passing) {
         if (passing != parmNum) {
             throw new CompileException("bad number of arguments in function call: "
-                    + passing + " (expected: " + (parmNum == 0 ? "none" : parmNum) + ")");
+                    + passing + " (expected: " + parmNum + ")");
         }
     }
 

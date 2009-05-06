@@ -19,8 +19,9 @@ package org.mvel2.optimizers;
 
 import org.mvel2.CompileException;
 import org.mvel2.compiler.AbstractParser;
-import static org.mvel2.util.ParseTools.isIdentifierPart;
+import org.mvel2.util.ParseTools;
 import static org.mvel2.util.ParseTools.isWhitespace;
+import static org.mvel2.util.ParseTools.isIdentifierPart;
 
 import static java.lang.Thread.currentThread;
 import java.lang.reflect.Method;
@@ -64,10 +65,11 @@ public class AbstractOptimizer extends AbstractParser {
                     case '.':
                         if (!meth) {
                             try {
-                                return Class.forName(new String(expr, 0, cursor = last), true, currentThread().getContextClassLoader());
+                                //   return Class.forName(new String(expr, 0, cursor = last));
+                                return currentThread().getContextClassLoader().loadClass(new String(expr, 0, cursor = last));
                             }
                             catch (ClassNotFoundException e) {
-                                Class cls = Class.forName(new String(expr, 0, i), true, currentThread().getContextClassLoader());
+                                Class cls = currentThread().getContextClassLoader().loadClass(new String(expr, 0, i));
                                 String name = new String(expr, i + 1, expr.length - i - 1);
                                 try {
                                     return cls.getField(name);
@@ -83,24 +85,6 @@ public class AbstractOptimizer extends AbstractParser {
 
                         meth = false;
                         last = i;
-                        break;
-
-                    case '}':
-                        i--;
-                        for (int d = 1; i > 0 && d != 0; i--) {
-                            switch (expr[i]) {
-                                case '}':
-                                    d++;
-                                    break;
-                                case '{':
-                                    d--;
-                                    break;
-                                case '"':
-                                case '\'':
-                                    char s = expr[i];
-                                    while (i > 0 && (expr[i] != s && expr[i - 1] != '\\')) i--;
-                            }
-                        }
                         break;
 
                     case ')':
@@ -152,7 +136,7 @@ public class AbstractOptimizer extends AbstractParser {
     }
 
     protected int nextSubToken() {
-        skipWhitespaceWithLineAccounting();
+        skipWhitespace();
         nullSafe = false;
 
         switch (expr[start = cursor]) {
@@ -162,7 +146,7 @@ public class AbstractOptimizer extends AbstractParser {
                 if ((start + 1) != length) {
                     switch (expr[cursor = ++start]) {
                         case '?':
-                            skipWhitespaceWithLineAccounting();
+                            skipWhitespace();
                             if ((cursor = ++start) == length) {
                                 throw new CompileException("unexpected end of statement");
                             }
@@ -174,7 +158,7 @@ public class AbstractOptimizer extends AbstractParser {
                             return WITH;
                         default:
                             if (isWhitespace(expr[start])) {
-                                skipWhitespaceWithLineAccounting();
+                                skipWhitespace();
                                 start = cursor;
                             }
                     }
@@ -262,6 +246,4 @@ public class AbstractOptimizer extends AbstractParser {
 
         return split;
     }
-
-
 }

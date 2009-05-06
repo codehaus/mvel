@@ -22,7 +22,6 @@ import static org.mvel2.MVELRuntime.execute;
 import org.mvel2.compiler.*;
 import org.mvel2.integration.Interceptor;
 import org.mvel2.integration.VariableResolverFactory;
-import org.mvel2.integration.impl.ClassImportResolverFactory;
 import org.mvel2.integration.impl.MapVariableResolverFactory;
 import org.mvel2.optimizers.impl.refl.nodes.GetterAccessor;
 import static org.mvel2.util.ParseTools.loadFromFile;
@@ -44,8 +43,8 @@ import java.util.Map;
  */
 public class MVEL {
     public static final String NAME = "MVEL (MVFLEX Expression Language)";
-    public static final String VERSION = "2.0.9";
-    public static final String VERSION_SUB = "";
+    public static final String VERSION = "2.0.7";
+    public static final String VERSION_SUB = "GA";
     public static final String CODENAME = "enceladus";
 
     static boolean DEBUG_FILE = getBoolean("mvel2.debug.fileoutput");
@@ -90,7 +89,12 @@ public class MVEL {
      * @return the resultant value
      */
     public static Object eval(String expression) {
-        return new MVELInterpretedRuntime(expression, MVELRuntime.IMMUTABLE_DEFAULT_FACTORY).parse();
+        try {
+            return new MVELInterpretedRuntime(expression, MVELRuntime.IMMUTABLE_DEFAULT_FACTORY).parse();
+        }
+        catch (EndWithValue end) {
+            return end.getValue();
+        }
     }
 
     /**
@@ -107,7 +111,12 @@ public class MVEL {
      * @return The resultant value
      */
     public static Object eval(String expression, Object ctx) {
-        return new MVELInterpretedRuntime(expression, ctx, MVELRuntime.IMMUTABLE_DEFAULT_FACTORY).parse();
+        try {
+            return new MVELInterpretedRuntime(expression, ctx, MVELRuntime.IMMUTABLE_DEFAULT_FACTORY).parse();
+        }
+        catch (EndWithValue end) {
+            return end.getValue();
+        }
     }
 
     /**
@@ -134,7 +143,12 @@ public class MVEL {
      * @return The resultant value.
      */
     public static Object eval(String expression, VariableResolverFactory resolverFactory) {
-        return new MVELInterpretedRuntime(expression, resolverFactory).parse();
+        try {
+            return new MVELInterpretedRuntime(expression, resolverFactory).parse();
+        }
+        catch (EndWithValue end) {
+            return end.getValue();
+        }
     }
 
     /**
@@ -148,7 +162,12 @@ public class MVEL {
      * @see #eval(String, org.mvel2.integration.VariableResolverFactory)
      */
     public static Object eval(String expression, Object ctx, VariableResolverFactory resolverFactory) {
-        return new MVELInterpretedRuntime(expression, ctx, resolverFactory).parse();
+        try {
+            return new MVELInterpretedRuntime(expression, ctx, resolverFactory).parse();
+        }
+        catch (EndWithValue end) {
+            return end.getValue();
+        }
     }
 
     /**
@@ -161,7 +180,12 @@ public class MVEL {
      * @see #eval(String, org.mvel2.integration.VariableResolverFactory)
      */
     public static Object eval(String expression, Map<String, Object> vars) {
-        return new MVELInterpretedRuntime(expression, null, new MapVariableResolverFactory(vars)).parse();
+        try {
+            return new MVELInterpretedRuntime(expression, null, new MapVariableResolverFactory(vars)).parse();
+        }
+        catch (EndWithValue end) {
+            return end.getValue();
+        }
     }
 
     /**
@@ -175,7 +199,12 @@ public class MVEL {
      * @see #eval(String, VariableResolverFactory)
      */
     public static Object eval(String expression, Object ctx, Map<String, Object> vars) {
-        return new MVELInterpretedRuntime(expression, ctx, new MapVariableResolverFactory(vars)).parse();
+        try {
+            return new MVELInterpretedRuntime(expression, ctx, new MapVariableResolverFactory(vars)).parse();
+        }
+        catch (EndWithValue end) {
+            return end.getValue();
+        }
     }
 
 
@@ -192,7 +221,12 @@ public class MVEL {
      * @return The resultant value.
      */
     public static <T> T eval(String expression, Class<T> toType) {
-        return convert(new MVELInterpretedRuntime(expression).parse(), toType);
+        try {
+            return convert(new MVELInterpretedRuntime(expression).parse(), toType);
+        }
+        catch (EndWithValue end) {
+            return convert(end.getValue(), toType);
+        }
     }
 
 
@@ -207,7 +241,12 @@ public class MVEL {
      * @see #eval(String,Class)
      */
     public static <T> T eval(String expression, Object ctx, Class<T> toType) {
-        return convert(new MVELInterpretedRuntime(expression, ctx).parse(), toType);
+        try {
+            return convert(new MVELInterpretedRuntime(expression, ctx).parse(), toType);
+        }
+        catch (EndWithValue end) {
+            return convert(end.getValue(), toType);
+        }
     }
 
 
@@ -223,7 +262,12 @@ public class MVEL {
      * @see #eval(String,Class)
      */
     public static <T> T eval(String expression, VariableResolverFactory vars, Class<T> toType) {
-        return convert(new MVELInterpretedRuntime(expression, null, vars).parse(), toType);
+        try {
+            return convert(new MVELInterpretedRuntime(expression, null, vars).parse(), toType);
+        }
+        catch (EndWithValue end) {
+            return convert(end.getValue(), toType);
+        }
     }
 
 
@@ -239,7 +283,12 @@ public class MVEL {
      * @see #eval(String, org.mvel2.integration.VariableResolverFactory)
      */
     public static <T> T eval(String expression, Map<String, Object> vars, Class<T> toType) {
-        return convert(new MVELInterpretedRuntime(expression, null, new MapVariableResolverFactory(vars)).parse(), toType);
+        try {
+            return convert(new MVELInterpretedRuntime(expression, null, new MapVariableResolverFactory(vars)).parse(), toType);
+        }
+        catch (EndWithValue end) {
+            return convert(end.getValue(), toType);
+        }
     }
 
     /**
@@ -255,7 +304,12 @@ public class MVEL {
      * @see #eval(String,Class)
      */
     public static <T> T eval(String expression, Object ctx, VariableResolverFactory vars, Class<T> toType) {
-        return convert(new MVELInterpretedRuntime(expression, ctx, vars).parse(), toType);
+        try {
+            return convert(new MVELInterpretedRuntime(expression, ctx, vars).parse(), toType);
+        }
+        catch (EndWithValue end) {
+            return convert(end.getValue(), toType);
+        }
     }
 
     /**
@@ -271,7 +325,12 @@ public class MVEL {
      * @see #eval(String,Class)
      */
     public static <T> T eval(String expression, Object ctx, Map<String, Object> vars, Class<T> toType) {
-        return convert(new MVELInterpretedRuntime(expression, ctx, new MapVariableResolverFactory(vars)).parse(), toType);
+        try {
+            return convert(new MVELInterpretedRuntime(expression, ctx, new MapVariableResolverFactory(vars)).parse(), toType);
+        }
+        catch (EndWithValue end) {
+            return convert(end.getValue(), toType);
+        }
     }
 
     /**
@@ -409,15 +468,6 @@ public class MVEL {
         }
         catch (EndWithValue end) {
             return end.getValue();
-        }
-    }
-
-    public static <T> T eval(char[] expression, Class<T> type) {
-        try {
-            return convert(new MVELInterpretedRuntime(expression).parse(), type);
-        }
-        catch (EndWithValue end) {
-            return (T) end.getValue();
         }
     }
 
@@ -975,7 +1025,7 @@ public class MVEL {
 
     public static Object executeExpression(final Object compiledExpression, final Object ctx, final VariableResolverFactory resolverFactory) {
         try {
-            return ((ExecutableStatement) compiledExpression).getValue(ctx, resolverFactory);                            
+            return ((ExecutableStatement) compiledExpression).getValue(ctx, resolverFactory);
         }
         catch (EndWithValue end) {
             return end.getValue();
@@ -1127,13 +1177,7 @@ public class MVEL {
 
     public static Object executeDebugger(CompiledExpression expression, Object ctx, VariableResolverFactory vars) {
         try {
-            if (expression.isImportInjectionRequired()) {
-                return execute(true, expression, ctx, new ClassImportResolverFactory(expression
-                        .getParserContext().getParserConfiguration(), vars));
-            }
-            else {
-                return execute(true, expression, ctx, vars);
-            }
+            return execute(true, expression, ctx, vars);
         }
         catch (EndWithValue e) {
             return e.getValue();

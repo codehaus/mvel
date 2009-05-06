@@ -19,34 +19,15 @@
 package org.mvel2.optimizers.dynamic;
 
 import org.mvel2.util.MVELClassLoader;
-import sun.misc.Unsafe;
 
-import java.lang.reflect.Field;
+import java.util.ConcurrentModificationException;
 import java.util.LinkedList;
 
 
 public class DynamicClassLoader extends ClassLoader implements MVELClassLoader {
     private int totalClasses;
     private int tenureLimit;
-    //    private final ConcurrentLinkedQueue<DynamicAccessor> allAccessors = new ConcurrentLinkedQueue<DynamicAccessor>();
     private final LinkedList<DynamicAccessor> allAccessors = new LinkedList<DynamicAccessor>();
-
-    private static boolean sunJVM;
-    private static Object sunUnsafe;
-
-    static {
-        try {
-            Field f = Unsafe.class.getDeclaredField("theUnsafe");
-            f.setAccessible(true);
-            sunUnsafe = f.get(null);
-            sunJVM = true;
-        }
-        catch (Throwable t) {
-            t.printStackTrace();
-            sunJVM = false;
-        }
-    }
-
 
     public DynamicClassLoader(ClassLoader classLoader, int tenureLimit) {
         super(classLoader);
@@ -55,12 +36,7 @@ public class DynamicClassLoader extends ClassLoader implements MVELClassLoader {
 
     public Class defineClassX(String className, byte[] b, int start, int end) {
         totalClasses++;
-        if (sunJVM) {
-            return ((Unsafe) sunUnsafe).defineClass(className, b, start, end);
-        }
-        else {
-            return super.defineClass(className, b, start, end);
-        }
+        return super.defineClass(className, b, start, end);
     }
 
     public int getTotalClasses() {
@@ -75,14 +51,14 @@ public class DynamicClassLoader extends ClassLoader implements MVELClassLoader {
 
     public void deoptimizeAll() {
         synchronized (allAccessors) {
-            //        try {
-            for (DynamicAccessor a : allAccessors) {
-                if (a != null) a.deoptimize();
+            try {
+                for (DynamicAccessor a : allAccessors) {
+                    if (a != null) a.deoptimize();
+                }
             }
-//            }
-//            catch (ConcurrentModificationException e) {
-//                // just back out.
-//            }
+            catch (ConcurrentModificationException e) {
+                // just back out.
+            }
         }
     }
 

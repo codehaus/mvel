@@ -36,6 +36,7 @@ import static org.mvel2.util.ParseTools.*;
 import static org.mvel2.util.PropertyTools.getFieldOrAccessor;
 import static org.mvel2.util.PropertyTools.getFieldOrWriteAccessor;
 import org.mvel2.util.StringAppender;
+import org.mvel2.optimizers.impl.refl.nodes.StaticReferenceAccessor;
 
 import static java.lang.Character.isJavaIdentifierPart;
 import static java.lang.Thread.currentThread;
@@ -75,13 +76,11 @@ public class PropertyAccessor {
     private static final WeakHashMap<Class, WeakHashMap<Integer, Member>> READ_PROPERTY_RESOLVER_CACHE;
     private static final WeakHashMap<Class, WeakHashMap<Integer, Member>> WRITE_PROPERTY_RESOLVER_CACHE;
     private static final WeakHashMap<Class, WeakHashMap<Integer, Object[]>> METHOD_RESOLVER_CACHE;
-    private static final WeakHashMap<Member, Class[]> METHOD_PARMTYPES_CACHE;
 
     static {
         READ_PROPERTY_RESOLVER_CACHE = (new WeakHashMap<Class, WeakHashMap<Integer, Member>>(10));
         WRITE_PROPERTY_RESOLVER_CACHE = (new WeakHashMap<Class, WeakHashMap<Integer, Member>>(10));
         METHOD_RESOLVER_CACHE = (new WeakHashMap<Class, WeakHashMap<Integer, Object[]>>(10));
-        METHOD_PARMTYPES_CACHE = new WeakHashMap<Member, Class[]>(10);
     }
 
 
@@ -325,7 +324,7 @@ public class PropertyAccessor {
                 }
             }
             else if (MVEL.COMPILER_OPT_ALLOW_OVERRIDE_ALL_PROPHANDLING && hasPropertyHandler(curr.getClass())) {
-                getPropertyHandler(curr.getClass()).setProperty(capture(), curr, variableFactory, value);
+                getPropertyHandler(curr.getClass()).setProperty(capture(), ctx, variableFactory, value);
                 return;
             }
 
@@ -340,14 +339,12 @@ public class PropertyAccessor {
             if (member instanceof Method) {
                 Method meth = (Method) member;
 
-                Class[] paramaterTypes = checkParmTypesCache(meth);
-
-                if (value != null && !paramaterTypes[0].isAssignableFrom(value.getClass())) {
-                    if (!canConvert(paramaterTypes[0], value.getClass())) {
+                if (value != null && !meth.getParameterTypes()[0].isAssignableFrom(value.getClass())) {
+                    if (!canConvert(meth.getParameterTypes()[0], value.getClass())) {
                         throw new ConversionException("cannot convert type: "
                                 + value.getClass() + ": to " + meth.getParameterTypes()[0]);
                     }
-                    meth.invoke(curr, convert(value, paramaterTypes[0]));
+                    meth.invoke(curr, convert(value, meth.getParameterTypes()[0]));
                 }
                 else {
                     meth.invoke(curr, value);
@@ -494,15 +491,6 @@ public class PropertyAccessor {
         return null;
     }
 
-    public static Class[] checkParmTypesCache(Method member) {
-         Class[] pt = METHOD_PARMTYPES_CACHE.get(member);
-         if (pt == null) {
-             METHOD_PARMTYPES_CACHE.put(member, pt = member.getParameterTypes());
-         }
-        return pt;
-    }
-
-
     private static void addMethodCache(Class cls, Integer property, Method member) {
         synchronized (METHOD_RESOLVER_CACHE) {
             WeakHashMap<Integer, Object[]> map = METHOD_RESOLVER_CACHE.get(cls);
@@ -634,9 +622,24 @@ public class PropertyAccessor {
     }
 
     private Object getWithProperty(Object ctx) {
-         parseWithExpressions(new String(property, 0, cursor - 1).trim(), property, cursor + 1,
-                cursor = balancedCaptureWithLineAccounting(property, cursor, '{', getCurrentThreadParserContext()), ctx, variableFactory);
-        cursor++;
+        String root = new String(property, 0, cursor - 1).trim();
+
+        int start = cursor + 1;
+        cursor = balancedCaptureWithLineAccounting(property, cursor, '{', AbstractParser.getCurrentThreadParserContext());
+
+        WithStatementPair[] pvp = parseWithExpressions(root, subset(property, start, cursor++ - start));
+
+        for (WithStatementPair aPvp : pvp) {
+            if (aPvp.getParm() == null) {
+                // Execute this interpretively now.
+                MVEL.eval(aPvp.getValue(), ctx, variableFactory);
+            }
+            else {
+                // Execute interpretively.
+                MVEL.setProperty(ctx, aPvp.getParm(), MVEL.eval(aPvp.getValue(), ctx, variableFactory));
+            }
+        }
+
         return ctx;
     }
 
@@ -683,12 +686,12 @@ public class PropertyAccessor {
             return ((CharSequence) ctx).charAt((Integer) eval(prop, ctx, variableFactory));
         }
         else {
-       //     TypeDescriptor td = new TypeDescriptor(property, 0);
+            TypeDescriptor td = new TypeDescriptor(property, 0);
             try {
-                return getClassReference(getCurrentThreadParserContext(), (Class) ctx, new TypeDescriptor(property, 0));
+                return getClassReference(getCurrentThreadParserContext(), td);
             }
             catch (Exception e) {
-                throw new PropertyAccessException("illegal use of []: unknown type: " + (ctx == null ? null : ctx.getClass().getName()), e);
+                throw new PropertyAccessException("illegal use of []: unknown type: " + (ctx == null ? null : ctx.getClass().getName()));
             }
         }
     }
@@ -744,8 +747,9 @@ public class PropertyAccessor {
                 return ((CharSequence) ctx).charAt((Integer) eval(prop, ctx, variableFactory));
         }
         else {
+            //      TypeDescriptor td = new TypeDescriptor(property, 0);
             try {
-                return getClassReference(getCurrentThreadParserContext(), (Class) ctx, new TypeDescriptor(property, 0));
+                return getClassReference(getCurrentThreadParserContext(), new TypeDescriptor(property, 0));
             }
             catch (Exception e) {
                 throw new PropertyAccessException("illegal use of []: unknown type: " + (ctx == null ? null : ctx.getClass().getName()));
@@ -943,24 +947,6 @@ public class PropertyAccessor {
 
                         meth = false;
                         last = i;
-                        break;
-
-                    case '}':
-                        i--;
-                        for (int d = 1; i > 0 && d != 0; i--) {
-                              switch (property[i])  {
-                                  case '}':
-                                      d++;
-                                      break;
-                                  case '{':
-                                      d--;
-                                      break;
-                                  case '"':
-                                  case '\'':
-                                      char s = property[i];
-                                      while (i > 0 && (property[i] != s && property[i - 1] != '\\')) i--;
-                              }
-                        }
                         break;
 
                     case ')':
