@@ -15,7 +15,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 /**
- * The front-facing API of MvelBus. All bus transcoding should be done via instances
+ * The front-facing API of MVBus. All bus transcoding should be done via instances
  * of this abstract class.
  *
  * @author Dhanji R. Prasanna (dhanji@gmail com)

@@ -11,7 +11,7 @@ import org.mvel2.MVEL;
  *
  * @author Dhanji R. Prasanna (dhanji@gmail com)
  */
-public class MvelDecodingEngine implements DecodingEngine {
+public class  MvelDecodingEngine implements DecodingEngine {
     private static final FunctionAliasResolverFactory factory = new FunctionAliasResolverFactory();
 
     @SuppressWarnings("unchecked")
