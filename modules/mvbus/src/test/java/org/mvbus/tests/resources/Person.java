@@ -1,5 +1,9 @@
 package org.mvbus.tests.resources;
 
+import org.mvel2.tests.core.res.Foo;
+
+import java.util.List;
+
 public class Person {
     private String name;
     private int age;
@@ -8,8 +12,6 @@ public class Person {
     private Person father;
     private boolean active;
 
-//    public Person() {
-//    }
 
     public Person(String name, int age, String[] nicknames) {
         this.name = name;
